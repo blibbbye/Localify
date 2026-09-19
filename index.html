@@ -49,6 +49,24 @@
     .discordStatus.searching .discordDot{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.12)}
     .discordStatus.error{color:#ffc4cb;border-color:rgba(255,91,110,.28);background:rgba(255,91,110,.08)}
     .discordStatus.error .discordDot{background:#fb7185;box-shadow:0 0 0 3px rgba(251,113,133,.12)}
+    .discordStatus{display:none!important}
+    .discordTopBtn{width:42px;height:42px;padding:0;border-radius:13px;display:grid;place-items:center;background:#15181e;border:1px solid #272c35;color:#cbd2dc;flex:none;position:relative}
+    .discordTopBtn:hover{background:#1c2128;color:#fff;border-color:#39414c}
+    .discordTopBtn.connected{color:#d9ffe5;border-color:rgba(74,222,128,.34);background:rgba(34,197,94,.09)}
+    .discordTopBtn.error{color:#ffc4cb;border-color:rgba(255,91,110,.34);background:rgba(255,91,110,.08)}
+    .discordTopBtn.searching{color:#fff1bd;border-color:rgba(251,191,36,.34);background:rgba(251,191,36,.08)}
+    .discordTopBtn.disabled{color:#aeb6c1}
+    .discordGlyph{font-size:18px;font-weight:1000;line-height:1}
+    .discordTopDot{position:absolute;right:5px;bottom:5px;width:7px;height:7px;border-radius:50%;background:#6b7280;box-shadow:0 0 0 2px #15181e}
+    .discordTopBtn.connected .discordTopDot{background:#4ade80}.discordTopBtn.error .discordTopDot{background:#fb7185}.discordTopBtn.searching .discordTopDot{background:#fbbf24}
+    .discordPanel{display:grid;gap:12px}
+    .discordConnectCard{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid #2a313a;background:#0e1217;border-radius:15px}
+    .discordConnectIcon{width:42px;height:42px;border-radius:12px;background:#171c23;display:grid;place-items:center;font-size:20px;flex:none}
+    .discordConnectTitle{font-weight:900}.discordConnectSub{color:#7d8793;font-size:11px;line-height:1.4;margin-top:2px}
+    .discordStep{display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:start;padding:10px 0;border-top:1px solid #242a31}
+    .discordStep:first-child{border-top:0}.discordStepNum{width:24px;height:24px;border-radius:50%;background:#171c22;border:1px solid #2b333d;display:grid;place-items:center;font-size:11px;font-weight:1000;color:#cbd3dd}.discordStep strong{font-size:13px}.discordStep p{margin:3px 0 0;color:#7f8894;font-size:11px;line-height:1.5}
+    .discordActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.discordActions a,.discordActions button{min-height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none}
+    @media(max-width:700px){.discordTopBtn{width:40px;height:40px;border-radius:12px}.discordActions{grid-template-columns:1fr}.discordPanel{gap:10px}}
 
     .content{padding:28px 28px 140px}
     .hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:18px;align-items:stretch;margin-bottom:28px}
@@ -283,7 +301,6 @@
       <button class="sideAction" id="folderBtn"><span>▤</span><span>Add folder</span></button>
       <button class="sideAction" id="backupBtn"><span>⇩</span><span>Export library</span></button>
       <button class="sideAction" id="restoreBtn"><span>⇧</span><span>Import library</span></button>
-      <button class="sideAction" id="discordBtn"><span>◉</span><span>Discord</span></button>
       <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span>🗑</span><span>Delete library</span></button>
       <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
       <input type="file" id="directoryPicker" webkitdirectory directory multiple hidden>
@@ -299,7 +316,8 @@
         <input id="globalSearch" type="search" placeholder="Search your local music..." />
       </div>
       <div class="topSpacer"></div>
-      <div class="discordStatus" id="discordStatus" title="Discord Rich Presence status"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
+      <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph">◉</span><span class="discordTopDot"></span></button>
+      <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
       <button class="secondary mobileImportBtn" id="mobileImport">＋ Import</button><button class="secondary mobileTools" id="mobileTools">☰</button><button class="secondary" id="quickAdd">＋ Add</button>
     </div>
     <div id="content" class="content"></div>
@@ -959,13 +977,35 @@
   let discordLastSentAt=0;
 
   function setDiscordUi(state,text){
-    const el=$("#discordStatus"),label=$("#discordStatusText");if(!el||!label)return;
-    el.classList.remove("connected","disabled","searching","error");
-    if(state==="connected")el.classList.add("connected");
-    else if(state==="disabled")el.classList.add("disabled");
-    else if(state==="searching")el.classList.add("searching");
-    else if(state==="error")el.classList.add("error");
-    label.textContent=text;
+    const el=$("#discordStatus"),label=$("#discordStatusText"),top=$("#discordTopBtn");
+    if(el&&label){
+      el.classList.remove("connected","disabled","searching","error");
+      if(state==="connected")el.classList.add("connected");
+      else if(state==="disabled")el.classList.add("disabled");
+      else if(state==="searching")el.classList.add("searching");
+      else if(state==="error")el.classList.add("error");
+      label.textContent=text;
+    }
+    if(top){
+      top.classList.remove("connected","disabled","searching","error");
+      if(state)top.classList.add(state);
+      top.title=`Discord Rich Presence — ${text}`;
+      top.setAttribute("aria-label",`Discord Rich Presence — ${text}`);
+      const modalStatus=$("#discordModalStatus");
+      if(modalStatus){modalStatus.textContent=text;modalStatus.dataset.state=state||"";}
+    }
+  }
+
+  function discordCoverUrl(t){
+    const raw=[t?.cover,albumById(t?.albumId)?.cover,artistById(t?.artistId)?.image];
+    for(const value of raw){
+      if(typeof value!=="string"||!value.trim())continue;
+      try{
+        const u=new URL(value,location.href);
+        if(u.protocol==="http:"||u.protocol==="https:")return u.href;
+      }catch{}
+    }
+    return "";
   }
 
   function discordPayload(t,playing=true){
@@ -974,7 +1014,7 @@
     const position=Math.max(0,Number(audio.currentTime||0));
     const start=Math.round(Date.now()-position*1000);
     const end=duration>0?Math.round(start+duration*1000):null;
-    return {kind:"presence",playing:!!playing,song:t.title||"Unknown song",artist:artistName(t)||"Unknown artist",album:albumName(t)||"",currentTime:position,duration:duration>0?duration:0,start,end};
+    return {kind:"presence",playing:!!playing,song:t.title||"Unknown song",artist:artistName(t)||"Unknown artist",album:albumName(t)||"",coverUrl:discordCoverUrl(t),currentTime:position,duration:duration>0?duration:0,start,end};
   }
 
   function sendDiscordMessage(payload){
@@ -985,14 +1025,14 @@
   function connectDiscordBridge(){
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord off");return}
     if(discordSocket&&(discordSocket.readyState===WebSocket.OPEN||discordSocket.readyState===WebSocket.CONNECTING))return;
-    clearTimeout(discordReconnectTimer);setDiscordUi("searching","Discord connecting…");
+    clearTimeout(discordReconnectTimer);setDiscordUi("searching","Connecting to connector…");
     try{
       const ws=new WebSocket("ws://127.0.0.1:4219/presence");discordSocket=ws;
-      ws.onopen=()=>{setDiscordUi("connected","Discord connected");sendDiscordMessage({kind:"hello",client:"Localify",version:1});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
+      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:2});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
       ws.onmessage=e=>{try{const m=JSON.parse(e.data||"{}");if(m.kind==="status")setDiscordUi(m.ok?"connected":"error",m.message||"Discord connector status")}catch{}};
-      ws.onerror=()=>setDiscordUi("error","Discord connector offline");
-      ws.onclose=()=>{if(discordSocket===ws)discordSocket=null;if(state.settings.discordPresence!==false){setDiscordUi("searching","Discord reconnecting…");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}};
-    }catch{setDiscordUi("error","Discord connector offline");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}
+      ws.onerror=()=>setDiscordUi("error","Connector not running");
+      ws.onclose=()=>{if(discordSocket===ws)discordSocket=null;if(state.settings.discordPresence!==false){setDiscordUi("searching","Connector disconnected — retrying…");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}};
+    }catch{setDiscordUi("error","Connector not running");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}
   }
 
   function sendDiscordPresence(force=false){
@@ -1000,7 +1040,7 @@
     const t=trackById(state.currentId);
     if(!t||audio.paused){sendDiscordMessage({kind:"clear"});return}
     const p=discordPayload(t,true);if(!p)return;
-    const key=[p.song,p.artist,p.album,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
+    const key=[p.song,p.artist,p.album,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
     if(!force&&key===discordLastPayloadKey&&now-discordLastSentAt<4500)return;
     discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
     window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
@@ -1010,17 +1050,28 @@
 
   function openDiscordSetup(){
     const enabled=state.settings.discordPresence!==false;
-    setModal(`<div class="modalHead"><h2>Discord Rich Presence</h2><button class="circle" id="closeModal">×</button></div>
-      <div class="modalSection"><div class="modalSectionTitle">Automatic listening status</div>
-      <div style="display:flex;align-items:center;gap:10px;padding:11px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-      <div class="help">While playing, Discord can show <b>Listening to [song]</b>, <b>In Localify</b>, <b>by [artist]</b>, plus a live track timer.</div></div>
-      <div class="modalSection"><div class="modalSectionTitle">Connector</div>
-      <div class="help">A tiny desktop connector is required because a normal hosted web page cannot directly open Discord Desktop's local RPC socket.</div>
-      <div class="entityActions"><a class="secondary" href="http://127.0.0.1:4219/" target="_blank" rel="noopener">Open connector setup</a><button class="secondary" id="discordReconnect">Reconnect</button></div></div>
-      <div class="modalFoot"><button class="primary" id="discordDone">Done</button></div>`);
+    const t=trackById(state.currentId);
+    const currentLine=t?`${esc(t.title||"Unknown song")} <span class="muted">• ${esc(artistName(t)||"Unknown artist")}</span>`:"Nothing is playing right now.";
+    setModal(`<div class="modalHead"><h2>Discord</h2><button class="circle" id="closeModal">×</button></div>
+      <div class="discordPanel">
+        <div class="discordConnectCard"><div class="discordConnectIcon">◉</div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
+        <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
+          <div class="help">Discord will show <b>Listening to In Localify • [album]</b>, then the song title, artist, a live timer, and album artwork when the artwork has a public URL.</div>
+          <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
+        </div>
+        <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
+          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download the connector</strong><p>Grab the Localify Discord Connector and extract it anywhere on your computer.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Run <code>start.bat</code></strong><p>On first run, install Node.js 18+ if Windows asks for it.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Enter your Discord Application ID once</strong><p>Open the connector page, paste your Application ID, then leave the connector running while you use Localify.</p></div></div>
+        </div>
+        <div class="discordActions"><a class="primary" href="./Localify_Discord_Connector.zip" download="Localify_Discord_Connector.zip">⬇ Download connector</a><a class="secondary" href="http://127.0.0.1:4219/" target="_blank" rel="noopener">Open connector</a><button class="secondary" id="discordReconnect">↻ Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
+        <div class="help">The connector listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
+      </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
     $("#discordPresenceToggle").onchange=async e=>{state.settings.discordPresence=!!e.target.checked;await save();if(state.settings.discordPresence===false){clearDiscordPresence();setDiscordUi("disabled","Discord off")}else{connectDiscordBridge();sendDiscordPresence(true)}};
     $("#discordReconnect").onclick=()=>{if(discordSocket){try{discordSocket.close()}catch{}};connectDiscordBridge()};
+    connectDiscordBridge();
   }
 
   function updatePlayerTime(){
@@ -1565,7 +1616,7 @@
   }
 
   function openMobileTools(){
-    setModal(`<div class="modalHead"><h2>Localify tools</h2><button class="circle" id="closeModal">×</button></div><div style="display:grid;gap:8px"><button class="secondary" id="mSave">✓ Save library now</button><button class="secondary" id="mImport">⇧ Import .localify file</button><button class="secondary" id="mExport">⇩ Export .localify file</button><button class="secondary" id="mAdd">＋ Add music</button><button class="secondary" id="mFolder">▤ Add folder</button><button class="deleteLibraryBtn" id="mDeleteLibrary">🗑 Delete library</button><button class="secondary" id="mEQ">♫ Sound filters</button><button class="secondary" id="mDiscord">◉ Discord Rich Presence</button></div>`);
+    setModal(`<div class="modalHead"><h2>Localify tools</h2><button class="circle" id="closeModal">×</button></div><div style="display:grid;gap:8px"><button class="secondary" id="mSave">✓ Save library now</button><button class="secondary" id="mImport">⇧ Import .localify file</button><button class="secondary" id="mExport">⇩ Export .localify file</button><button class="secondary" id="mAdd">＋ Add music</button><button class="secondary" id="mFolder">▤ Add folder</button><button class="deleteLibraryBtn" id="mDeleteLibrary">🗑 Delete library</button><button class="secondary" id="mEQ">♫ Sound filters</button></div>`);
     $("#closeModal").onclick=()=>closeModal();
     $("#mSave").onclick=async()=>{closeModal(true);await save(true)};
     $("#mImport").onclick=()=>{closeModal(true);pickLibraryFile()};
@@ -1573,7 +1624,7 @@
     $("#mAdd").onclick=()=>{closeModal(true);pickFiles({})};
     $("#mFolder").onclick=()=>{closeModal(true);pickFolder()};
     $("#mDeleteLibrary").onclick=()=>{closeModal(true);openDeleteLibraryWarning()};
-    $("#mEQ").onclick=()=>{closeModal(true);openEQ()};$("#mDiscord").onclick=()=>{closeModal(true);openDiscordSetup()};
+    $("#mEQ").onclick=()=>{closeModal(true);openEQ()};
   }
 
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
@@ -1592,7 +1643,7 @@
     if(id)warmTrack(id);
   },{passive:true});
   $("#globalSearch").addEventListener("input",e=>{state.search=e.target.value;if(state.search.trim()){state.currentView="search";renderSearch()}else if(state.currentView==="search"){state.currentView="home";render()}});
-  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#discordBtn").onclick=openDiscordSetup;$("#discordStatus").onclick=openDiscordSetup;$("#mobileImport").onclick=pickLibraryFile;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#backupBtn").onclick=exportLibrary;$("#restoreBtn").onclick=pickLibraryFile;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importLibrary(f)};
+  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileImport").onclick=pickLibraryFile;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#backupBtn").onclick=exportLibrary;$("#restoreBtn").onclick=pickLibraryFile;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importLibrary(f)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#next").onclick=next;$("#prev").onclick=prev;$("#shuffle").onchange=async e=>{state.settings.shuffle=!!e.target.checked;await save();renderPlayer()};$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
