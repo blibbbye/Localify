@@ -1334,18 +1334,17 @@ main{min-width:0;min-height:0}
     return localifyCoverMapPromise;
   }
 
+  function normalizeCoverAlbumName(value){
+    return String(value||"")
+      .normalize("NFKC")
+      .replace(/\s+/g," ")
+      .trim()
+      .toLocaleLowerCase();
+  }
+
   function coverMapCandidates(albumTitle){
-    const original=String(albumTitle||"").trim();
-    if(!original)return [];
-    const variants=[
-      original,
-      original.replace(/\s+/g," ").trim(),
-      original.toUpperCase(),
-      original.toLowerCase()
-    ];
-    const seen=new Set(),out=[];
-    for(const v of variants){const k=v.toLowerCase();if(!seen.has(k)){seen.add(k);out.push(k)}}
-    return out;
+    const key=normalizeCoverAlbumName(albumTitle);
+    return key?[key]:[];
   }
 
   function coverMapUrl(value){
