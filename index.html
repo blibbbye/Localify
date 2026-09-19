@@ -1454,14 +1454,54 @@ main{min-width:0;min-height:0}
     return "";
   }
 
+  function coverMatchScore(a,b){
+    const left=canonicalCoverAlbumName(a),right=canonicalCoverAlbumName(b);
+    if(!left||!right)return 0;
+    if(left===right)return 1;
+    if(left.length>=5&&right.length>=5&&(left.includes(right)||right.includes(left))){
+      const shorter=Math.min(left.length,right.length),longer=Math.max(left.length,right.length);
+      return shorter/longer>=0.62?0.94:0;
+    }
+    // Small edit-distance tolerance catches cover aliases such as
+    // "turbografx16" vs "turbografx-16" without matching unrelated albums.
+    const m=left.length,n=right.length;
+    if(Math.max(m,n)>48||Math.abs(m-n)>8)return 0;
+    const prev=new Array(n+1);
+    for(let j=0;j<=n;j++)prev[j]=j;
+    for(let i=1;i<=m;i++){
+      const cur=new Array(n+1);cur[0]=i;
+      for(let j=1;j<=n;j++){
+        const cost=left[i-1]===right[j-1]?0:1;
+        cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+cost);
+      }
+      for(let j=0;j<=n;j++)prev[j]=cur[j];
+    }
+    const maxLen=Math.max(m,n);
+    const similarity=1-(prev[n]/maxLen);
+    return similarity>=0.84?similarity:0;
+  }
+
   function externalCoverForAlbum(albumTitle){
     if(!localifyCoverMap||isExcludedCoverAlbum(albumTitle))return "";
-    for(const key of coverMapCandidates(albumTitle)){
+    const candidates=coverMapCandidates(albumTitle);
+    for(const key of candidates){
       const value=localifyCoverMap[key];
       const mapped=coverMapUrl(value||"");
       if(mapped)return mapped;
     }
-    return "";
+
+    // Fuzzy alias pass. This is still based only on the owner-controlled
+    // covers.json/built-in cover map; album metadata never leaves Localify.
+    let bestUrl="",bestScore=0;
+    for(const [key,value] of Object.entries(localifyCoverMap)){
+      const mapped=coverMapUrl(value||"");
+      if(!mapped)continue;
+      for(const candidate of candidates){
+        const score=coverMatchScore(candidate,key);
+        if(score>bestScore){bestScore=score;bestUrl=mapped}
+      }
+    }
+    return bestScore>=0.84?bestUrl:"";
   }
 
   function knownCoverUrlForAlbum(albumTitle){
@@ -1590,11 +1630,12 @@ main{min-width:0;min-height:0}
     let coverUrl="";
 
     // IMPORTANT: Only title, artists, artwork and timing are allowed into the
-    // Discord bridge. Album metadata is intentionally never copied to this payload.
-    // The album may still be used internally by the artwork resolver.
-    // Never make the status wait for cover discovery: unknown/missing artwork
-    // must not prevent the song + artist presence from being published.
-    if(resolveCover){
+    // Discord bridge. Album metadata is used ONLY inside Localify to select artwork.
+    // It is never copied into the Discord payload.
+    // Prefer the configured album cover, then fall back to the track/artist artwork.
+    const album=albumName(t);
+    coverUrl=builtInCoverForAlbum(album);
+    if(resolveCover&& !coverUrl){
       try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
     }
     if(!coverUrl)coverUrl=discordDirectCoverUrl(t);
@@ -1645,8 +1686,8 @@ main{min-width:0;min-height:0}
       window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
     }
 
-    // Resolve GitHub artwork in the background. When it finishes, update the
-    // same song only if the user is still listening to it.
+    // Resolve configured/fuzzy album artwork in the background. The album is
+    // used only inside Localify for artwork selection and is never transmitted.
     resolveGithubAlbumCover(t).then(cover=>{
       if(!cover)return;
       if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
