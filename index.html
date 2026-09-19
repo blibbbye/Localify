@@ -1569,7 +1569,7 @@ main{min-width:0;min-height:0}
     clearTimeout(discordReconnectTimer);setDiscordUi("searching","Connecting to connector…");
     try{
       const ws=new WebSocket("ws://127.0.0.1:4219/presence");discordSocket=ws;
-      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:2});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
+      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:3});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
       ws.onmessage=e=>{try{const m=JSON.parse(e.data||"{}");if(m.kind==="status")setDiscordUi(m.ok?"connected":"error",m.message||"Discord connector status")}catch{}};
       ws.onerror=()=>setDiscordUi("error","Connector not running");
       ws.onclose=()=>{if(discordSocket===ws)discordSocket=null;if(state.settings.discordPresence!==false){setDiscordUi("searching","Connector disconnected — retrying…");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}};
@@ -1583,12 +1583,15 @@ main{min-width:0;min-height:0}
 
   async function discordPayload(t,playing=true,resolveCover=true){
     const song=sanitizeDiscordText(t?.title,"Unknown song");
-    const artists=artistNamesForTrack(t).filter(Boolean);
+    const artists=artistNamesForTrack(t)
+      .map(x=>sanitizeDiscordText(x,""))
+      .filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
     let coverUrl="";
 
-    // Album names are only used internally to resolve artwork. They are never
-    // sent as a Discord status/activity field.
+    // IMPORTANT: Only title, artists, artwork and timing are allowed into the
+    // Discord bridge. Album metadata is intentionally never copied to this payload.
+    // The album may still be used internally by the artwork resolver.
     // Never make the status wait for cover discovery: unknown/missing artwork
     // must not prevent the song + artist presence from being published.
     if(resolveCover){
@@ -1609,8 +1612,9 @@ main{min-width:0;min-height:0}
       playing:!!playing,
       song,
       artist,
+      artists,
       // Album is deliberately omitted from the payload.
-      // It is only used above to find the correct cover.
+      // It is only used internally above to find the correct cover.
       coverUrl,
       currentTime,
       duration,
@@ -1631,7 +1635,8 @@ main{min-width:0;min-height:0}
     let p;
     try{p=await discordPayload(t,true,false)}catch(e){
       console.warn("Localify Discord payload build failed",e);
-      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
+      const fallbackArtists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(fallbackArtists.join(", "),"Unknown Artist"),artists:fallbackArtists,coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
@@ -1645,7 +1650,7 @@ main{min-width:0;min-height:0}
     resolveGithubAlbumCover(t).then(cover=>{
       if(!cover)return;
       if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
-      const updated={...p,coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0)};
+      const updated={kind:"presence",playing:true,song:p.song,artist:p.artist,artists:Array.isArray(p.artists)?p.artists.slice():String(p.artist||"").split(",").map(x=>x.trim()).filter(Boolean),coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0),duration:Number(p.duration||audio.duration||0),start:Number(p.start||0),end:Number(p.end||0)};
       const updatedKey=[updated.song,updated.artist,updated.coverUrl,Math.floor(updated.currentTime/5),Math.round(updated.duration)].join("|");
       if(updatedKey===discordLastPayloadKey)return;
       discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();sendDiscordMessage(updated);
@@ -1664,7 +1669,7 @@ main{min-width:0;min-height:0}
         <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">Discord shows the Localify listening activity with the song title, artists, live timer, and artwork. Album names are used only to choose the cover — the album name is not shown in the Discord status. For your Ye-focused library, put covers in <code>covers/</code> and optionally map aliases in <code>covers.json</code>. No Discord Application ID needs to be entered.</div>
+          <div class="help">Discord receives only the song title, artists, artwork, and playback timing. Album metadata is used only inside Localify when resolving artwork and is never sent to the connector. For your Ye-focused library, put covers in <code>covers/</code> and optionally map aliases in <code>covers.json</code>. No Discord Application ID needs to be entered.</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
