@@ -1581,17 +1581,19 @@ main{min-width:0;min-height:0}
     return (text||fallback).slice(0,max);
   }
 
-  async function discordPayload(t,playing=true){
+  async function discordPayload(t,playing=true,resolveCover=true){
     const song=sanitizeDiscordText(t?.title,"Unknown song");
     const artists=artistNamesForTrack(t).filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
-    const album=albumName(t);
     let coverUrl="";
 
-    // For mapped albums, the GitHub cover is the first choice. VULTURES 2 is
-    // intentionally excluded by resolveGithubAlbumCover(), so it falls back
-    // to the user's normal/local album artwork there.
-    try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
+    // Album names are only used internally to resolve artwork. They are never
+    // sent as a Discord status/activity field.
+    // Never make the status wait for cover discovery: unknown/missing artwork
+    // must not prevent the song + artist presence from being published.
+    if(resolveCover){
+      try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
+    }
     if(!coverUrl)coverUrl=discordDirectCoverUrl(t);
 
     let duration=Number(audio.duration||t?.duration||0);
@@ -1607,9 +1609,8 @@ main{min-width:0;min-height:0}
       playing:!!playing,
       song,
       artist,
-      // Keep album available internally for cover resolution/debugging only.
-      // The connector does not display it in Discord.
-      album:sanitizeDiscordText(album,"",128),
+      // Album is deliberately omitted from the payload.
+      // It is only used above to find the correct cover.
       coverUrl,
       currentTime,
       duration,
@@ -1623,13 +1624,33 @@ main{min-width:0;min-height:0}
     const requestId=++discordPresenceRequest;
     const t=trackById(state.currentId);
     if(!t||audio.paused){sendDiscordMessage({kind:"clear"});return}
+
+    // Publish the status immediately with any already-known cover. Do not wait
+    // for album-name/filename probing, otherwise albums without a matching
+    // cover could make Discord appear completely broken for a long time.
     let p;
-    try{p=await discordPayload(t,true)}catch(e){console.warn("Localify Discord payload build failed",e);p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0}}
+    try{p=await discordPayload(t,true,false)}catch(e){
+      console.warn("Localify Discord payload build failed",e);
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
+    }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
-    if(!force&&key===discordLastPayloadKey&&now-discordLastSentAt<4500)return;
-    discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
-    window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
+    if(force||key!==discordLastPayloadKey||now-discordLastSentAt>=4500){
+      discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
+      window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
+    }
+
+    // Resolve GitHub artwork in the background. When it finishes, update the
+    // same song only if the user is still listening to it.
+    resolveGithubAlbumCover(t).then(cover=>{
+      if(!cover)return;
+      if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
+      const updated={...p,coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0)};
+      const updatedKey=[updated.song,updated.artist,updated.coverUrl,Math.floor(updated.currentTime/5),Math.round(updated.duration)].join("|");
+      if(updatedKey===discordLastPayloadKey)return;
+      discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();sendDiscordMessage(updated);
+      window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:updated}));window.LocalifyDiscordPresence=updated;
+    }).catch(e=>console.warn("Localify background Discord cover lookup failed",e));
   }
 
   function clearDiscordPresence(){discordPresenceRequest++;discordLastPayloadKey="";sendDiscordMessage({kind:"clear"});window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:null}));window.LocalifyDiscordPresence=null}
