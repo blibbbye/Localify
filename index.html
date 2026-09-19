@@ -1171,7 +1171,7 @@ main{min-width:0;min-height:0}
         <div class="discordConnectCard"><div class="discordConnectIcon">◉</div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">Discord will show the Localify listening activity with the song title, artist, live timer, and artwork when the artwork has a public URL. No Discord Application ID needs to be entered.</div>
+          <div class="help">On ur profile it will show everything exept the album/song cover "idk how"</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
@@ -1180,7 +1180,7 @@ main{min-width:0;min-height:0}
           <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Start the connector</strong><p>The Localify connector already has the correct Application ID built in. Leave it running while you use Localify.</p></div></div>
         </div>
         <div class="discordActions"><a class="primary" href="./Localify_Discord_Connector.zip" download="Localify_Discord_Connector.zip">⬇ Download connector</a><a class="secondary" href="http://127.0.0.1:4219/" target="_blank" rel="noopener">Open connector</a><button class="secondary" id="discordReconnect">↻ Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
-        <div class="help">The connector listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
+        <div class="help">Btw this is work in progress thats why we need this setup sadly. This is more for me!</div>
       </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
     $("#discordPresenceToggle").onchange=async e=>{state.settings.discordPresence=!!e.target.checked;await save();if(state.settings.discordPresence===false){clearDiscordPresence();setDiscordUi("disabled","Discord off")}else{connectDiscordBridge();sendDiscordPresence(true)}};
