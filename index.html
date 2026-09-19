@@ -921,7 +921,7 @@ main{min-width:0;min-height:0}
       </div>
       <div class="section"><div class="sectionHead"><h2>Recently played</h2><span>${recent.length?"Jump back in":"Nothing played yet"}</span></div>${recent.length?`<div class="grid">${recent.map(trackCard).join("")}</div>`:empty("No history yet","Play something and it will appear here.")}</div>
       <div class="section"><div class="sectionHead"><h2>Your albums</h2><span>${albums.length} shown</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album or import songs to build your catalog.")}</div>
-      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Made by <b>@blibbbye</b> with ideas from<b>@modmodroots</b>.</div></div></div>`;
+      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Made by <b>@blibbbye</b> with ideas from <b>@modmodroots</b>.</div></div></div>`;
     $("#heroAdd").onclick=()=>pickFiles({});
     $("#heroFolder").onclick=pickFolder;
     $("#heroAlbum").onclick=()=>editAlbum(null);
