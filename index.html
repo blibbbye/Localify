@@ -1273,6 +1273,42 @@ main{min-width:0;min-height:0}
   let localifyCoverMap=null;
   let localifyCoverMapPromise=null;
 
+  // Built-in Ye cover aliases. covers.json can extend or override these.
+  // VULTURES 2 is intentionally omitted so it keeps its normal/local artwork.
+  const LOCALIFY_BUILTIN_COVER_MAP={
+    "808s":"808s.png","808s & Heartbreak":"808s.png","808s and Heartbreak":"808s.png",
+    "BBP":"BBPB.jpeg","BBPB":"BBPB.jpeg","BBP B":"BBPB.jpeg","BBP V1":"BBPB.jpeg","Bad Bitch Playbook":"BBPB.jpeg","Bad Bitch Playbook V1":"BBPB.jpeg","Bad Bitch Playbook V2":"BBPB.jpeg",
+    "Cruel Summer":"cruelsummer.jpg","Cruel Summer V1":"cruelsummer.jpg","Cruel Winter":"cruelwinter.jpg","Cruel Winter V1":"cruelwinter.jpg",
+    "CUCK":"CUCK.JPG","C.U.C.K.":"CUCK.JPG","CUCK V1":"CUCK.JPG","Cuck":"CUCK.JPG","Cuck V1":"CUCK.JPG",
+    "Donda":"donda.jpg","Donda 2021":"donda.jpg","Donda V2":"donda.jpg",
+    "Donda 2":"donda2.jpg","Donda II":"donda2.jpg","Donda 2 V1":"donda2.jpg",
+    "Donda With Child":"DONDACHILD.jpg","Donda with Child":"DONDACHILD.jpg","Donda V1":"DONDACHILD.jpg","Donda 2020":"DONDACHILD.jpg","Donda 2020 V1":"DONDACHILD.jpg",
+    "God's Country":"godscountry.jpg","Gods Country":"godscountry.jpg","God's Country V1":"godscountry.jpg","Gods Country V1":"godscountry.jpg",
+    "Good Ass Job":"Good Ass Job.webp","Good Ass Job V1":"Good Ass Job.webp","GAJ":"Good Ass Job.webp","GAJ V1":"Good Ass Job.webp",
+    "Graduation":"graduation.jpg","Graduation V1":"graduation.jpg",
+    "Jesus Is King":"jesusisking.jpg","Jesus Is King V1":"jesusisking.jpg","JIK":"jesusisking.jpg","JIK V1":"jesusisking.jpg","Jesus Is King V2":"jesusisking2.jpg","Jesus Is King 2":"jesusisking2.jpg","JIK V2":"jesusisking2.jpg",
+    "Job Well Done":"JobWellDone.jpg","Job Well Done V1":"JobWellDone.jpg","JWD":"JobWellDone.jpg",
+    "Kids See Ghosts":"kidsSeeGhosts.png","Kids See Ghosts V1":"kidsSeeGhosts.png","KIDS SEE GHOSTS":"kidsSeeGhosts.png","KSG":"kidsSeeGhosts.png","Kids See Ghosts 2":"kidsSeeGhosts2.jpg","Kids See Ghosts II":"kidsSeeGhosts2.jpg","Kids See Ghosts V2":"kidsSeeGhosts2.jpg","KSG2":"kidsSeeGhosts2.jpg","KSG V2":"kidsSeeGhosts2.jpg",
+    "Late Registration":"latereg.jpg","LateReg":"latereg.jpg","Late Reg":"latereg.jpg",
+    "Love Everyone":"loveeveryone.jpg","Love Everyone V1":"loveeveryone.jpg","LOVE EVERYONE":"loveeveryone.jpg","LE":"loveeveryone.jpg",
+    "My Beautiful Dark Twisted Fantasy":"MBDTF.jpg","MBDTF":"MBDTF.jpg",
+    "So Help Me God":"SoHelpMeGod.webp","So Help Me God V1":"SoHelpMeGod.webp","SHMG":"SoHelpMeGod.webp","SHMG V1":"SoHelpMeGod.webp",
+    "Swish":"Swish.jpg","Swish V1":"Swish.jpg",
+    "Thank God For Drugs":"ThankGodForDrugs.webp","Thank God For Drugs V1":"ThankGodForDrugs.webp","ThankGodForDrugs":"ThankGodForDrugs.webp","TGFD":"ThankGodForDrugs.webp",
+    "The College Dropout":"thecollegedropout.jpg","The College Dropout V1":"thecollegedropout.jpg","The College Dropout V2":"thecollegedropout.jpg","College Dropout":"thecollegedropout.jpg","TCD":"thecollegedropout.jpg",
+    "The Life of Pablo":"tlop.jpg","The Life of Pablo V1":"tlop.jpg","The Life of Pablo 2016":"tlop.jpg","TLOP":"tlop.jpg",
+    "TurboGrafx-16":"TURBOGRAFX.jpeg","TurboGrafx 16":"TURBOGRAFX.jpeg","Turbografx 16":"TURBOGRAFX.jpeg","Turbografx":"TURBOGRAFX.jpeg","TurboGrafx":"TURBOGRAFX.jpeg","TurboGrafx16":"TURBOGRAFX.jpeg",
+    "Vultures 1":"VULTURES 1.png","Vultures I":"VULTURES 1.png","VULTURES 1":"VULTURES 1.png",
+    "Vultures 3":"VULTURES 3.webp","Vultures III":"VULTURES 3.webp","VULTURES 3":"VULTURES 3.webp",
+    "WAR":"WAR.png","War":"WAR.png","War V1":"WAR.png",
+    "Watch the Throne":"watchthethrone.jpg","Watch the Throne V1":"watchthethrone.jpg","WTT":"watchthethrone.jpg","Watch the Throne 2":"watchthethrone2.webp","Watch the Throne II":"watchthethrone2.webp","Watch the Throne V2":"watchthethrone2.webp","WTT2":"watchthethrone2.webp","WTT II":"watchthethrone2.webp",
+    "Waves":"waves.png","Waves V1":"waves.png","Wolves":"wolves.jpg","Wolves V1":"wolves.jpg",
+    "Yandhi":"YANDHI.jpg","Yandhi V1":"YANDHI.jpg","Yandhi V2":"YANDHI.jpg","Yandhi 1":"YANDHI.jpg","Yandhi 2":"YANDHI.jpg",
+    "Ye":"ye.jpg","Ye V1":"ye.jpg",
+    "YEBU":"YEBU.jpeg","Yebu":"YEBU.jpeg","YEBU V1":"YEBU.jpeg",
+    "Yeezus":"yeezus.png","Yeezus V1":"yeezus.png","Yeezus 1":"yeezus.png","Yeezus OG":"yeezus.png","Yeezus 2":"Yeezus 2.jpg","Yeezus II":"Yeezus 2.jpg","Yeezus V2":"Yeezus 2.jpg","Yeezus 2 V1":"Yeezus 2.jpg"
+  };
+
   function setDiscordUi(state,text){
     const el=$("#discordStatus"),label=$("#discordStatusText"),top=$("#discordTopBtn");
     if(el&&label){
@@ -1310,25 +1346,40 @@ main{min-width:0;min-height:0}
   async function loadLocalifyCoverMap(){
     if(localifyCoverMap)return localifyCoverMap;
     if(localifyCoverMapPromise)return localifyCoverMapPromise;
-    if(location.protocol!=="http:"&&location.protocol!=="https:"){localifyCoverMap={};return localifyCoverMap}
+
+    // Always start with the built-in map. That way a missing/unreachable
+    // covers.json never makes all previously working covers disappear.
+    const out={};
+    for(const [k,v] of Object.entries(LOCALIFY_BUILTIN_COVER_MAP)){
+      if(typeof v!=="string"||!v.trim())continue;
+      out[normalizeCoverAlbumName(k)]=v.trim();
+      out[canonicalCoverAlbumName(k)]=v.trim();
+    }
+
+    if(location.protocol!=="http:"&&location.protocol!=="https:"){
+      localifyCoverMap=out;
+      return localifyCoverMap;
+    }
+
     localifyCoverMapPromise=(async()=>{
       try{
         const r=await fetch(LOCALIFY_COVER_MAP_URL,{cache:"no-store"});
         if(!r.ok)throw new Error(`HTTP ${r.status}`);
         const data=await r.json();
         const raw=data&&typeof data.covers==="object"?data.covers:data;
-        const out={};
         if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
           for(const [k,v] of Object.entries(raw)){
             if(typeof v!=="string"||!v.trim())continue;
-            out[String(k).trim().toLowerCase()]=v.trim();
+            const value=v.trim();
+            out[normalizeCoverAlbumName(k)]=value;
+            out[canonicalCoverAlbumName(k)]=value;
           }
         }
-        localifyCoverMap=out;
       }catch(e){
-        localifyCoverMap={};
-        console.warn("Localify covers.json could not be loaded",e);
+        // Keep the built-in map as a reliable fallback.
+        console.warn("Localify covers.json could not be loaded; using built-in cover map.",e);
       }
+      localifyCoverMap=out;
       return localifyCoverMap;
     })();
     return localifyCoverMapPromise;
@@ -1342,9 +1393,34 @@ main{min-width:0;min-height:0}
       .toLocaleLowerCase();
   }
 
+  function canonicalCoverAlbumName(value){
+    return normalizeCoverAlbumName(value)
+      .replace(/&/g,"and")
+      .replace(/[’'`]/g,"")
+      .replace(/[^a-z0-9]+/g,"");
+  }
+
   function coverMapCandidates(albumTitle){
-    const key=normalizeCoverAlbumName(albumTitle);
-    return key?[key]:[];
+    const raw=String(albumTitle||"");
+    const exact=normalizeCoverAlbumName(raw);
+    const canonical=canonicalCoverAlbumName(raw);
+    const variants=new Set([exact,canonical]);
+    // Be forgiving about common album-version suffixes.
+    const withoutVersion=raw
+      .replace(/\s*[-–—:]?\s*v(?:ersion)?\.?\s*\d+\s*$/i,"")
+      .replace(/\s*\(?(?:version|final|complete|deluxe|revised)\)?\s*$/i,"")
+      .trim();
+    if(withoutVersion&&withoutVersion!==raw){
+      variants.add(normalizeCoverAlbumName(withoutVersion));
+      variants.add(canonicalCoverAlbumName(withoutVersion));
+    }
+    // Common Roman-numeral forms.
+    const roman=raw.replace(/\bII\b/gi,"2").replace(/\bIII\b/gi,"3").replace(/\bI\b/gi,"1");
+    if(roman!==raw){
+      variants.add(normalizeCoverAlbumName(roman));
+      variants.add(canonicalCoverAlbumName(roman));
+    }
+    return [...variants].filter(Boolean);
   }
 
   function coverMapUrl(value){
@@ -1432,6 +1508,13 @@ main{min-width:0;min-height:0}
     const start=Math.round(Date.now()-position*1000);
     const end=duration>0?Math.round(start+duration*1000):null;
     const coverUrl=discordDirectCoverUrl(t)||await resolveGithubAlbumCover(t);
+    // Promote the resolved GitHub cover into the live album/song metadata so
+    // album cards and the player can also use it during this session.
+    if(coverUrl){
+      const albumObj=albumById(t.albumId);
+      if(albumObj&&!albumObj.cover)albumObj.cover=coverUrl;
+      if(!t.cover)t.cover=coverUrl;
+    }
     return {kind:"presence",playing:!!playing,song:t.title||"Unknown song",artist:artistName(t)||"Unknown artist",album:albumName(t)||"",coverUrl,currentTime:position,duration:duration>0?duration:0,start,end};
   }
 
