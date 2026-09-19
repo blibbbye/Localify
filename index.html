@@ -1974,22 +1974,23 @@ main{min-width:0;min-height:0}
 
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
   function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a}
-  function crc32(bytes){let c=0xffffffff;for(let i=0;i<bytes.length;i++){c^=bytes[i];for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return (c^0xffffffff)>>>0}
+  const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0);t[n]=c>>>0}return t})();
+  function crc32(bytes){let c=0xffffffff;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&255]^(c>>>8);return (c^0xffffffff)>>>0}
+  function crc32Update(crc,bytes){let c=crc>>>0;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&255]^(c>>>8);return c>>>0}
+  async function crc32Blob(blob){let c=0xffffffff;for await(const chunk of blob.stream())c=crc32Update(c,chunk);return (c^0xffffffff)>>>0}
   function guessMime(name){const e=(String(name||'').match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase();return ({mp3:'audio/mpeg',m4a:'audio/mp4',mp4:'audio/mp4',aac:'audio/aac',flac:'audio/flac',wav:'audio/wav',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',webm:'audio/webm',aiff:'audio/aiff',aif:'audio/aiff',alac:'audio/mp4',caf:'audio/x-caf'})[e]||'application/octet-stream'}
   async function blobToBytes(blob){return new Uint8Array(await blob.arrayBuffer())}
+  function zipLocalHeader(nameBytes,crc,size){const local=new Uint8Array(30+nameBytes.length),lv=new DataView(local.buffer);lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x800,true);lv.setUint16(8,0,true);lv.setUint16(10,0,true);lv.setUint16(12,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,size,true);lv.setUint32(22,size,true);lv.setUint16(26,nameBytes.length,true);lv.setUint16(28,0,true);local.set(nameBytes,30);return local}
+  function zipCentralHeader(nameBytes,crc,size,offset){const cdir=new Uint8Array(46+nameBytes.length),cv=new DataView(cdir.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,size,true);cv.setUint32(24,size,true);cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);cdir.set(nameBytes,46);return cdir}
+  function zipEnd(count,cdSize,cdOffset){const end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,count,true);ev.setUint16(10,count,true);ev.setUint32(12,cdSize,true);ev.setUint32(16,cdOffset,true);ev.setUint16(20,0,true);return end}
   async function makeZip(entries){
     const chunks=[],central=[];let offset=0;
     const enc=new TextEncoder();
     for(const entry of entries){
       const nameBytes=enc.encode(entry.name),data=entry.bytes instanceof Uint8Array?entry.bytes:new Uint8Array(entry.bytes),crc=crc32(data),size=data.length;
-      const local=new Uint8Array(30+nameBytes.length);const lv=new DataView(local.buffer);
-      lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x800,true);lv.setUint16(8,0,true);lv.setUint16(10,0,true);lv.setUint16(12,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,size,true);lv.setUint32(22,size,true);lv.setUint16(26,nameBytes.length,true);lv.setUint16(28,0,true);local.set(nameBytes,30);
-      chunks.push(local,data);
-      const cdir=new Uint8Array(46+nameBytes.length);const cv=new DataView(cdir.buffer);
-      cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,size,true);cv.setUint32(24,size,true);cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);cdir.set(nameBytes,46);central.push(cdir);offset+=local.length+size;
+      const local=zipLocalHeader(nameBytes,crc,size);chunks.push(local,data);central.push(zipCentralHeader(nameBytes,crc,size,offset));offset+=local.length+size;
     }
-    const cdOffset=offset;let cdSize=0;for(const c of central){chunks.push(c);cdSize+=c.length}
-    const end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,central.length,true);ev.setUint16(10,central.length,true);ev.setUint32(12,cdSize,true);ev.setUint32(16,cdOffset,true);ev.setUint16(20,0,true);chunks.push(end);
+    const cdOffset=offset;let cdSize=0;for(const c of central){chunks.push(c);cdSize+=c.length}chunks.push(zipEnd(central.length,cdSize,cdOffset));
     return new Blob(chunks,{type:'application/zip'});
   }
   async function parseZip(file){
@@ -2012,32 +2013,62 @@ main{min-width:0;min-height:0}
     }
     return files;
   }
-  async function collectLibraryBundle(){
-    const manifest={version:12,name:"Localify Library",exportedAt:new Date().toISOString(),artists:state.artists,albums:state.albums,playlists:state.playlists,liked:state.liked,recent:state.recent,settings:state.settings,tracks:[]},entries=[{name:'library.json',bytes:null}];
-    const tracks=[];let done=0;
+  async function collectLibraryMeta(){
+    const manifest={version:12,name:"Localify Library",exportedAt:new Date().toISOString(),artists:state.artists,albums:state.albums,playlists:state.playlists,liked:state.liked,recent:state.recent,settings:state.settings,tracks:[]};
     for(const src of state.tracks){
       const t={...src,blob:undefined,_blobDirty:undefined,hasAudio:false,audioFile:null};
-      const blob=await warmTrack(src.id);
-      if(isBlobLike(blob)){
+      if(src.fileName||isBlobLike(src.blob)){
         const ext=(src.fileName?.match(/\.[^.]+$/)||['.bin'])[0];
-        t.hasAudio=true;t.audioFile=`audio/${src.id}${ext}`;entries.push({name:t.audioFile,bytes:await blobToBytes(blob)});
+        t.hasAudio=true;t.audioFile=`audio/${src.id}${ext}`;
       }
-      tracks.push(t);done++;
-      if(done%4===0)toast(`Preparing library… ${done}/${state.tracks.length}`);
+      manifest.tracks.push(t);
     }
-    manifest.tracks=tracks;entries[0].bytes=new TextEncoder().encode(JSON.stringify(manifest));
-    return {manifest,entries};
+    return manifest;
+  }
+  async function exportLibraryStreaming(){
+    if(!window.showSaveFilePicker) return false;
+    const handle=await window.showSaveFilePicker({suggestedName:'Localify-Library.localify',types:[{description:'Localify Library',accept:{'application/zip':['.localify']}}]});
+    const writable=await handle.createWritable();
+    const enc=new TextEncoder();let offset=0,central=[],done=0;
+    try{
+      const manifest=await collectLibraryMeta();
+      const manifestBytes=enc.encode(JSON.stringify(manifest));
+      const manifestName=enc.encode('library.json'),manifestCrc=crc32(manifestBytes),manifestHeader=zipLocalHeader(manifestName,manifestCrc,manifestBytes.length);
+      await writable.write(manifestHeader);await writable.write(manifestBytes);central.push(zipCentralHeader(manifestName,manifestCrc,manifestBytes.length,offset));offset+=manifestHeader.length+manifestBytes.length;
+      if(manifest.tracks.length>65535)throw Error('This ZIP format supports at most 65,535 entries.');
+      for(const src of state.tracks){
+        const alreadyLoaded=isBlobLike(src.blob);
+        const blob=await ensureTrackBlob(src);
+        if(!isBlobLike(blob)){done++;if(done%4===0)toast(`Exporting… ${done}/${state.tracks.length}`);continue}
+        const ext=(src.fileName?.match(/\.[^.]+$/)||['.bin'])[0];
+        const name=`audio/${src.id}${ext}`;const nameBytes=enc.encode(name),size=blob.size;
+        if(size>0xffffffff||offset>0xffffffff)throw Error('The library is larger than standard ZIP32 supports.');
+        const crc=await crc32Blob(blob);
+        const header=zipLocalHeader(nameBytes,crc,size);
+        await writable.write(header);
+        for await(const chunk of blob.stream())await writable.write(chunk);
+        central.push(zipCentralHeader(nameBytes,crc,size,offset));offset+=header.length+size;done++;
+        if(!alreadyLoaded){src.blob=null;src._blobDirty=false}
+        if(done%2===0||done===state.tracks.length)toast(`Exporting library… ${done}/${state.tracks.length}`);
+      }
+      const cdOffset=offset;let cdSize=0;for(const c of central){await writable.write(c);cdSize+=c.length}await writable.write(zipEnd(central.length,cdSize,cdOffset));await writable.close();toast(`Library exported: ${done}/${state.tracks.length} songs.`);return true;
+    }catch(e){try{await writable.abort()}catch{};throw e}
   }
   function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
   async function exportLibrary(){
     await flushSave(false);
     try{
-      const {entries}=await collectLibraryBundle();
-      const blob=await makeZip(entries);
-      downloadBlob(blob,'Localify-Library.localify');
-      toast('Full Localify library exported. The file includes your imported audio.');
-      return true;
-    }catch(e){console.error('Localify bundle export failed',e);toast('Could not export the full library file.');return false}
+      if(window.showSaveFilePicker){
+        await exportLibraryStreaming();
+        return true;
+      }
+      // Fallback for browsers without File System Access: keep the legacy in-memory export.
+      // It is suitable for smaller libraries; large exports should be done in Chrome/Edge.
+      const entries=[],tracks=[];let done=0;const enc=new TextEncoder();
+      for(const src of state.tracks){const t={...src,blob:undefined,_blobDirty:undefined,hasAudio:false,audioFile:null};const blob=await ensureTrackBlob(src);if(isBlobLike(blob)){const ext=(src.fileName?.match(/\.[^.]+$/)||['.bin'])[0];t.hasAudio=true;t.audioFile=`audio/${src.id}${ext}`;entries.push({name:t.audioFile,bytes:await blobToBytes(blob)})}tracks.push(t);done++;if(done%4===0)toast(`Preparing library… ${done}/${state.tracks.length}`)}
+      const manifest={version:12,name:"Localify Library",exportedAt:new Date().toISOString(),artists:state.artists,albums:state.albums,playlists:state.playlists,liked:state.liked,recent:state.recent,settings:state.settings,tracks};entries.unshift({name:'library.json',bytes:enc.encode(JSON.stringify(manifest))});
+      const blob=await makeZip(entries);downloadBlob(blob,'Localify-Library.localify');toast('Library exported. For very large libraries, use Chrome/Edge so Localify can stream directly to disk.');return true;
+    }catch(e){console.error('Localify bundle export failed',e);toast(e?.message||'Could not export the library.');return false}
   }
   function pickLibraryFile(){const input=$('#bundlePicker');if(!input){toast('Library file import is unavailable.');return}input.value='';input.click()}
   async function importLibrary(file){
