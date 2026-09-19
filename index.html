@@ -365,66 +365,100 @@
     if(dbPromise)return dbPromise;
     dbPromise=new Promise((resolve,reject)=>{
       try{
-        const req=indexedDB.open(DB_NAME,DB_VERSION);
+        if(!window.indexedDB) throw new Error("IndexedDB unavailable");
+        const req=indexedDB.open(DB_NAME,1);
         req.onupgradeneeded=()=>{
           const d=req.result;
-          if(!d.objectStoreNames.contains(META_STORE))d.createObjectStore(META_STORE);
-          if(!d.objectStoreNames.contains(BLOB_STORE))d.createObjectStore(BLOB_STORE);
+          if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta");
+          if(!d.objectStoreNames.contains("blobs")) d.createObjectStore("blobs");
         };
-        req.onsuccess=()=>{db=req.result;storageReady=true;storageBlocked=false;db.onversionchange=()=>db.close();resolve(db)};
-        req.onerror=()=>{storageBlocked=true;reject(req.error||new Error("IndexedDB unavailable"))};
-        req.onblocked=()=>console.warn("Localify storage database is blocked")
+        req.onblocked=()=>console.warn("Localify database upgrade is blocked");
+        req.onsuccess=()=>{
+          db=req.result;
+          storageReady=true;
+          storageBlocked=false;
+          db.onversionchange=()=>db.close();
+          db.onclose=()=>{db=null};
+          resolve(db);
+        };
+        req.onerror=()=>{storageBlocked=true;reject(req.error||new Error("IndexedDB could not open"))};
       }catch(e){storageBlocked=true;reject(e)}
     }).finally(()=>{dbPromise=null});
     return dbPromise;
   }
-  async function idbGetMeta(){const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction(META_STORE,"readonly").objectStore(META_STORE).get(DB_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}
-  async function idbPutMeta(meta){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction(META_STORE,"readwrite");tx.objectStore(META_STORE).put(meta,DB_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Metadata save failed"));tx.onabort=()=>reject(tx.error||new Error("Metadata save aborted"))})}
-  async function idbGetBlob(id){const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction(BLOB_STORE,"readonly").objectStore(BLOB_STORE).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}
-  async function idbPutBlob(id,blob){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction(BLOB_STORE,"readwrite");tx.objectStore(BLOB_STORE).put(blob,id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Audio save failed"));tx.onabort=()=>reject(tx.error||new Error("Audio save aborted"))})}
-  async function idbDeleteBlob(id){try{const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction(BLOB_STORE,"readwrite");tx.objectStore(BLOB_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
+  async function idbGetMeta(){const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction("meta","readonly").objectStore("meta").get("app");r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}
+  async function idbPutMeta(meta){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("meta","readwrite");tx.objectStore("meta").put(meta,"app");tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Metadata save failed"));tx.onabort=()=>reject(tx.error||new Error("Metadata save aborted"))})}
+  async function idbGetBlob(id){const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction("blobs","readonly").objectStore("blobs").get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}
+  async function idbPutBlob(id,blob){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").put(blob,id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Audio save failed"));tx.onabort=()=>reject(tx.error||new Error("Audio save aborted"))})}
+  async function idbDeleteBlob(id){try{const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
 
   function writeMetaFallback(){
-    try{localStorage.setItem(META_KEY,JSON.stringify(cloneMeta()));return true}catch(e){storageBlocked=true;return false}
+    try{
+      localStorage.setItem(META_KEY,JSON.stringify(cloneMeta()));
+      return true;
+    }catch(e){
+      console.warn("Localify metadata fallback unavailable",e);
+      return false;
+    }
   }
-  async function saveAll({showMessage=false,blobIds=[]}={}){
+
+  let dirtySave=false;
+  let pendingBlobIds=new Set();
+  let saveInFlight=false;
+  let lastSaveAt=0;
+  async function flushSave(showMessage=false){
+    if(saveInFlight){dirtySave=true;return false}
+    if(!dirtySave && !showMessage)return true;
+    saveInFlight=true;dirtySave=false;
+    const ids=[...pendingBlobIds];pendingBlobIds.clear();
     const meta=cloneMeta();
-    const fallbackOk=writeMetaFallback();
-    let metaOk=false;
-    try{await idbPutMeta(meta);metaOk=true}catch(e){console.warn("Localify IndexedDB metadata save failed",e)}
-    const ids=[...new Set(blobIds)];
-    let failed=0;
-    for(const id of ids){const t=trackById(id);if(!t?.blob)continue;try{await idbPutBlob(id,t.blob);t._blobDirty=false}catch(e){console.warn("Localify audio save failed",id,e);failed++}}
-    if(showMessage)toast(failed?`Saved library metadata, but ${failed} audio file(s) could not be stored.`:(metaOk||fallbackOk?"Everything saved on this device.":"This browser is blocking persistent storage."));
-    return failed===0&&(metaOk||fallbackOk);
+    let okMeta=false,failed=0;
+    try{writeMetaFallback()}catch{}
+    try{await idbPutMeta(meta);okMeta=true}catch(e){console.warn("Localify metadata save failed",e)}
+    for(const id of ids){
+      const t=trackById(id);
+      if(!t?.blob)continue;
+      try{await idbPutBlob(id,t.blob);t._blobDirty=false}catch(e){failed++;console.warn("Localify audio save failed",id,e)}
+    }
+    lastSaveAt=Date.now();
+    saveInFlight=false;
+    if(dirtySave) setTimeout(()=>flushSave(false),50);
+    if(showMessage)toast(failed?`Saved, but ${failed} audio file(s) could not be stored.`:(okMeta?"Library saved on this device.":"Metadata fallback saved; browser storage is blocked."));
+    return failed===0;
   }
   function save(showMessage=false,blobIds=[]){
+    dirtySave=true;
+    for(const id of (blobIds||[]))pendingBlobIds.add(id);
     writeMetaFallback();
-    saveChain=saveChain.then(()=>saveAll({showMessage,blobIds})).catch(e=>{console.error(e);writeMetaFallback();return false});
-    return saveChain;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(()=>flushSave(showMessage),150);
+    return Promise.resolve(true);
   }
-  function autoSave(){writeMetaFallback();clearTimeout(saveTimer);saveTimer=setTimeout(()=>save(false),150)}
+  function autoSave(blobIds=[]){save(false,blobIds)}
 
   async function restoreSaved(){
     let meta=null;
-    try{meta=await idbGetMeta()}catch{}
-    if(!meta){try{const raw=localStorage.getItem(META_KEY);if(raw)meta=JSON.parse(raw)}catch{}}
-    // Migration from the prior single-artist v7/v6 builds.
+    try{meta=await idbGetMeta()}catch(e){console.warn("Localify IndexedDB restore failed",e)}
     if(!meta){
-      for(const name of LEGACY_DB_NAMES){
-        try{
-          const old=await new Promise((resolve,reject)=>{const req=indexedDB.open(name);req.onsuccess=()=>{const d=req.result;if(!d.objectStoreNames.contains("meta")){d.close();resolve(null);return}const r=d.transaction("meta","readonly").objectStore("meta").get("app");r.onsuccess=()=>{const v=r.result||null;d.close();resolve(v)};r.onerror=()=>{d.close();resolve(null)}};req.onerror=()=>resolve(null)});
-          if(old){meta=old;break}
-        }catch{}
-      }
+      try{const raw=localStorage.getItem(META_KEY);if(raw)meta=JSON.parse(raw)}catch(e){console.warn("Localify metadata fallback restore failed",e)}
     }
     if(!meta)return false;
+    // Normalize the current single-artist schema only.
     Object.assign(state,meta);
-    // Never restore the old multi-artist shape if an older experimental build had it.
-    state.tracks=(state.tracks||[]).map(t=>{if(Array.isArray(t.artistIds)){t.artistId=t.artistIds[0]||t.artistId;delete t.artistIds}return t});
-    state.albums=state.albums||[];state.artists=state.artists||[];state.playlists=state.playlists||[];state.liked=state.liked||[];state.recent=state.recent||[];state.queue=state.queue||[];
+    state.tracks=Array.isArray(state.tracks)?state.tracks:[];
+    state.albums=Array.isArray(state.albums)?state.albums:[];
+    state.artists=Array.isArray(state.artists)?state.artists:[];
+    state.playlists=Array.isArray(state.playlists)?state.playlists:[];
+    state.liked=Array.isArray(state.liked)?state.liked:[];
+    state.recent=Array.isArray(state.recent)?state.recent:[];
+    state.queue=Array.isArray(state.queue)?state.queue:[];
+    state.selected=[];
     for(const t of state.tracks){
-      try{if(!(t.blob instanceof Blob))t.blob=await idbGetBlob(t.id)}catch{}
+      // Explicitly ignore experimental artistIds from older builds.
+      if(Array.isArray(t.artistIds)){t.artistId=t.artistIds[0]||t.artistId;delete t.artistIds}
+      if(!(t.blob instanceof Blob)){
+        try{t.blob=await idbGetBlob(t.id)}catch{t.blob=null}
+      }
       t._blobDirty=false;
     }
     return true;
@@ -849,29 +883,38 @@
   }
 
   async function pickFiles(context={}){
-    importContext={...context};
-    const input=$("#filePicker");input.value="";
-    input.click();
+    importContext=context||{};
+    const input=$("#filePicker");
+    input.value="";
+    try{
+      if(window.showOpenFilePicker){
+        const handles=await window.showOpenFilePicker({multiple:true,types:[{description:"Audio",accept:{"audio/*":[".mp3",".m4a",".aac",".flac",".wav",".ogg",".opus",".webm",".aiff",".alac"]}}]});
+        const files=[];
+        for(const h of handles)files.push(await h.getFile());
+        await addFiles(files,importContext);
+      }else input.click();
+    }catch(e){
+      if(e?.name!=="AbortError") input.click();
+    }
   }
   async function pickFolder(){
     importContext={};
-    const el=document.createElement("input");el.type="file";el.multiple=true;el.accept="audio/*,.mp3,.m4a,.aac,.flac,.wav,.ogg,.opus,.webm,.aiff,.alac,image/*";
-    if("webkitdirectory" in el){
-      el.webkitdirectory=true;
-      el.onchange=async()=>{
-        const files=[...el.files];
-        const images=files.filter(f=>(f.type&&f.type.startsWith("image/"))||/\.(png|jpe?g|webp|gif)$/i.test(f.name));
-        const imageMap=new Map();
-        for(const img of images){const rel=img.webkitRelativePath||img.name;const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";if(!imageMap.has(dir))imageMap.set(dir,await readFileImage(img))}
-        const audio=files.filter(f=>(f.type&&f.type.startsWith("audio/"))||/\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|aiff|alac)$/i.test(f.name));
-        await addFiles(audio,{folderImageMap:imageMap});
-      };
-      try{el.showPicker?.()}catch{el.click()}
-    }else{toast("Folder picking isn't available here. Choose your music files instead.");pickFiles({})}
+    const input=$("#directoryPicker");
+    input.value="";
+    input.onchange=async e=>{
+      const files=[...e.target.files];
+      const imageFiles=files.filter(f=>f.type.startsWith("image/")||/\.(png|jpe?g|webp|gif)$/i.test(f.name));
+      const byDir=new Map();
+      for(const img of imageFiles){
+        const rel=img.webkitRelativePath||img.name;
+        const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+        if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
+      }
+      await addFiles(files.filter(f=>f.type.startsWith("audio/")||/\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|aiff|alac)$/i.test(f.name)),{folderImageMap:byDir});
+      input.value="";
+    };
+    input.click();
   }
-  async function readDuration(t){return new Promise(resolve=>{const u=URL.createObjectURL(t.blob),a=new Audio();a.onloadedmetadata=()=>{t.duration=a.duration||0;URL.revokeObjectURL(u);resolve()};a.onerror=()=>{URL.revokeObjectURL(u);resolve()};a.src=u})}
-  async function readFileImage(file){return new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>resolve(null);r.readAsDataURL(file)})}
-
   async function addFiles(files,context={}){
     const arr=files.filter(f=>(f.type&&f.type.startsWith("audio/"))||/\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|aiff|alac)$/i.test(f.name));
     if(!arr.length){toast("No audio files found.");return}
@@ -1033,23 +1076,93 @@
     $("#closeModal").onclick=()=>closeModal();$("#eqDone").onclick=()=>closeModal(true);
   }
 
+  async function collectLibraryManifest(){
+    const p={version:11,name:"Localify Library",exportedAt:new Date().toISOString(),artists:state.artists,albums:state.albums,playlists:state.playlists,liked:state.liked,recent:state.recent,settings:state.settings,tracks:[]};
+    for(const t of state.tracks){
+      p.tracks.push({...t,blob:undefined,_blobDirty:undefined,hasAudio:!!t.blob});
+    }
+    return p;
+  }
   async function exportLibrary(){
-    toast("Preparing library export…");
-    const toB64=async blob=>{const buf=await blob.arrayBuffer();let bin="";const b=new Uint8Array(buf),chunk=0x8000;for(let i=0;i<b.length;i+=chunk)bin+=String.fromCharCode(...b.subarray(i,i+chunk));return btoa(bin)};
-    const p={version:3,name:"Localify Library",exportedAt:new Date().toISOString(),artists:state.artists,albums:state.albums,playlists:state.playlists,liked:state.liked,recent:state.recent,settings:state.settings,tracks:[]};
-    for(const t of state.tracks){const x={...t};delete x.blob;delete x._blobDirty;x.audioBase64=await toB64(t.blob);p.tracks.push(x)}
-    const blob=new Blob([JSON.stringify(p)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Localify-Library.localify";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast("Library exported.")
+    await flushSave(false);
+    // GitHub Pages/Chrome: write a real library directory directly to disk.
+    // This avoids Blob/base64 memory limits and works for very large libraries.
+    if(window.showDirectoryPicker){
+      try{
+        toast("Choose where to save your Localify library…");
+        const root=await window.showDirectoryPicker({mode:"readwrite"});
+        const dir=await root.getDirectoryHandle("Localify Library",{create:true});
+        const audioDir=await dir.getDirectoryHandle("audio",{create:true});
+        const coverDir=await dir.getDirectoryHandle("covers",{create:true});
+        const manifest=await collectLibraryManifest();
+        for(const t of manifest.tracks){
+          if(t.cover){
+            const mt=state.tracks.find(x=>x.id===t.id); t.cover="covers/"+t.id+".txt";
+            const cf=await coverDir.getFileHandle(t.id+".txt",{create:true});
+            const cw=await cf.createWritable();await cw.write(mt.cover);await cw.close();
+          }
+          const source=state.tracks.find(x=>x.id===t.id);
+          if(source?.blob){
+            const ext=(source.fileName.match(/\.[^.]+$/)||[".bin"])[0];
+            const af=await audioDir.getFileHandle(t.id+ext,{create:true});
+            const w=await af.createWritable();await source.blob.stream().pipeTo(w);
+            t.audioFile="audio/"+t.id+ext;
+          }
+        }
+        const mf=await dir.getFileHandle("library.json",{create:true});const mw=await mf.createWritable();await mw.write(JSON.stringify(manifest));await mw.close();
+        toast("Library exported to the selected folder.");
+        return true;
+      }catch(e){
+        if(e?.name!=="AbortError")console.error("Folder export failed",e);
+        if(e?.name!=="AbortError")toast("Folder export failed. Check the browser's folder permission.");
+        return false;
+      }
+    }
+    // Fallback: export compact metadata only rather than crashing from a giant Blob.
+    try{
+      const manifest=await collectLibraryManifest();
+      const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Localify-Library-Metadata.localify";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      toast("Metadata exported. Use a Chromium desktop browser for a full audio-library folder export.");
+      return true;
+    }catch(e){console.error(e);toast("Could not export the library.");return false}
   }
   async function importLibrary(file){
-    try{const p=JSON.parse(await file.text());if(!p.tracks)throw Error("invalid");const fromB64=b64=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u])};state.tracks=[];pendingBlobIds.clear();for(const x of p.tracks){const t={...x,blob:fromB64(x.audioBase64),_blobDirty:true};delete t.audioBase64;state.tracks.push(t);queueBlob(t.id)}state.artists=p.artists||[];state.albums=p.albums||[];state.playlists=p.playlists||[];state.liked=p.liked||[];state.recent=p.recent||[];state.settings=p.settings||state.settings;migrate(state);await save();render();toast("Library imported and saved.")}catch(e){console.error(e);toast("Could not import that Localify library.")}
+    try{
+      const p=JSON.parse(await file.text());
+      if(!p.tracks)throw Error("Invalid Localify metadata");
+      // Metadata-only import: preserve the library structure. Actual audio files
+      // can be restored by directory import on supported desktop browsers.
+      state.artists=Array.isArray(p.artists)?p.artists:[];state.albums=Array.isArray(p.albums)?p.albums:[];state.playlists=Array.isArray(p.playlists)?p.playlists:[];state.liked=Array.isArray(p.liked)?p.liked:[];state.recent=Array.isArray(p.recent)?p.recent:[];state.settings=p.settings||state.settings;
+      state.tracks=Array.isArray(p.tracks)?p.tracks.map(x=>({...x,blob:null,_blobDirty:false})):[];
+      await save();render();toast("Library metadata imported. Select the exported Localify Library folder to restore audio.");
+    }catch(e){console.error(e);toast("Could not import that Localify file.")}
   }
-
+  async function importLibraryFolder(){
+    if(!window.showDirectoryPicker){$("#bundlePicker").click();return}
+    try{
+      const root=await window.showDirectoryPicker();
+      const dir=await root.getDirectoryHandle("Localify Library").catch(()=>root);
+      const mf=await dir.getFileHandle("library.json");
+      const p=JSON.parse(await (await mf.getFile()).text());
+      const audioDir=await dir.getDirectoryHandle("audio").catch(()=>null);
+      const coverDir=await dir.getDirectoryHandle("covers").catch(()=>null);
+      state.artists=p.artists||[];state.albums=p.albums||[];state.playlists=p.playlists||[];state.liked=p.liked||[];state.recent=p.recent||[];state.settings=p.settings||state.settings;state.tracks=[];
+      for(const x of (p.tracks||[])){
+        const t={...x,blob:null,_blobDirty:false};
+        if(t.audioFile&&audioDir){try{const rel=t.audioFile.replace(/^audio\//,"");t.blob=await (await audioDir.getFileHandle(rel)).getFile()}catch{}}
+        if(t.cover&&coverDir){try{const rel=t.cover.replace(/^covers\//,"");t.cover=await (await coverDir.getFileHandle(rel)).getFile().then(f=>f.text())}catch{}}
+        state.tracks.push(t);
+      }
+      await save(false,state.tracks.filter(t=>t.blob).map(t=>t.id));render();toast("Full Localify library imported.");
+    }catch(e){if(e?.name!=="AbortError"){console.error(e);toast("Could not import that Localify Library folder.")}}
+  }
 
   function openMobileTools(){
     setModal(`<div class="modalHead"><h2>Localify tools</h2><button class="circle" id="closeModal">×</button></div><div style="display:grid;gap:8px"><button class="secondary" id="mSave">✓ Save library now</button><button class="secondary" id="mImport">⇧ Import library</button><button class="secondary" id="mExport">⇩ Export library</button><button class="secondary" id="mAdd">＋ Add music</button><button class="secondary" id="mFolder">▤ Add folder</button><button class="secondary" id="mEQ">♫ Sound filters</button></div>`);
     $("#closeModal").onclick=()=>closeModal();
     $("#mSave").onclick=async()=>{closeModal(true);await save(true)};
-    $("#mImport").onclick=()=>{$("#bundlePicker").click();closeModal(true)};
+    $("#mImport").onclick=()=>{closeModal(true);importLibraryFolder()};
     $("#mExport").onclick=()=>{closeModal(true);exportLibrary()};
     $("#mAdd").onclick=()=>{closeModal(true);pickFiles({})};
     $("#mFolder").onclick=()=>{closeModal(true);pickFolder()};
@@ -1060,7 +1173,7 @@
 
   // Static controls
   $("#globalSearch").addEventListener("input",e=>{state.search=e.target.value;if(state.search.trim()){state.currentView="search";renderSearch()}else if(state.currentView==="search"){state.currentView="home";render()}});
-  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#mobileImport").onclick=()=>$("#bundlePicker").click();$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#backupBtn").onclick=exportLibrary;$("#restoreBtn").onclick=()=>$("#bundlePicker").click();$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importLibrary(f)};
+  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#mobileImport").onclick=importLibraryFolder;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#backupBtn").onclick=exportLibrary;$("#restoreBtn").onclick=importLibraryFolder;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importLibrary(f)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#next").onclick=next;$("#prev").onclick=prev;$("#shuffle").onchange=async e=>{state.settings.shuffle=!!e.target.checked;await save();renderPlayer()};$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
@@ -1069,6 +1182,8 @@
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next)}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){writeMetaFallback();save(false)}});
   window.addEventListener("pagehide",()=>{writeMetaFallback()});
+  setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
+  window.addEventListener("beforeunload",()=>{try{writeMetaFallback()}catch{}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
 
@@ -1076,6 +1191,7 @@
     try{
       db=await openDB();
       await load();
+      if(window.storage?.persist)try{await navigator.storage.persist()}catch{}
     }catch(e){
       console.error("Localify startup error",e);
       // Last-resort: keep the app usable and initialize an empty state rather
