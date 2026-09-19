@@ -239,7 +239,8 @@
       <button class="sideAction" id="folderBtn"><span>▤</span><span>Add folder</span></button>
       <button class="sideAction" id="backupBtn"><span>⇩</span><span>Export library</span></button>
       <button class="sideAction" id="restoreBtn"><span>⇧</span><span>Import library</span></button>
-      <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.aac,.flac,.wav,.ogg,.opus,.webm,.aiff,.alac" multiple hidden>
+      <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
+      <input type="file" id="directoryPicker" webkitdirectory directory multiple hidden>
       <input type="file" id="bundlePicker" accept=".localify,.zip,application/zip" hidden>
       <input type="file" id="coverPicker" accept="image/*" hidden>
     </div>
@@ -291,9 +292,10 @@
 <div class="toast" id="toast"></div>
 <div class="contextMenu" id="contextMenu"></div>
 
-<audio id="audio" preload="auto" playsinline></audio>
+<audio id="audio" preload="metadata" playsinline></audio>
 
 <script>
+
 (() => {
   "use strict";
 
@@ -353,7 +355,7 @@
     if(t.blob instanceof Blob) return t.blob;
     try{
       const blob=await idbGetBlob(t.id);
-      if(blob instanceof Blob){ t.blob=blob; return blob; }
+      if(isBlobLike(blob)){ t.blob=blob; return blob; }
     }catch(e){ console.warn("Localify could not restore audio",t.id,e); }
     return null;
   }
@@ -401,6 +403,84 @@
   async function idbPutBlob(id,blob){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").put(blob,id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Audio save failed"));tx.onabort=()=>reject(tx.error||new Error("Audio save aborted"))})}
   async function idbDeleteBlob(id){try{const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
 
+  const AUDIO_EXT_RE=/\.(mp3|m4a|mp4|aac|flac|wav|ogg|oga|opus|webm|aiff|aif|alac|caf)$/i;
+  const isBlobLike=v=>!!v&&typeof v.size==="number"&&typeof v.arrayBuffer==="function";
+  const isAudioFile=f=>!!f&&(((f.type||"").toLowerCase().startsWith("audio/"))||AUDIO_EXT_RE.test(f.name||""));
+
+  function readFileImage(file){
+    return new Promise(resolve=>{
+      if(!file){resolve(null);return}
+      let settled=false;
+      const finish=data=>{if(settled)return;settled=true;resolve(data||null)};
+      const fr=new FileReader();
+      fr.onerror=()=>finish(null);
+      fr.onload=()=>{
+        const src=String(fr.result||"");
+        if(!src){finish(null);return}
+        const img=new Image();
+        img.onload=()=>{
+          try{
+            const max=900,iw=img.naturalWidth||1,ih=img.naturalHeight||1,scale=Math.min(1,max/Math.max(iw,ih));
+            const w=Math.max(1,Math.round(iw*scale)),h=Math.max(1,Math.round(ih*scale));
+            const c=document.createElement("canvas");c.width=w;c.height=h;
+            const ctx=c.getContext("2d",{alpha:true});
+            if(!ctx){finish(src);return}
+            ctx.drawImage(img,0,0,w,h);
+            let out="";
+            try{out=c.toDataURL("image/webp",.84)}catch{}
+            finish(out&&out.startsWith("data:image/")?out:src);
+          }catch{finish(src)}
+        };
+        img.onerror=()=>finish(src);
+        img.src=src;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  function readDuration(t){
+    return new Promise(resolve=>{
+      const blob=t?.blob;
+      if(!isBlobLike(blob)){resolve(0);return}
+      const temp=document.createElement("audio");
+      let url="",done=false,timer=0;
+      const cleanup=()=>{
+        if(done)return;
+        done=true;clearTimeout(timer);
+        temp.onloadedmetadata=null;temp.onerror=null;
+        try{temp.removeAttribute("src");temp.load()}catch{}
+        if(url)URL.revokeObjectURL(url);
+      };
+      const finish=d=>{
+        const n=Number.isFinite(d)&&d>0?d:0;
+        t.duration=n;cleanup();resolve(n);
+      };
+      temp.preload="metadata";
+      temp.onloadedmetadata=()=>finish(temp.duration);
+      temp.onerror=()=>finish(0);
+      url=URL.createObjectURL(blob);
+      temp.src=url;
+      try{temp.load()}catch{}
+      timer=setTimeout(()=>finish(0),5000);
+    });
+  }
+
+  function queueBlob(id){
+    if(id){pendingBlobIds.add(id);pendingBlobDeletes.delete(id)}
+  }
+  function queueBlobDelete(id){
+    if(id){pendingBlobDeletes.add(id);pendingBlobIds.delete(id)}
+  }
+  async function warmTrack(id){
+    const t=trackById(id);
+    if(!t)return null;
+    if(isBlobLike(t.blob))return t.blob;
+    if(warmPromises.has(id))return warmPromises.get(id);
+    const p=ensureTrackBlob(t).finally(()=>warmPromises.delete(id));
+    warmPromises.set(id,p);
+    return p;
+  }
+
   function writeMetaFallback(){
     try{
       localStorage.setItem(META_KEY,JSON.stringify(cloneMeta()));
@@ -413,32 +493,39 @@
 
   let dirtySave=false;
   let pendingBlobIds=new Set();
+  let pendingBlobDeletes=new Set();
   let saveInFlight=false;
+  let playToken=0;
+  const warmPromises=new Map();
   let lastSaveAt=0;
   async function flushSave(showMessage=false){
     if(saveInFlight){dirtySave=true;return false}
     if(!dirtySave && !showMessage)return true;
     saveInFlight=true;dirtySave=false;
     const ids=[...pendingBlobIds];pendingBlobIds.clear();
+    const deletes=[...pendingBlobDeletes];pendingBlobDeletes.clear();
     const meta=cloneMeta();
-    let okMeta=false,failed=0;
-    try{writeMetaFallback()}catch{}
-    try{await idbPutMeta(meta);okMeta=true}catch(e){console.warn("Localify metadata save failed",e)}
+    let okMeta=false,failed=0,deleted=0;
+    if(!storageReady || storageBlocked){try{writeMetaFallback()}catch{}}
+    try{await idbPutMeta(meta);okMeta=true;storageReady=true;storageBlocked=false}
+    catch(e){storageBlocked=true;console.warn("Localify metadata save failed",e);try{writeMetaFallback()}catch{}}
     for(const id of ids){
       const t=trackById(id);
-      if(!t?.blob)continue;
+      if(!isBlobLike(t?.blob))continue;
       try{await idbPutBlob(id,t.blob);t._blobDirty=false}catch(e){failed++;console.warn("Localify audio save failed",id,e)}
+    }
+    for(const id of deletes){
+      try{await idbDeleteBlob(id);deleted++}catch(e){console.warn("Localify audio delete failed",id,e)}
     }
     lastSaveAt=Date.now();
     saveInFlight=false;
-    if(dirtySave) setTimeout(()=>flushSave(false),50);
-    if(showMessage)toast(failed?`Saved, but ${failed} audio file(s) could not be stored.`:(okMeta?"Library saved on this device.":"Metadata fallback saved; browser storage is blocked."));
-    return failed===0;
+    if(dirtySave)setTimeout(()=>flushSave(false),50);
+    if(showMessage)toast(failed?`Saved, but ${failed} audio file(s) could not be stored.`:(okMeta?`Library saved on this device${deleted?` • ${deleted} removed`:""}.`:"Metadata fallback saved; browser storage is blocked."));
+    return failed===0 && (okMeta || storageBlocked);
   }
   function save(showMessage=false,blobIds=[]){
     dirtySave=true;
-    for(const id of (blobIds||[]))pendingBlobIds.add(id);
-    writeMetaFallback();
+    for(const id of (blobIds||[]))queueBlob(id);
     clearTimeout(saveTimer);
     saveTimer=setTimeout(()=>flushSave(showMessage),150);
     return Promise.resolve(true);
@@ -584,7 +671,7 @@
     state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"},discordPresence:true},state.settings||{});
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat"},state.settings.eq||{});
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
-    for(const t of state.tracks){if(!(t.blob instanceof Blob))t.blob=null;t._blobDirty=false}
+    for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
     try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{}
     if(!restored){writeMetaFallback();toast("Localify started a new saved library on this device.")}
@@ -859,25 +946,57 @@
   }
   function playQueue(tracks,index){state.queue=tracks.map(t=>t.id);state.queueIndex=Math.max(0,index);playCurrent()}
   async function playCurrent(){
+    const token=++playToken;
     const t=trackById(state.queue[state.queueIndex]);
     if(!t)return;
-    const blob=await ensureTrackBlob(t);
-    if(!blob){ toast("This song is not saved on this device. Please re-import it."); return; }
     state.currentId=t.id;
-    const url=getUrl(t);
-    if(!url){toast("Could not load this audio file.");return;}
-    audio.pause();
-    audio.src=url;
-    audio.currentTime=0;
-    try{ await audio.play(); }catch(e){
-      console.warn("Localify playback failed",e);
-      toast("The browser could not play this audio file. Try another format or browser.");
+    renderPlayer();
+
+    const blob=await warmTrack(t.id);
+    if(token!==playToken)return;
+    if(!isBlobLike(blob)){
+      toast("This song is not saved on this device. Re-import it, then try Play again.");
       return;
     }
+    const url=getUrl(t);
+    if(!url){
+      toast("Could not create a playable URL for this audio file.");
+      return;
+    }
+
+    try{
+      audio.pause();
+      audio.src=url;
+      audio.preload="metadata";
+      audio.load();
+      audio.currentTime=0;
+    }catch(e){
+      console.warn("Localify audio setup failed",e);
+      toast("Could not load this audio file.");
+      return;
+    }
+
+    try{
+      await audio.play();
+    }catch(e){
+      console.warn("Localify playback failed",e);
+      if(e?.name==="NotAllowedError")toast("Playback was blocked by the browser. Press Play once more.");
+      else if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play that audio format. Try MP3, WAV, FLAC, OGG or another browser.");
+      else toast("The browser could not play this audio file.");
+      return;
+    }
+
     pushRecent(t.id);
     autoSave();
     renderPlayer();
-    if("mediaSession"in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:artistName(t),album:albumName(t),artwork:t.cover?[{src:t.cover}]:[]})}catch{}}
+    if("mediaSession"in navigator){
+      try{
+        navigator.mediaSession.metadata=new MediaMetadata({
+          title:t.title,artist:artistName(t),album:albumName(t),
+          artwork:t.cover?[{src:t.cover,sizes:"512x512"}]:[]
+        });
+      }catch{}
+    }
   }
   function next(){
     if(!state.queue.length)return;
@@ -909,7 +1028,7 @@
       queueBlobDelete(id);
       if(objectUrls.has(id)){URL.revokeObjectURL(objectUrls.get(id));objectUrls.delete(id)}
     }
-    if(set.has(state.currentId)){audio.pause();audio.removeAttribute("src");state.currentId=null}
+    if(set.has(state.currentId)){playToken++;audio.pause();audio.removeAttribute("src");state.currentId=null}
   }
 
   async function pickFiles(context={}){
@@ -938,45 +1057,76 @@
     input.value="";
     input.onchange=async e=>{
       const files=[...e.target.files];
-      const imageFiles=files.filter(f=>f.type.startsWith("image/")||/\.(png|jpe?g|webp|gif)$/i.test(f.name));
+      const imageFiles=files.filter(f=>(f.type||"").startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/i.test(f.name));
       const byDir=new Map();
       for(const img of imageFiles){
         const rel=img.webkitRelativePath||img.name;
         const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
         if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
       }
-      await addFiles(files.filter(f=>f.type.startsWith("audio/")||/\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|aiff|alac)$/i.test(f.name)),{folderImageMap:byDir});
+      await addFiles(files.filter(isAudioFile),{folderImageMap:byDir});
       input.value="";
     };
     input.click();
   }
   async function addFiles(files,context={}){
-    const arr=files.filter(f=>(f.type&&f.type.startsWith("audio/"))||/\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|aiff|alac)$/i.test(f.name));
+    const arr=files.filter(isAudioFile);
     if(!arr.length){toast("No audio files found.");return}
     const album=context.albumId?albumById(context.albumId):null;
     const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(album.artistId):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
-    const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.blob?.size||0}|${t.blob?.lastModified||0}`));
+    const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
     const added=[];
     for(const f of arr){
-      const sig=`${f.name}|${f.size}|${f.lastModified}`;if(existing.has(sig))continue;
+      const sig=`${f.name}|${f.size}|${f.lastModified}`;
+      if(existing.has(sig))continue;
       const artist=forcedArtist||getOrCreateArtist("Unknown Artist");
       let folderCover=null;
-      if(context.folderImageMap){const rel=f.webkitRelativePath||"";const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";folderCover=context.folderImageMap.get(dir)||null}
+      if(context.folderImageMap){
+        const rel=f.webkitRelativePath||"";
+        const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+        folderCover=context.folderImageMap.get(dir)||null;
+      }
       const al=album||getOrCreateAlbum("Unknown Album",artist,folderCover);
       if(folderCover&&!al.cover)al.cover=folderCover;
-      const t={id:uid(),title:f.name.replace(/\.[^.]+$/,""),artist:artist.name,artistId:artist.id,album:al.title,albumId:al.id,albumArtist:artistById(al.artistId)?.name||artist.name,albumArtistId:al.artistId,genre:al.genre||"",year:al.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,explicit:false,duration:0,fileName:f.name,blob:f,_blobDirty:true,cover:al.cover||artist.image||folderCover||null,lyrics:"",credits:normalizeCredits(al.credits||{}),addedAt:Date.now()};
-      await readDuration(t);state.tracks.push(t);added.push(t);existing.add(sig);queueBlob(t.id);
-      // Persist large audio imports in small steps instead of keeping the whole import
-      // only in RAM until the end.
-      await save(false,[t.id]);
+      const t={
+        id:uid(),title:f.name.replace(/\.[^.]+$/,""),
+        artist:artist.name,artistId:artist.id,
+        album:al.title,albumId:al.id,
+        albumArtist:artistById(al.artistId)?.name||artist.name,albumArtistId:al.artistId,
+        genre:al.genre||"",year:al.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
+        explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
+        blob:f,_blobDirty:true,cover:al.cover||artist.image||folderCover||null,
+        lyrics:"",credits:normalizeCredits(al.credits||{}),addedAt:Date.now()
+      };
+      state.tracks.push(t);
+      added.push(t);
+      existing.add(sig);
+      queueBlob(t.id);
       if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
     }
     importContext={};
     if(!added.length){toast("Nothing new was imported.");return}
-    await save();
+
+    save(false,added.map(t=>t.id));
     toast(`Added ${added.length} ${added.length===1?"song":"songs"}.`);
-    if(context.albumId)showAlbum(context.albumId);else if(context.artistId)showArtist(context.artistId);else if(context.playlistId)showPlaylist(context.playlistId);else render();
+    if(context.albumId)showAlbum(context.albumId);
+    else if(context.artistId)showArtist(context.artistId);
+    else if(context.playlistId)showPlaylist(context.playlistId);
+    else render();
+
+    (async()=>{
+      let cursor=0;
+      const workers=Array.from({length:Math.min(4,added.length)},async()=>{
+        while(cursor<added.length){
+          const t=added[cursor++];
+          await readDuration(t);
+        }
+      });
+      await Promise.all(workers);
+      autoSave();
+      if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search")renderCurrentViewWithoutScroll();
+    })().catch(e=>console.warn("Localify duration scan failed",e));
   }
   function inferTrackNumberFromFilename(name){const m=String(name||"").match(/^(?:Track\s*)?0*(\d+)(?:[.\-_)\s])/i);return m?parseInt(m[1],10):null}
   function setupDrop(z){if(!z)return;["dragenter","dragover"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.add("drag")}));["dragleave","drop"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.remove("drag")}));z.addEventListener("drop",e=>addFiles([...e.dataTransfer.files],{}))}
@@ -1174,7 +1324,39 @@
     }catch(e){console.error(e);toast("Could not import that Localify file.")}
   }
   async function importLibraryFolder(){
-    if(!window.showDirectoryPicker){$("#bundlePicker").click();return}
+    if(!window.showDirectoryPicker){
+      const input=$("#directoryPicker");
+      if(!input){toast("Folder import is not supported in this browser.");return}
+      input.value="";
+      input.onchange=async e=>{
+        try{
+          const files=[...e.target.files];
+          const manifestFile=files.find(f=>{const r=f.webkitRelativePath||f.name;return /(?:^|\/)library\.json$/i.test(r)});
+          if(!manifestFile)throw new Error("library.json not found");
+          const p=JSON.parse(await manifestFile.text());
+          const byPath=new Map(files.map(f=>[f.webkitRelativePath||f.name,f]));
+          state.artists=p.artists||[];state.albums=p.albums||[];state.playlists=p.playlists||[];state.liked=p.liked||[];state.recent=p.recent||[];state.settings=p.settings||state.settings;state.tracks=[];
+          for(const x of (p.tracks||[])){
+            const t={...x,blob:null,_blobDirty:false};
+            if(t.audioFile){
+              const candidates=[t.audioFile, t.audioFile.replace(/^.*?Localify Library\//,"")];
+              const f=candidates.map(k=>byPath.get(k)).find(Boolean);
+              if(f)t.blob=f;
+            }
+            if(t.cover && typeof t.cover==="string" && !t.cover.startsWith("data:")){
+              const coverKey=t.cover.replace(/^.*?Localify Library\//,"");
+              const cf=byPath.get(t.cover)||byPath.get(coverKey);
+              if(cf){try{t.cover=await cf.text()}catch{}}
+            }
+            state.tracks.push(t);
+          }
+          await save(false,state.tracks.filter(t=>t.blob).map(t=>t.id));render();toast("Full Localify library imported.");
+        }catch(err){console.error(err);toast("Could not import that Localify Library folder.")}
+        finally{input.value=""}
+      };
+      input.click();
+      return;
+    }
     try{
       const root=await window.showDirectoryPicker();
       const dir=await root.getDirectoryHandle("Localify Library").catch(()=>root);
@@ -1186,7 +1368,6 @@
       for(const x of (p.tracks||[])){
         const t={...x,blob:null,_blobDirty:false};
         if(t.audioFile&&audioDir){try{const rel=t.audioFile.replace(/^audio\//,"");t.blob=await (await audioDir.getFileHandle(rel)).getFile()}catch{}}
-        if(t.cover&&coverDir){try{const rel=t.cover.replace(/^covers\//,"");t.cover=await (await coverDir.getFileHandle(rel)).getFile().then(f=>f.text())}catch{}}
         state.tracks.push(t);
       }
       await save(false,state.tracks.filter(t=>t.blob).map(t=>t.id));render();toast("Full Localify library imported.");
@@ -1204,21 +1385,44 @@
     $("#mEQ").onclick=()=>{closeModal(true);openEQ()};
   }
 
-  async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};writeMetaFallback();try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
+  async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
 
   // Static controls
+  document.addEventListener("pointerdown",e=>{
+    const cardPlay=e.target.closest?.(".play-track");
+    const rowPlay=e.target.closest?.(".play-row");
+    const playButton=e.target.closest?.("#playPause");
+    let id=cardPlay?.dataset.id||rowPlay?.closest("tr")?.dataset.id||(playButton?(state.currentId||state.tracks[0]?.id):null);
+    const pagePlay=e.target.closest?.("#albumPlay,#artistPlay,#plPlay,#playLiked,#albumShuffle,#plShuffle,#shuffleLiked");
+    if(!id && pagePlay){
+      const first=contextTracksFor(state.tracks[0]||null)[0];
+      if(first)id=first.id;
+    }
+    if(id)warmTrack(id);
+  },{passive:true});
   $("#globalSearch").addEventListener("input",e=>{state.search=e.target.value;if(state.search.trim()){state.currentView="search";renderSearch()}else if(state.currentView==="search"){state.currentView="home";render()}});
   $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#mobileImport").onclick=importLibraryFolder;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#backupBtn").onclick=exportLibrary;$("#restoreBtn").onclick=importLibraryFolder;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importLibrary(f)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#next").onclick=next;$("#prev").onclick=prev;$("#shuffle").onchange=async e=>{state.settings.shuffle=!!e.target.checked;await save();renderPlayer()};$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
-  audio.addEventListener("timeupdate",updatePlayerTime);audio.addEventListener("play",renderPlayer);audio.addEventListener("pause",renderPlayer);audio.addEventListener("loadedmetadata",updatePlayerTime);audio.addEventListener("ended",()=>{if(state.settings.repeat==="one"){audio.currentTime=0;audio.play()}else next()});
+  audio.addEventListener("timeupdate",updatePlayerTime);
+  audio.addEventListener("play",renderPlayer);
+  audio.addEventListener("pause",renderPlayer);
+  audio.addEventListener("loadedmetadata",updatePlayerTime);
+  audio.addEventListener("error",()=>{
+    if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play this audio format.");
+  });
+  audio.addEventListener("ended",()=>{
+    if(state.settings.repeat==="one"){
+      try{audio.currentTime=0;const p=audio.play();if(p?.catch)p.catch(()=>{})}catch{}
+    }else next();
+  });
   window.addEventListener("keydown",e=>{if(e.code==="Space"&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();$("#playPause").click()}if(e.key==="ArrowRight"&&e.shiftKey)next();if(e.key==="ArrowLeft"&&e.shiftKey)prev()});
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next)}
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){writeMetaFallback();save(false)}});
-  window.addEventListener("pagehide",()=>{writeMetaFallback()});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")save(false)});
+  window.addEventListener("pagehide",()=>{flushSave(false)});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
-  window.addEventListener("beforeunload",()=>{try{writeMetaFallback()}catch{}});
+  window.addEventListener("beforeunload",()=>{if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
 
@@ -1235,6 +1439,8 @@
       toast("Localify opened without restoring the previous library. Check browser storage permissions.");
     }
     render();
+    const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
+    if("requestIdleCallback"in window)requestIdleCallback(warmFirst,{timeout:1500});else setTimeout(warmFirst,700);
   })();
 })();
 </script>
