@@ -280,8 +280,27 @@
     }
     @media (hover:none){.card:hover{transform:none}.card:hover .playOverlay{opacity:1;transform:none}}
 
+/* Localify phone fit patch */
+.topbar{min-width:0}
+.topbar>*{min-width:0}
+.mobileTools{display:none;white-space:nowrap}
+.mobileToolsGlyph{display:inline-grid;place-items:center}
+.mobileToolsLabel{display:none}
+main,#main,.content{min-width:0;max-width:100%;overflow-x:hidden}
+.content>*{max-width:100%;min-width:0}
+.grid,.viewGrid{min-width:0}
+.grid>.card,.viewGrid>.card{min-width:0}
+.tableWrap{min-width:0}
+.viewIntro,.profileHero,.sectionHead{min-width:0}
+.viewIntro>*,.profileHero>*,.sectionHead>*{min-width:0;max-width:100%}
+.player{box-sizing:border-box}
+
 /* Localify responsive/layout patch v2 */
 .svgIcon{width:18px;height:18px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btnIcon{display:inline-flex;align-items:center;justify-content:center;gap:7px}.btnIcon .svgIcon{width:16px;height:16px}.iconOnly .svgIcon{width:18px;height:18px}
+.btnIcon .iconInline{display:inline-flex;align-items:center;justify-content:center}.btnIcon{vertical-align:middle}
+.primary .svgIcon,.secondary .svgIcon,.dangerBtn .svgIcon,.toolbar button .svgIcon,.entityActions button .svgIcon,.contextMenu button .svgIcon,.sideAction .svgIcon{display:inline-block;vertical-align:middle;margin-right:6px}.contextMenu button .svgIcon{width:16px;height:16px}
+.repeatOneBadge{position:absolute;font-size:9px;font-weight:900;line-height:1;bottom:6px;right:6px}.ctrl.iconOnly{position:relative;display:grid;place-items:center}.discordGlyph{display:inline-grid;place-items:center}.discordGlyph .svgIcon{width:17px;height:17px}
 .icon .svgIcon{width:19px;height:19px}
 .icon,.discordGlyph,.discordConnectIcon{font-family:inherit}
 .phoneIcon{display:inline-grid;place-items:center}
@@ -385,7 +404,53 @@ main{min-width:0;min-height:0}
   .ctrl{width:30px;height:30px}.ctrl.big{width:38px;height:38px}
 }
 
-  </style>
+  
+/* Final mobile polish v3 */
+@media (max-width:780px){
+  :root{--player-h:86px;--library-tools-h:64px}
+  body{width:100%;max-width:100vw;overflow-x:hidden;overscroll-behavior-x:none}
+  .app{width:100%;max-width:100vw;min-width:0;padding:0}
+  main{width:100%;max-width:100vw;min-width:0;overflow-x:hidden}
+  .topbar{width:100%;max-width:100vw;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px;box-sizing:border-box}
+  .topbar .search{grid-column:1;min-width:0;width:100%}
+  .topbar .discordTopBtn{grid-column:2;display:grid}
+  .topbar .mobileTools{grid-column:3;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:0;width:auto;max-width:140px;height:40px;padding:0 10px;border-radius:12px;overflow:hidden}
+  .topbar .mobileTools .mobileToolsLabel{display:inline;overflow:hidden;text-overflow:ellipsis}
+  .topbar .mobileTools .mobileToolsGlyph{flex:none}
+  .topbar .mobileImportBtn,.topbar #quickAdd,.topbar .pill,.topbar .discordStatus{display:none!important}
+  .search input{width:100%;min-width:0}
+  .content{width:100%;max-width:100vw;min-width:0;padding:14px 10px calc(var(--player-h) + var(--library-tools-h) + 18px + env(safe-area-inset-bottom));overflow-x:hidden}
+  aside{bottom:var(--player-h);height:var(--library-tools-h);padding:7px max(8px,env(safe-area-inset-left)) 7px max(8px,env(safe-area-inset-right));box-sizing:border-box;overflow:hidden}
+  .brand{flex:0 0 40px;min-width:40px}
+  .brand .logo{width:36px;height:36px}
+  .nav{min-width:0;flex:1;overflow-x:auto;overflow-y:hidden;padding-bottom:1px}
+  .nav button{flex:0 0 58px;min-width:58px;max-width:58px;height:50px}
+  .nav button .icon{height:21px}
+  .nav button span:last-child{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px}
+  .player{height:var(--player-h);min-height:var(--player-h);max-height:var(--player-h);left:0;right:0;bottom:0;width:100%;max-width:100vw;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;gap:5px;padding:5px 8px calc(7px + env(safe-area-inset-bottom));overflow:hidden;box-sizing:border-box}
+  .now{min-width:0;overflow:hidden}.nowText{min-width:0;max-width:none;overflow:hidden}.nowTitle,.nowArtist{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .playerCenter{min-width:0;max-width:46vw;overflow:hidden}.controls{min-width:0;max-width:100%;overflow:hidden}
+  .ctrl{flex:none}
+  .progressLine{bottom:0;height:3px}
+}
+@media (max-width:520px){
+  .topbar{grid-template-columns:minmax(0,1fr) 38px 38px}
+  .topbar .mobileTools{width:38px;height:38px;padding:0}
+  .topbar .mobileToolsLabel{display:none}
+  .topbar .mobileToolsGlyph .svgIcon{width:18px;height:18px}
+  .nav button{flex-basis:54px;min-width:54px;max-width:54px}
+  .playerCenter{max-width:48vw}
+}
+@media (max-width:380px){
+  :root{--player-h:82px;--library-tools-h:60px}
+  .topbar{grid-template-columns:minmax(0,1fr) 36px 36px;gap:5px}
+  .topbar .discordTopBtn,.topbar .mobileTools{width:36px;height:36px}
+  .nav button{flex-basis:50px;min-width:50px;max-width:50px}
+  .nav button span:last-child{font-size:7px}
+  .playerCenter{max-width:50vw}
+  .ctrl{width:30px;height:30px}.ctrl.big{width:36px;height:36px}
+}
+</style>
 </head>
 <body>
 <div class="app">
@@ -403,13 +468,13 @@ main{min-width:0;min-height:0}
     </nav>
     <div class="sectionTitle">Library tools</div>
     <div class="sideBottom">
-      <button class="sideAction" id="importBtn"><span>＋</span><span>Add music</span></button>
-      <button class="sideAction" id="folderBtn"><span>▤</span><span>Add folder</span></button>
-      <button class="sideAction" id="backupBtn"><span>⇩</span><span>Export library</span></button>
-      <button class="sideAction" id="restoreBtn"><span>⇧</span><span>Import library</span></button>
+      <button class="sideAction btnIcon" id="importBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add music</span></button>
+      <button class="sideAction btnIcon" id="folderBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/></svg></span><span>Add folder</span></button>
+      <button class="sideAction btnIcon" id="backupBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></span><span>Export library</span></button>
+      <button class="sideAction btnIcon" id="restoreBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9"/><path d="m7.5 13.5 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/></svg></span><span>Import library</span></button>
       <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span>Delete library</span></button>
       <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
-      <input type="file" id="directoryPicker" webkitdirectory directory multiple hidden>
+      <input type="file" id="directoryPicker" webkitdirectory directory multiple hidden accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf,image/*">
       <input type="file" id="bundlePicker" accept=".localify,.zip,application/zip" hidden>
       <input type="file" id="coverPicker" accept="image/*" hidden>
     </div>
@@ -418,39 +483,39 @@ main{min-width:0;min-height:0}
   <main id="main">
     <div class="topbar">
       <div class="search">
-        <div class="searchIcon">⌕</div>
+        <div class="searchIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></div>
         <input id="globalSearch" type="search" placeholder="Search your local music..." />
       </div>
       <div class="topSpacer"></div>
-      <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph">◉</span><span class="discordTopDot"></span></button>
+      <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span><span class="discordTopDot"></span></button>
       <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
-      <button class="secondary mobileImportBtn" id="mobileImport">＋ Import</button><button class="secondary mobileTools" id="mobileTools">☰</button><button class="secondary" id="quickAdd">＋ Add</button>
+      <button class="secondary mobileImportBtn btnIcon" id="mobileImport"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Import</span></button><button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button><button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add</span></button>
     </div>
     <div id="content" class="content"></div>
   </main>
 
   <div class="player">
     <div class="now" id="nowPlaying">
-      <div class="nowArt" id="nowArt"><div class="art fallback">♪</div></div>
+      <div class="nowArt" id="nowArt"><div class="art fallback"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg></div></div>
       <div class="nowText">
         <div class="nowTitle" id="nowTitle">Nothing playing</div>
         <div class="nowArtist" id="nowArtist">Add local music to get started</div>
       </div>
-      <button class="circle" id="likeNow" title="Like">♡</button>
+      <button class="circle iconOnly" id="likeNow" title="Like" aria-label="Like"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/></svg></button>
     </div>
     <div class="playerCenter">
       <div class="controls">
         <label class="shuffleToggle" title="Shuffle"><input id="shuffle" type="checkbox"> <span>Shuffle</span></label>
-        <button class="ctrl" id="prev" title="Previous">⏮</button>
-        <button class="ctrl big" id="playPause" title="Play/Pause">▶</button>
-        <button class="ctrl" id="next" title="Next">⏭</button>
-        <button class="ctrl" id="repeat" title="Repeat">↻</button>
+        <button class="ctrl iconOnly" id="prev" title="Previous" aria-label="Previous"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12"/><path d="m18 7-8 5 8 5z"/></svg></button>
+        <button class="ctrl big iconOnly" id="playPause" title="Play/Pause" aria-label="Play/Pause"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6z"/></svg></button>
+        <button class="ctrl iconOnly" id="next" title="Next" aria-label="Next"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12"/><path d="m6 7 8 5-8 5z"/></svg></button>
+        <button class="ctrl iconOnly" id="repeat" title="Repeat" aria-label="Repeat"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l-2.5-2.5M17 17H7l2.5 2.5"/><path d="M17 7a5 5 0 0 1 0 10M7 17A5 5 0 0 1 7 7"/></svg><span id="repeatOneBadge" class="repeatOneBadge" hidden>1</span></button>
       </div>
       <div class="progressLine"><span id="curTime">0:00</span><input id="progress" type="range" min="0" max="1000" value="0"><span id="durTime">0:00</span></div>
     </div>
     <div class="playerRight">
-      <button class="ctrl" id="lyricsBtn" title="Lyrics">▤</button>
-      <button class="ctrl" id="queueBtn" title="Queue">☷</button><button class="ctrl" id="eqBtn" title="Sound filters">EQ</button>
+      <button class="ctrl iconOnly" id="lyricsBtn" title="Lyrics" aria-label="Lyrics"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M6 9h12M6 13h8M6 17h10"/></svg></button>
+      <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound filters" aria-label="Sound filters"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
       <span style="color:#7e8793;display:inline-flex"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7 7 0 0 1 0 10"/></svg></span><input class="volume" id="volume" type="range" min="0" max="1" step=".01" value=".9">
     </div>
   </div>
@@ -515,9 +580,46 @@ main{min-width:0;min-height:0}
   function creditsOf(t){return normalizeCredits(t?.credits)}
   function creditsText(c){return normalizeCredits(c).producer.join(", ")}
   function creditList(c,key){return normalizeCredits(c)[key].join(", ")}
-  function fallbackArt(text="L"){return text==="artist"?`<div class="nowFallback artistFallback"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></div>`:`<div class="nowFallback">${esc(text)}</div>`}
-  function collectionArt(kind){if(kind==="liked")return `<div class="collectionArt likedArt">♥</div>`;return `<div class="collectionArt">${kind==="queue"?"☷":"L"}</div>`}
-  function coverHtml(t,cls=""){const cover=t?.cover||albumById(t?.albumId)?.cover||artistById(t?.artistId)?.image;return cover?`<img class="${cls}" src="${cover}" alt="">`:`<div class="${cls} fallback">♪</div>`}
+  function uiIcon(name, label=""){
+    const paths={
+      play:'<path d="m9 6 10 6-10 6z"/>', pause:'<path d="M8 6v12M16 6v12"/>',
+      prev:'<path d="M6 6v12"/><path d="m18 7-8 5 8 5z"/>', next:'<path d="M18 6v12"/><path d="m6 7 8 5-8 5z"/>',
+      repeat:'<path d="M7 7h10l-2.5-2.5M17 17H7l2.5 2.5"/><path d="M17 7a5 5 0 0 1 0 10M7 17A5 5 0 0 1 7 7"/>',
+      shuffle:'<path d="M4 7h3c4 0 6 10 10 10h3M4 17h3c1.4 0 2.4-1.3 3.2-2.8M15 7h2c1.3 0 2.2 1 3 2.2"/><path d="m18 4 3 3-3 3M18 14l3 3-3 3"/>',
+      plus:'<path d="M12 5v14M5 12h14"/>',
+      folder:'<path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/>',
+      download:'<path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>',
+      upload:'<path d="M12 20V9"/><path d="m7.5 13.5 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/>',
+      trash:'<path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/>',
+      edit:'<path d="m5 16-.8 3.8L8 19l10.7-10.7a2 2 0 0 0-2.8-2.8L5.2 16Z"/><path d="m14.5 6.5 3 3"/>',
+      info:'<circle cx="12" cy="12" r="8"/><path d="M12 10v6M12 7h.01"/>',
+      heart:'<path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/>',
+      queue:'<path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/>',
+      lyrics:'<path d="M6 5h12M6 9h12M6 13h8M6 17h10"/>',
+      close:'<path d="m6 6 12 12M18 6 6 18"/>',
+      check:'<path d="m5 12 4 4L19 6"/>',
+      save:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v6h7V4M8 20v-5h8v5"/>',
+      music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+      artist:'<circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/>',
+      album:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><path d="m6.5 17 4.2-4.2 2.7 2.7 2-2 2.1 2.1"/>',
+      more:'<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
+      search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+      clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+      home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
+      library:'<path d="M5 4v16"/><path d="M8 5h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8z"/><path d="M11 8h5M11 12h5M11 16h3"/>',
+      playlist:'<path d="M5 6h14M5 12h14M5 18h10"/>',
+      equalizer:'<path d="M5 7h14M5 17h14M9 7v4M15 13v4"/>',
+      volume:'<path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7 7 0 0 1 0 10"/>',
+      discord:'<circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/>',
+      external:'<path d="M14 5h5v5M19 5l-8 8"/><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
+      warning:'<path d="m12 4 9 16H3z"/><path d="M12 9v4M12 17h.01"/>'
+    };
+    return `<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"${label?` data-icon-label="${esc(label)}"`:''}>${paths[name]||paths.music}</svg>`;
+  }
+
+  function fallbackArt(text="music"){const map={artist:"artist",album:"album",playlist:"playlist",queue:"queue",liked:"heart",music:"music"};return `<div class="nowFallback ${text==="artist"?"artistFallback":""}">${uiIcon(map[text]||"music")}</div>`}
+  function collectionArt(kind){if(kind==="liked")return `<div class="collectionArt likedArt">${uiIcon("heart")}</div>`;return `<div class="collectionArt">${kind==="queue"?uiIcon("queue"):uiIcon("music")}</div>`}
+  function coverHtml(t,cls=""){const cover=t?.cover||albumById(t?.albumId)?.cover||artistById(t?.artistId)?.image;return cover?`<img class="${cls}" src="${cover}" alt="">`:`<div class="${cls} fallback">${uiIcon("music")}</div>`}
   function artBox(t,cls="art"){return `<div class="${cls}">${coverHtml(t)}</div>`}
   function getUrl(t){if(!t?.blob)return "";if(!objectUrls.has(t.id))objectUrls.set(t.id,URL.createObjectURL(t.blob));return objectUrls.get(t.id)}
   async function ensureTrackBlob(t){
@@ -912,7 +1014,7 @@ main{min-width:0;min-height:0}
           <div class="heroKicker">LOCALIFY • Built by @blibbbye + @modmodroots</div>
           <h1>Local Files<br>But better</h1>
           <div class="heroDesc">Locailify, A audio player website made by @blibbbye, Create albums and artists add songs from ur files and listen. This was made for me and my friends at ModMod's Unreleased!</div>
-          <div class="heroActions"><button class="primary" id="heroAdd">＋ Add songs</button><button class="secondary" id="heroFolder">＋ Add folder</button><button class="secondary" id="heroAlbum">＋ Create album</button><button class="secondary" id="heroArtist">＋ Create artist</button></div>
+          <div class="heroActions"><button class="primary" id="heroAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="heroFolder">${uiIcon("folder")} Add folder</button><button class="secondary" id="heroAlbum">${uiIcon("plus")} Create album</button><button class="secondary" id="heroArtist">${uiIcon("artist")} Create artist</button></div>
         </div>
         <div class="quickCard">
           <div><div class="quickTitle">Your local library</div><div class="quickStat">${state.tracks.length}</div><div class="muted">${state.albums.length} albums • ${state.artists.length} artists • ${state.playlists.length} playlists</div></div>
@@ -921,7 +1023,7 @@ main{min-width:0;min-height:0}
       </div>
       <div class="section"><div class="sectionHead"><h2>Recently played</h2><span>${recent.length?"Jump back in":"Nothing played yet"}</span></div>${recent.length?`<div class="grid">${recent.map(trackCard).join("")}</div>`:empty("No history yet","Play something and it will appear here.")}</div>
       <div class="section"><div class="sectionHead"><h2>Your albums</h2><span>${albums.length} shown</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album or import songs to build your catalog.")}</div>
-      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Made by <b>@blibbbye</b> with ideas from <b>@modmodroots</b>.</div></div></div>`;
+      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Created by <b>@blibbbye</b> and <b>@modmodroots</b>.</div></div></div>`;
     $("#heroAdd").onclick=()=>pickFiles({});
     $("#heroFolder").onclick=pickFolder;
     $("#heroAlbum").onclick=()=>editAlbum(null);
@@ -967,23 +1069,23 @@ main{min-width:0;min-height:0}
   }
 
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary" id="newAlbum">＋ Create album</button></div>${state.albums.length?`<div class="grid">${albumList().map(albumCard).join("")}</div>`:empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?`<div class="grid">${albumList().map(albumCard).join("")}</div>`:empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); $$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id));
   }
 
   function renderArtists(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary" id="newArtist">＋ Create artist</button></div>${state.artists.length?`<div class="viewGrid">${artistList().map(artistCard).join("")}</div>`:empty("No artists","Create an artist or import music to build your artist index.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary" id="newArtist">${uiIcon("artist")} Create artist</button></div>${state.artists.length?`<div class="viewGrid">${artistList().map(artistCard).join("")}</div>`:empty("No artists","Create an artist or import music to build your artist index.")}`;
     $("#newArtist").onclick=()=>editArtist(null); $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
   }
 
   function renderPlaylists(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><button class="primary" id="newPlaylist">＋ New playlist</button></div>${state.playlists.length?`<div class="viewGrid">${state.playlists.map(playlistCard).join("")}</div>`:empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><button class="primary" id="newPlaylist">${uiIcon("playlist")} New playlist</button></div>${state.playlists.length?`<div class="viewGrid">${state.playlists.map(playlistCard).join("")}</div>`:empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.")}`;
     $("#newPlaylist").onclick=()=>editPlaylist(null); $$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
   }
 
   function renderLiked(){
     const tracks=state.liked.map(trackById).filter(Boolean);
-    $("#content").innerHTML=`<div class="profileHero"><div>${collectionArt("liked")}</div><div><h2 class="viewTitle">Liked Songs</h2><div class="subtle">${tracks.length} liked ${tracks.length===1?"song":"songs"}</div><div class="entityActions">${tracks.length?`<button class="primary" id="playLiked">▶ Play</button><button class="secondary" id="shuffleLiked">⤨ Shuffle</button>`:""}</div></div></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("Nothing liked yet","Tap the heart beside any song to save it here.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div>${collectionArt("liked")}</div><div><h2 class="viewTitle">Liked Songs</h2><div class="subtle">${tracks.length} liked ${tracks.length===1?"song":"songs"}</div><div class="entityActions">${tracks.length?`<button class="primary" id="playLiked">${uiIcon("play")} Play</button><button class="secondary" id="shuffleLiked">${uiIcon("shuffle")} Shuffle</button>`:""}</div></div></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("Nothing liked yet","Tap the heart beside any song to save it here.")}`;
     if($("#playLiked"))$("#playLiked").onclick=()=>playQueue(tracks,0);
     if($("#shuffleLiked"))$("#shuffleLiked").onclick=()=>playQueue(shuffleArr(tracks),0);
     bindTrackTable();
@@ -995,18 +1097,18 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
 
-  function trackCard(t){return `<div class="card track-card" data-id="${t.id}" style="cursor:pointer">${artBox(t)}<button class="playOverlay play-track" data-id="${t.id}">▶</button><div class="cardTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="cardSub">${esc(artistName(t))}</div></div>`}
-  function albumCard(a){return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${a.cover?`<div class="art"><img src="${a.cover}" alt=""></div>`:`<div class="art"><div class="fallback">▣</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistById(a.artistId)?.name||"Unknown Artist")} • ${state.tracks.filter(t=>t.albumId===a.id).length} songs</div></div>`}
+  function trackCard(t){return `<div class="card track-card" data-id="${t.id}" style="cursor:pointer">${artBox(t)}<button class="playOverlay play-track" data-id="${t.id}">${uiIcon("play")}</button><div class="cardTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="cardSub">${esc(artistName(t))}</div></div>`}
+  function albumCard(a){return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${a.cover?`<div class="art"><img src="${a.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistById(a.artistId)?.name||"Unknown Artist")} • ${state.tracks.filter(t=>t.albumId===a.id).length} songs</div></div>`}
   function artistCard(a){return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${state.tracks.filter(t=>t.artistId===a.id).length} songs</div></div>`}
-  function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img src="${p.cover}" alt=""></div>`:`<div class="art"><div class="fallback">☷</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs</div></div>`}
+  function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img src="${p.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("playlist")}</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs</div></div>`}
 
   function trackTable(tracks){
-    return `<table><thead><tr><th style="width:54px"></th><th>Title</th><th>Artist</th><th>Album</th><th>Duration</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${tracks.length&&tracks.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${tracks.map(t=>`<tr data-id="${t.id}" class="track-row"><td><button class="rowPlay play-row" title="Play">▶</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${esc(albumArtistName(t))}</div></div></div></td><td>${esc(artistName(t))}</td><td>${esc(albumName(t))}</td><td>${fmt(t.duration)}</td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like">♥</button><button class="circle more-row" title="More">•••</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`;
+    return `<table><thead><tr><th style="width:54px"></th><th>Title</th><th>Artist</th><th>Album</th><th>Duration</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${tracks.length&&tracks.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${tracks.map(t=>`<tr data-id="${t.id}" class="track-row"><td><button class="rowPlay play-row" title="Play">${uiIcon("play")}</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${esc(albumArtistName(t))}</div></div></div></td><td>${esc(artistName(t))}</td><td>${esc(albumName(t))}</td><td>${fmt(t.duration)}</td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like" aria-label="Like">${uiIcon("heart")}</button><button class="circle more-row iconOnly" title="More" aria-label="More">${uiIcon("more")}</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`;
   }
   function selectionBar(tracks){
     const ids=tracks.map(t=>t.id); const selected=ids.filter(id=>state.selected.includes(id));
     if(!selected.length)return "";
-    return `<div class="selectionBar"><strong>${selected.length} selected</strong><button class="secondary small" id="bulkPlay">▶ Play</button><button class="secondary small" id="bulkEdit">✎ Edit</button><button class="secondary small" id="bulkLike">♥ Like</button><button class="secondary small" id="bulkPlaylist">☷ Add to playlist</button><button class="dangerBtn small" id="bulkDelete">⌫ Remove</button><button class="secondary small" id="bulkClear">Clear</button></div>`;
+    return `<div class="selectionBar"><strong>${selected.length} selected</strong><button class="secondary small" id="bulkPlay">${uiIcon("play")} Play</button><button class="secondary small" id="bulkEdit">${uiIcon("edit")} Edit</button><button class="secondary small" id="bulkLike">${uiIcon("heart")} Like</button><button class="secondary small" id="bulkPlaylist">${uiIcon("playlist")} Add to playlist</button><button class="dangerBtn small" id="bulkDelete">${uiIcon("trash")} Remove</button><button class="secondary small" id="bulkClear">Clear</button></div>`;
   }
 
   function bindTrackTable(){
@@ -1052,13 +1154,13 @@ main{min-width:0;min-height:0}
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(state.tracks.filter(t=>t.albumId===id));
     const artist=artistById(a.artistId);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${a.cover?`<img src="${a.cover}" alt="">`:fallbackArt("▣")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artist?.name||"Unknown Artist")} • ${tracks.length} songs${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">▶ Play</button><button class="secondary" id="albumShuffle">⤨ Shuffle</button><button class="secondary" id="albumAdd">＋ Add songs</button><button class="secondary" id="albumEdit">✎ Edit album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">ⓘ</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${a.cover?`<img src="${a.cover}" alt="">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artist?.name||"Unknown Artist")} • ${tracks.length} songs${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary" id="albumShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="albumAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="albumEdit">${uiIcon("edit")} Edit album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
     $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumShuffle").onclick=()=>playQueue(shuffleArr(tracks),0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
   }
 
   function showArtist(id,keepDetail=false){
     const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=state.tracks.filter(t=>t.artistId===id); const albums=state.albums.filter(x=>x.artistId===id);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">▶ Play</button><button class="secondary" id="artistEdit">✎ Edit artist</button><button class="secondary" id="artistAdd">＋ Add songs</button><button class="secondary" id="artistAlbum">＋ Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary" id="artistEdit">${uiIcon("edit")} Edit artist</button><button class="secondary" id="artistAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
     $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistId:id});bindTrackTable();$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id));
   }
 
@@ -1067,7 +1169,7 @@ main{min-width:0;min-height:0}
     const base=p.trackIds.map(trackById).filter(Boolean);
     const sk=state.playlistSort?.[id]||"added";
     const tracks=[...base].sort((a,b)=>playlistCompare(a,b,sk));
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img src="${p.cover}" alt="">`:fallbackArt("☷")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs</div><div class="entityActions"><button class="primary" id="plPlay">▶ Play</button><button class="secondary" id="plShuffle">⤨ Shuffle</button><button class="secondary" id="plAdd">＋ Add songs</button><button class="secondary" id="plEdit">✎ Edit playlist</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}<div class="toolbar"><button class="sortBtn ${sk==='added'?'active':''}" data-plsort="added">Added</button><button class="sortBtn ${sk==='title'?'active':''}" data-plsort="title">Name</button><button class="sortBtn ${sk==='album'?'active':''}" data-plsort="album">Album</button><button class="sortBtn ${sk==='artist'?'active':''}" data-plsort="artist">Artist</button><button class="sortBtn ${sk==='duration'?'active':''}" data-plsort="duration">Duration</button></div>${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song's menu.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img src="${p.cover}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary" id="plShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="plAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="plEdit">${uiIcon("edit")} Edit playlist</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}<div class="toolbar"><button class="sortBtn ${sk==='added'?'active':''}" data-plsort="added">Added</button><button class="sortBtn ${sk==='title'?'active':''}" data-plsort="title">Name</button><button class="sortBtn ${sk==='album'?'active':''}" data-plsort="album">Album</button><button class="sortBtn ${sk==='artist'?'active':''}" data-plsort="artist">Artist</button><button class="sortBtn ${sk==='duration'?'active':''}" data-plsort="duration">Duration</button></div>${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song's menu.")}`;
     $("#plPlay").onclick=()=>playQueue(tracks,0);$("#plShuffle").onclick=()=>playQueue(shuffleArr(tracks),0);$("#plAdd").onclick=()=>pickFiles({playlistId:id});$("#plEdit").onclick=()=>editPlaylist(id);$("#plDelete").onclick=async()=>deletePlaylist(id);
     $$("[data-plsort]").forEach(b=>b.onclick=()=>{state.playlistSort=state.playlistSort||{};state.playlistSort[id]=b.dataset.plsort;autoSave();showPlaylist(id,true)});
     bindTrackTable();
@@ -1080,7 +1182,7 @@ main{min-width:0;min-height:0}
   function showCredits(id){
     const a=albumById(id);if(!a)return;
     const c=a.credits||{};
-    setModal(`<div class="modalHead"><h2>${esc(a.title)} — Credits</h2><button class="circle" id="closeModal">×</button></div><div class="creditsGrid">${[["Producer",c.producer],["Songwriter",c.songwriter],["Composer",c.composer],["Publisher",c.publisher],["Label",c.label||a.label],["Copyright",c.copyright]].map(([k,v])=>`<div><strong>${esc(k)}</strong>${esc(Array.isArray(v)?v.join(", "):v||"Not set")}</div>`).join("")}</div><div class="modalFoot"><button class="primary" id="creditsDone">Done</button></div>`);
+    setModal(`<div class="modalHead"><h2>${esc(a.title)} — Credits</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="creditsGrid">${[["Producer",c.producer],["Songwriter",c.songwriter],["Composer",c.composer],["Publisher",c.publisher],["Label",c.label||a.label],["Copyright",c.copyright]].map(([k,v])=>`<div><strong>${esc(k)}</strong>${esc(Array.isArray(v)?v.join(", "):v||"Not set")}</div>`).join("")}</div><div class="modalFoot"><button class="primary" id="creditsDone">Done</button></div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#creditsDone").onclick=()=>closeModal(true);
   }
 
@@ -1166,12 +1268,12 @@ main{min-width:0;min-height:0}
     const enabled=state.settings.discordPresence!==false;
     const t=trackById(state.currentId);
     const currentLine=t?`${esc(t.title||"Unknown song")} <span class="muted">• ${esc(artistName(t)||"Unknown artist")}</span>`:"Nothing is playing right now.";
-    setModal(`<div class="modalHead"><h2>Discord</h2><button class="circle" id="closeModal">×</button></div>
+    setModal(`<div class="modalHead"><h2>Discord</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="discordPanel">
-        <div class="discordConnectCard"><div class="discordConnectIcon">◉</div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
+        <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">On ur profile it will show everything exept the album/song cover "idk how"</div>
+          <div class="help">Discord will show the Localify listening activity with the song title, artist, live timer, and artwork when the artwork has a public URL. No Discord Application ID needs to be entered.</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
@@ -1179,8 +1281,8 @@ main{min-width:0;min-height:0}
           <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Run <code>start.bat</code></strong><p>On first run, install Node.js 18+ if Windows asks for it.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Start the connector</strong><p>The Localify connector already has the correct Application ID built in. Leave it running while you use Localify.</p></div></div>
         </div>
-        <div class="discordActions"><a class="primary" href="./Localify_Discord_Connector.zip" download="Localify_Discord_Connector.zip">⬇ Download connector</a><a class="secondary" href="http://127.0.0.1:4219/" target="_blank" rel="noopener">Open connector</a><button class="secondary" id="discordReconnect">↻ Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
-        <div class="help">Btw this is work in progress thats why we need this setup sadly. This is more for me!</div>
+        <div class="discordActions"><a class="primary btnIcon" href="./Localify_Discord_Connector.zip" download="Localify_Discord_Connector.zip">${uiIcon("download")} Download connector</a><a class="secondary btnIcon" href="http://127.0.0.1:4219/" target="_blank" rel="noopener">${uiIcon("external")} Open connector</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
+        <div class="help">The connector listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
       </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
     $("#discordPresenceToggle").onchange=async e=>{state.settings.discordPresence=!!e.target.checked;await save();if(state.settings.discordPresence===false){clearDiscordPresence();setDiscordUi("disabled","Discord off")}else{connectDiscordBridge();sendDiscordPresence(true)}};
@@ -1201,13 +1303,13 @@ main{min-width:0;min-height:0}
     const artKey=t?`${t.id}|${t.cover||""}`:"empty";
     if($("#nowArt").dataset.key!==artKey){
       $("#nowArt").dataset.key=artKey;
-      $("#nowArt").innerHTML=t?coverHtml(t):`<div class="nowFallback">LOCALIFY</div>`;
+      $("#nowArt").innerHTML=t?coverHtml(t):`<div class="nowFallback">${uiIcon("music")}</div>`;
     }
     $("#likeNow").classList.toggle("liked",!!t&&state.liked.includes(t.id));
-    $("#playPause").textContent=audio.paused?"▶":"Ⅱ";
+    $("#playPause").innerHTML=audio.paused?uiIcon("play"):uiIcon("pause");
     const sh=$("#shuffle"); if(sh && sh.type==="checkbox") sh.checked=!!state.settings.shuffle;
     $("#repeat").classList.toggle("liked",state.settings.repeat!=="off");
-    $("#repeat").textContent=state.settings.repeat==="one"?"↻1":"↻";
+    $("#repeat").innerHTML=uiIcon("repeat")+(state.settings.repeat==="one"?`<span class="repeatOneBadge">1</span>`:"");
     updatePlayerTime();
   }
 
@@ -1336,7 +1438,45 @@ main{min-width:0;min-height:0}
   }
   async function pickFolder(){
     importContext={};
+
+    // Prefer the modern File System Access API on phones/browsers that expose it.
+    // This gives an actual folder picker instead of the browser falling back to a file picker.
+    if(window.showDirectoryPicker){
+      try{
+        const root=await window.showDirectoryPicker({mode:"read"});
+        const files=[];
+        const images=[];
+        const walk=async(dir,parts=[])=>{
+          for await(const [name,handle] of dir.entries()){
+            if(handle.kind==="file") {
+              const file=await handle.getFile();
+              const rel=[...parts,name].join("/");
+              try{Object.defineProperty(file,"webkitRelativePath",{value:rel,configurable:true})}catch{}
+              if(isAudioFile(file))files.push(file);
+              else if((file.type||"").startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/i.test(name))images.push(file);
+            } else if(handle.kind==="directory") {
+              await walk(handle,[...parts,name]);
+            }
+          }
+        };
+        await walk(root,[]);
+        if(!files.length){toast("No audio files found in that folder.");return}
+        const byDir=new Map();
+        for(const img of images){
+          const rel=img.webkitRelativePath||img.name;
+          const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+          if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
+        }
+        await addFiles(files,{folderImageMap:byDir,folderImport:true});
+        return;
+      }catch(e){
+        if(e?.name==="AbortError")return;
+        console.warn("Modern folder picker failed, falling back:",e);
+      }
+    }
+
     const input=$("#directoryPicker");
+    if(!input){toast("Folder import is not supported in this browser.");return}
     input.value="";
     input.onchange=async e=>{
       const files=[...e.target.files];
@@ -1440,13 +1580,13 @@ main{min-width:0;min-height:0}
   function openDeleteLibraryWarning(){
     const count=state.tracks.length;
     setModal(`
-      <div class="modalHead"><h2>Delete entire library?</h2><button class="circle" id="closeDeleteLibrary">×</button></div>
+      <div class="modalHead"><h2>Delete entire library?</h2><button class="circle iconOnly" id="closeDeleteLibrary" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="deleteWarning">
         <div class="deleteWarningBox"><strong>This will permanently remove this Localify library from this device.</strong><br>It will delete ${count} saved song${count===1?"":"s"}, artists, albums, playlists, liked/recent data, and stored audio files from this browser.</div>
         <div class="help">This does not delete files from your computer or phone. It only removes Localify's saved library data. A previously exported <code>.localify</code> backup can be imported again.</div>
         <div class="modalFoot">
           <button class="secondary" id="cancelDeleteLibrary">Cancel</button>
-          <button class="deleteLibraryBtn" id="confirmDeleteLibrary">🗑 Delete everything</button>
+          <button class="deleteLibraryBtn btnIcon" id="confirmDeleteLibrary">${uiIcon("trash")} Delete everything</button>
         </div>
       </div>`);
     $("#closeDeleteLibrary").onclick=()=>closeModal(true);
@@ -1490,12 +1630,12 @@ main{min-width:0;min-height:0}
   }
   function trackFormHtml(t){
     const currentAlbum=albumById(t.albumId);const currentArtist=artistById(t.artistId);const cover=t.cover||currentAlbum?.cover||currentArtist?.image;
-    return `<div class="modalHead"><h2>Edit song</h2><button class="circle" id="closeModal">×</button></div>
-      <div class="coverEdit">${cover?`<img id="editCover" src="${cover}" alt="">`:`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">♪</div>`}<div><button class="secondary" id="songCoverBtn">Choose artwork</button><div class="help" style="margin-top:6px">Artwork can differ from the album artwork.</div></div></div>
+    return `<div class="modalHead"><h2>Edit song</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="coverEdit">${cover?`<img id="editCover" src="${cover}" alt="">`:`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("music")}</div>`}<div><button class="secondary" id="songCoverBtn">Choose artwork</button><div class="help" style="margin-top:6px">Artwork can differ from the album artwork.</div></div></div>
       <div class="formGrid" style="margin-top:16px">
         ${field("Title","songTitle",t.title)}
-        <div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="songArtist"><option value="">None</option>${artistOptions(t.artistId)}</select><button class="secondary small" id="newArtistInline">＋</button></div></div>
-        <div class="field"><label>Album</label><div style="display:flex;gap:6px"><select id="songAlbum"><option value="">None</option>${albumOptions(t.albumId)}</select><button class="secondary small" id="newAlbumInline">＋</button></div></div>
+        <div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="songArtist"><option value="">None</option>${artistOptions(t.artistId)}</select><button class="secondary small" id="newArtistInline">${uiIcon("plus")}</button></div></div>
+        <div class="field"><label>Album</label><div style="display:flex;gap:6px"><select id="songAlbum"><option value="">None</option>${albumOptions(t.albumId)}</select><button class="secondary small" id="newAlbumInline">${uiIcon("plus")}</button></div></div>
         <div class="field"><label>Album artist</label><select id="songAlbumArtist"><option value="">None</option>${artistOptions(t.albumArtistId||t.artistId)}</select></div>
         ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
         <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
@@ -1523,7 +1663,7 @@ main{min-width:0;min-height:0}
 
   async function bulkEdit(tracks){
     if(!tracks.length)return;
-    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle" id="closeModal">×</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label><input id="applyArtist" type="checkbox"> Set artist</label><select id="bulkArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field full"><label><input id="applyAlbum" type="checkbox"> Set album</label><select id="bulkAlbum"><option value="">Choose album</option>${albumOptions()}</select></div><div class="field"><label><input id="applyAlbumArtist" type="checkbox"> Set album artist</label><select id="bulkAlbumArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field"><label><input id="applyGenre" type="checkbox"> Set genre</label><input id="bulkGenre"></div><div class="field"><label><input id="applyYear" type="checkbox"> Set year</label><input id="bulkYear"></div><div class="field"><label><input id="applyExplicit" type="checkbox"> Explicit</label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label><input id="applyCover" type="checkbox"> Apply same artwork</label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
+    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label><input id="applyArtist" type="checkbox"> Set artist</label><select id="bulkArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field full"><label><input id="applyAlbum" type="checkbox"> Set album</label><select id="bulkAlbum"><option value="">Choose album</option>${albumOptions()}</select></div><div class="field"><label><input id="applyAlbumArtist" type="checkbox"> Set album artist</label><select id="bulkAlbumArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field"><label><input id="applyGenre" type="checkbox"> Set genre</label><input id="bulkGenre"></div><div class="field"><label><input id="applyYear" type="checkbox"> Set year</label><input id="bulkYear"></div><div class="field"><label><input id="applyExplicit" type="checkbox"> Explicit</label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label><input id="applyCover" type="checkbox"> Apply same artwork</label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
     bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
     $("#bulkSave").onclick=async()=>{
       for(const t of tracks){const artist=$("#applyArtist").checked?artistById($("#bulkArtist").value):null;const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;const albumArtist=$("#applyAlbumArtist").checked?artistById($("#bulkAlbumArtist").value):null;if(artist){t.artistId=artist.id;t.artist=artist.name}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(albumArtist){t.albumArtistId=albumArtist.id;t.albumArtist=albumArtist.name}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
@@ -1534,37 +1674,37 @@ main{min-width:0;min-height:0}
   function bulkAddPlaylist(ids){
     const tracks=ids.map(trackById).filter(Boolean);if(!tracks.length)return;
     if(!state.playlists.length){editPlaylist(null, {prefillTracks:ids});return}
-    setModal(`<div class="modalHead"><h2>Add ${tracks.length} songs to a playlist</h2><button class="circle" id="closeModal">×</button></div>${state.playlists.map(p=>`<button class="secondary" data-plid="${p.id}" style="width:100%;text-align:left;margin:5px 0">${esc(p.name)}<span style="float:right">${tracks.filter(t=>p.trackIds.includes(t.id)).length}/${tracks.length}</span></button>`).join("")}<div class="modalFoot"><button class="secondary" id="cancelBulkPl">Cancel</button></div>`);
+    setModal(`<div class="modalHead"><h2>Add ${tracks.length} songs to a playlist</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>${state.playlists.map(p=>`<button class="secondary" data-plid="${p.id}" style="width:100%;text-align:left;margin:5px 0">${esc(p.name)}<span style="float:right">${tracks.filter(t=>p.trackIds.includes(t.id)).length}/${tracks.length}</span></button>`).join("")}<div class="modalFoot"><button class="secondary" id="cancelBulkPl">Cancel</button></div>`);
     $("#closeModal").onclick=()=>closeModal();$("#cancelBulkPl").onclick=()=>closeModal();$$("#modal [data-plid]").forEach(b=>b.onclick=async()=>{const p=playlistById(b.dataset.plid);for(const t of tracks)if(!p.trackIds.includes(t.id))p.trackIds.push(t.id);await save();closeModal(true);toast(`Added ${tracks.length} songs to ${p.name}`);renderCurrentViewWithoutScroll()});
   }
 
   function albumModalHtml(a,opts={}){
     const selectedArtist=a?.artistId||opts.artistId||""; const cover=a?.cover;
-    return `<div class="modalHead"><h2>${a?"Edit album":"Create album"}</h2><button class="circle" id="closeModal">×</button></div><div class="modalSection"><div class="coverEdit">${cover?`<img id="entityCover" src="${cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">▣</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button><div class="help">New songs inherit this album's artwork. Changing the album artist also updates every song's artist.</div></div></div></div><div class="formGrid"><div class="field full"><label>Album title</label><input id="entityTitle" value="${esc(a?.title||"")}" placeholder="Album name"></div><div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="entityArtist"><option value="">Choose artist</option>${artistOptions(selectedArtist)}</select><button class="secondary small" id="entityNewArtist">＋</button></div></div>${field("Year","entityYear",a?.year||"")}${field("Genre","entityGenre",a?.genre||"")}${field("Label","entityLabel",a?.label||"")}<div class="field full"><label>Description</label><textarea id="entityDescription">${esc(a?.description||"")}</textarea></div><div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","entityProducer",creditList(a?.credits,"producer"))}${field("Songwriter(s)","entitySongwriter",creditList(a?.credits,"songwriter"))}${field("Composer(s)","entityComposer",creditList(a?.credits,"composer"))}${field("Publisher(s)","entityPublisher",creditList(a?.credits,"publisher"))}${field("Copyright","entityCopyright",creditList(a?.credits,"copyright"))}</div></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteAlbum">Delete album</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create album"}</button></div>`;
+    return `<div class="modalHead"><h2>${a?"Edit album":"Create album"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="modalSection"><div class="coverEdit">${cover?`<img id="entityCover" src="${cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button><div class="help">New songs inherit this album's artwork. Changing the album artist also updates every song's artist.</div></div></div></div><div class="formGrid"><div class="field full"><label>Album title</label><input id="entityTitle" value="${esc(a?.title||"")}" placeholder="Album name"></div><div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="entityArtist"><option value="">Choose artist</option>${artistOptions(selectedArtist)}</select><button class="secondary small" id="entityNewArtist">${uiIcon("plus")}</button></div></div>${field("Year","entityYear",a?.year||"")}${field("Genre","entityGenre",a?.genre||"")}${field("Label","entityLabel",a?.label||"")}<div class="field full"><label>Description</label><textarea id="entityDescription">${esc(a?.description||"")}</textarea></div><div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","entityProducer",creditList(a?.credits,"producer"))}${field("Songwriter(s)","entitySongwriter",creditList(a?.credits,"songwriter"))}${field("Composer(s)","entityComposer",creditList(a?.credits,"composer"))}${field("Publisher(s)","entityPublisher",creditList(a?.credits,"publisher"))}${field("Copyright","entityCopyright",creditList(a?.credits,"copyright"))}</div></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteAlbum">Delete album</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create album"}</button></div>`;
   }
   function editAlbum(id,opts={}){
-    const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">▣</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
+    const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
     $("#saveEntity").onclick=async()=>{const artist=artistById($("#entityArtist").value);if(!$("#entityTitle").value.trim()||!artist){toast("Choose an album title and artist.");return}let target=a;if(!target){target={id:uid(),title:"",artistId:artist.id,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}target.title=$("#entityTitle").value.trim();target.artistId=artist.id;target.cover=cover;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;t.artistId=target.artistId;t.artist=artist.name;t.albumArtistId=target.artistId;t.albumArtist=artist.name;if(cover)t.cover=cover;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);toast(a?"Album updated.":"Album created.")};
     if(a)$("#deleteAlbum").onclick=async()=>{if(!confirm(`Delete album "${a.title}"? Songs are kept in your library.`))return;state.albums=state.albums.filter(x=>x.id!==a.id);for(const t of state.tracks){if(t.albumId===a.id){t.albumId=null;t.album="Unknown Album";t.albumArtistId=null;t.albumArtist="Unknown Artist"}}await save(true);closeModal(true);state.detail=null;setView("albums");toast("Album deleted.")}
   }
 
-  function artistModalHtml(a){return `<div class="modalHead"><h2>${a?"Edit artist":"Create artist"}</h2><button class="circle" id="closeModal">×</button></div><div class="coverEdit">${a?.image?`<img id="entityCover" src="${a.image}" alt="" style="border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose profile picture</button></div></div><div class="formGrid" style="margin-top:16px">${field("Artist name","entityTitle",a?.name||"")}${field("Label","entityLabel",a?.label||"")}${field("Founded / active year","entityYear",a?.year||"")}${field("Website","entityWebsite",a?.website||"")}<div class="field full"><label>Genres</label><input id="entityGenres" value="${esc((a?.genres||[]).join(", "))}" placeholder="Pop, Hip-Hop"></div><div class="field full"><label>Bio</label><textarea id="entityBio">${esc(a?.bio||"")}</textarea></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteArtist">Delete artist</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create artist"}</button></div>`}
+  function artistModalHtml(a){return `<div class="modalHead"><h2>${a?"Edit artist":"Create artist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${a?.image?`<img id="entityCover" src="${a.image}" alt="" style="border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose profile picture</button></div></div><div class="formGrid" style="margin-top:16px">${field("Artist name","entityTitle",a?.name||"")}${field("Label","entityLabel",a?.label||"")}${field("Founded / active year","entityYear",a?.year||"")}${field("Website","entityWebsite",a?.website||"")}<div class="field full"><label>Genres</label><input id="entityGenres" value="${esc((a?.genres||[]).join(", "))}" placeholder="Pop, Hip-Hop"></div><div class="field full"><label>Bio</label><textarea id="entityBio">${esc(a?.bio||"")}</textarea></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteArtist">Delete artist</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create artist"}</button></div>`}
   function editArtist(id,opts={}){
     const a=id?artistById(id):null;let img=a?.image||null;setModal(artistModalHtml(a));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(img,d=>{img=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`;markDirty()});
     $("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim();if(!name){toast("Give the artist a name.");return}let target=a;if(!target){target={id:uid(),name:"",image:null,bio:"",genres:[],website:"",label:"",year:""};state.artists.push(target)}target.name=name;target.image=img;target.label=$("#entityLabel").value;target.year=$("#entityYear").value;target.website=$("#entityWebsite").value;target.genres=$("#entityGenres").value.split(",").map(x=>x.trim()).filter(Boolean);target.bio=$("#entityBio").value;for(const t of state.tracks){if(t.artistId===target.id)t.artist=target.name;if(t.albumArtistId===target.id)t.albumArtist=target.name}await save();closeModal(true);if(opts.returnTo?.type==="track")editTrack(opts.returnTo.id);else if(opts.returnTo?.type==="album")editAlbum(opts.returnTo.id,{artistId:target.id});else showArtist(target.id);toast(a?"Artist updated.":`Artist ${name} created.`)};
     if(a)$("#deleteArtist").onclick=async()=>{if(confirm(`Delete artist "${a.name}"? Songs stay in your library.`)){state.artists=state.artists.filter(x=>x.id!==a.id);await save();closeModal(true);setView("artists")}}
   }
 
-  function playlistModalHtml(p){return `<div class="modalHead"><h2>${p?"Edit playlist":"New playlist"}</h2><button class="circle" id="closeModal">×</button></div><div class="coverEdit">${p?.cover?`<img id="entityCover" src="${p.cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">☷</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button></div></div><div class="formGrid" style="margin-top:16px">${field("Name","entityTitle",p?.name||"")}<div class="field"><label>Style / mood</label><input id="entityLabel" value="${esc(p?.label||"")}" placeholder="Workout, favorites..."></div><div class="field full"><label>Description</label><textarea id="entityDescription">${esc(p?.description||"")}</textarea></div></div><div class="modalFoot"><button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${p?"Save changes":"Create playlist"}</button></div>`}
+  function playlistModalHtml(p){return `<div class="modalHead"><h2>${p?"Edit playlist":"New playlist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${p?.cover?`<img id="entityCover" src="${p.cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button></div></div><div class="formGrid" style="margin-top:16px">${field("Name","entityTitle",p?.name||"")}<div class="field"><label>Style / mood</label><input id="entityLabel" value="${esc(p?.label||"")}" placeholder="Workout, favorites..."></div><div class="field full"><label>Description</label><textarea id="entityDescription">${esc(p?.description||"")}</textarea></div></div><div class="modalFoot"><button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${p?"Save changes":"Create playlist"}</button></div>`}
   function editPlaylist(id,opts={}){
-    const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">☷</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
+    const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
 
   function openContext(x,y,id){
-    const m=$("#contextMenu");m.innerHTML=`<button data-a="play">▶ Play now</button><button data-a="queue">＋ Add to queue</button><button data-a="like">♥ ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="select">☑ Select</button><button data-a="playlist">☷ Add to playlist</button><button data-a="lyrics">▤ View lyrics</button><button data-a="edit">✎ Edit song</button><button data-a="delete" class="dangerText">⌫ Remove from library</button>`;m.style.left=Math.min(x,innerWidth-220)+"px";m.style.top=Math.min(y,innerHeight-340)+"px";m.classList.add("show");$$("#contextMenu button").forEach(b=>b.onclick=async()=>{const a=b.dataset.a;m.classList.remove("show");if(a==="play")playId(id);if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}if(a==="like")toggleLike(id);if(a==="select"){if(!state.selected.includes(id))state.selected.push(id);renderCurrentViewWithoutScroll()}if(a==="playlist")bulkAddPlaylist([id]);if(a==="lyrics")showLyrics(id);if(a==="edit")editTrack(id);if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}})
+    const m=$("#contextMenu");m.innerHTML=`<button data-a="play">${uiIcon("play")} Play now</button><button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="select">${uiIcon("check")} Select</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button>`;m.style.left=Math.min(x,innerWidth-220)+"px";m.style.top=Math.min(y,innerHeight-340)+"px";m.classList.add("show");$$("#contextMenu button").forEach(b=>b.onclick=async()=>{const a=b.dataset.a;m.classList.remove("show");if(a==="play")playId(id);if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}if(a==="like")toggleLike(id);if(a==="select"){if(!state.selected.includes(id))state.selected.push(id);renderCurrentViewWithoutScroll()}if(a==="playlist")bulkAddPlaylist([id]);if(a==="lyrics")showLyrics(id);if(a==="edit")editTrack(id);if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}})
   }
   document.addEventListener("click",e=>{if(!e.target.closest("#contextMenu")&&!e.target.closest(".more-row"))$("#contextMenu").classList.remove("show")});
 
-  function showLyrics(id){const t=trackById(id);if(!t)return;$("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverHtml(t)}</div><div><h2 class="viewTitle">${esc(t.title)}</h2><div class="subtle">${esc(artistName(t))} • ${esc(albumName(t))}</div><div class="entityActions"><button class="primary" id="playLyrics">▶ Play</button><button class="secondary" id="editLyrics">✎ Edit song</button></div></div></div><div class="lyricsPanel">${esc(t.lyrics||"No lyrics saved for this song yet.")}</div>`;$("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id)}
+  function showLyrics(id){const t=trackById(id);if(!t)return;$("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverHtml(t)}</div><div><h2 class="viewTitle">${esc(t.title)}</h2><div class="subtle">${esc(artistName(t))} • ${esc(albumName(t))}</div><div class="entityActions"><button class="primary" id="playLyrics">${uiIcon("play")} Play</button><button class="secondary" id="editLyrics">${uiIcon("edit")} Edit song</button></div></div></div><div class="lyricsPanel">${esc(t.lyrics||"No lyrics saved for this song yet.")}</div>`;$("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id)}
 
 
   function ensureAudioGraph(){
@@ -1585,7 +1725,7 @@ main{min-width:0;min-height:0}
   function openEQ(){
     ensureAudioGraph();try{audioCtx?.resume()}catch{}
     const q=state.settings.eq||EQ_PRESETS.flat;
-    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle" id="closeModal">×</button></div><div class="field"><label>Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div><div class="formGrid" style="margin-top:14px"><div class="field"><label>Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1"></div><div class="field"><label>Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1"></div><div class="field"><label>Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1"></div><div class="field"><label>Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1"></div></div><div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div><div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
+    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="field"><label>Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div><div class="formGrid" style="margin-top:14px"><div class="field"><label>Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1"></div><div class="field"><label>Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1"></div><div class="field"><label>Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1"></div><div class="field"><label>Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1"></div></div><div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div><div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
     const update=()=>{state.settings.eq={bass:+$("#eqBass").value,mid:+$("#eqMid").value,treble:+$("#eqTreble").value,gain:+$("#eqGain").value,preset:$("#eqPreset").value};applyEQ();$("#eqBass").previousElementSibling.textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMid").previousElementSibling.textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTreble").previousElementSibling.textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGain").previousElementSibling.textContent=`Gain ${state.settings.eq.gain} dB`;autoSave()};
     ["#eqBass","#eqMid","#eqTreble","#eqGain"].forEach(id=>$(id).addEventListener("input",update));
@@ -1742,7 +1882,7 @@ main{min-width:0;min-height:0}
   }
 
   function openMobileTools(){
-    setModal(`<div class="modalHead"><h2>Localify tools</h2><button class="circle" id="closeModal">×</button></div><div style="display:grid;gap:8px"><button class="secondary" id="mSave">✓ Save library now</button><button class="secondary" id="mImport">⇧ Import .localify file</button><button class="secondary" id="mExport">⇩ Export .localify file</button><button class="secondary" id="mAdd">＋ Add music</button><button class="secondary" id="mFolder">▤ Add folder</button><button class="deleteLibraryBtn" id="mDeleteLibrary">🗑 Delete library</button><button class="secondary" id="mEQ">♫ Sound filters</button></div>`);
+    setModal(`<div class="modalHead"><h2>Library tools</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div style="display:grid;gap:8px"><button class="secondary btnIcon" id="mSave">${uiIcon("save")} Save library now</button><button class="secondary btnIcon" id="mImport">${uiIcon("upload")} Import .localify file</button><button class="secondary btnIcon" id="mExport">${uiIcon("download")} Export .localify file</button><button class="secondary btnIcon" id="mAdd">${uiIcon("plus")} Add music</button><button class="secondary btnIcon" id="mFolder">${uiIcon("folder")} Add folder</button><button class="secondary btnIcon" id="mEQ">${uiIcon("equalizer")} Sound filters</button><button class="deleteLibraryBtn btnIcon" id="mDeleteLibrary">${uiIcon("trash")} Delete library</button></div>`);
     $("#closeModal").onclick=()=>closeModal();
     $("#mSave").onclick=async()=>{closeModal(true);await save(true)};
     $("#mImport").onclick=()=>{closeModal(true);pickLibraryFile()};
