@@ -515,9 +515,9 @@ main{min-width:0;min-height:0}
     <div class="sideBottom">
       <button class="sideAction btnIcon" id="importBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add music</span></button>
       <button class="sideAction btnIcon" id="folderBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/></svg></span><span>Add folder</span></button>
-      <button class="sideAction btnIcon" id="backupBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></span><span>Export Preset</span></button>
-      <button class="sideAction btnIcon" id="restoreBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9"/><path d="m7.5 13.5 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/></svg></span><span>Import Preset</span></button>
-      <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span>Reset</span></button>
+      <button class="sideAction btnIcon" id="backupBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></span><span>Export library</span></button>
+      <button class="sideAction btnIcon" id="restoreBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9"/><path d="m7.5 13.5 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/></svg></span><span>Import library</span></button>
+      <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span>Delete library</span></button>
       <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
       <input type="file" id="directoryPicker" webkitdirectory directory mozdirectory multiple hidden accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf,image/*">
       <input type="file" id="bundlePicker" accept=".localify,.zip,application/zip" hidden>
@@ -1087,7 +1087,7 @@ main{min-width:0;min-height:0}
           <div class="heroKicker">LOCALIFY • Built by @blibbbye + @modmodroots</div>
           <h1>Local Files<br>But better</h1>
           <div class="heroDesc">Locailify, A audio player website made by @blibbbye, Create albums and artists add songs from ur files and listen. This was made for me and my friends at ModMod's Unreleased!</div>
-          <div class="heroActions"><button class="primary" id="heroAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="heroFolder">${uiIcon("folder")} Add Folder</button><button class="secondary" id="heroAlbum">${uiIcon("plus")} Create album</button><button class="secondary" id="heroArtist">${uiIcon("artist")} Create artist</button></div>
+          <div class="heroActions"><button class="primary" id="heroAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="heroFolder">${uiIcon("folder")} Add folder</button><button class="secondary" id="heroAlbum">${uiIcon("plus")} Create album</button><button class="secondary" id="heroArtist">${uiIcon("artist")} Create artist</button></div>
         </div>
         <div class="quickCard">
           <div><div class="quickTitle">Your local library</div><div class="quickStat">${state.tracks.length}</div><div class="muted">${state.albums.length} albums • ${state.artists.length} artists • ${state.playlists.length} playlists</div></div>
@@ -1264,6 +1264,11 @@ main{min-width:0;min-height:0}
   let discordReconnectTimer=null;
   let discordLastPayloadKey="";
   let discordLastSentAt=0;
+  let discordPresenceRequest=0;
+  const discordCoverCache=new Map();
+  const discordCoverRequests=new Map();
+  const LOCALIFY_COVER_DIRECTORY="./covers/";
+  const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
 
   function setDiscordUi(state,text){
     const el=$("#discordStatus"),label=$("#discordStatusText"),top=$("#discordTopBtn");
@@ -1285,25 +1290,82 @@ main{min-width:0;min-height:0}
     }
   }
 
-  function discordCoverUrl(t){
+  function discordDirectCoverUrl(t){
     const raw=[t?.cover,albumById(t?.albumId)?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     for(const value of raw){
       if(typeof value!=="string"||!value.trim())continue;
       try{
         const u=new URL(value,location.href);
-        if(u.protocol==="http:"||u.protocol==="https:")return u.href;
+        if(u.protocol!=="http:"&&u.protocol!=="https:")continue;
+        if((location.hostname==="127.0.0.1"||location.hostname==="localhost")&&u.hostname===location.hostname)continue;
+        return u.href;
       }catch{}
     }
     return "";
   }
 
-  function discordPayload(t,playing=true){
+  function coverFileCandidates(albumTitle){
+    const original=String(albumTitle||"").trim();
+    if(!original||/^unknown album$/i.test(original))return [];
+    const variants=[
+      original,
+      original.replace(/[\\/:*?\"<>|]/g,"-").replace(/\s+/g," ").trim(),
+      original.replace(/\s+/g,"_"),
+      original.replace(/\s+/g,"-"),
+      original.replace(/\s*[–—-]\s*/g,"-")
+    ].filter(Boolean);
+    const seen=new Set(),out=[];
+    for(const base of variants){
+      for(const ext of LOCALIFY_COVER_EXTENSIONS){
+        for(const candidate of [base,base.toUpperCase(),base.toLowerCase()]){
+          const key=(candidate+ext).toLowerCase();
+          if(seen.has(key))continue;seen.add(key);out.push(candidate+ext);
+        }
+      }
+    }
+    return out;
+  }
+
+  async function resolveGithubAlbumCover(t){
+    if(!t)return "";
+    const album=albumName(t);
+    const key=String(album||"").trim().toLowerCase();
+    if(!key||/^unknown album$/.test(key))return "";
+    if(discordCoverCache.has(key))return discordCoverCache.get(key)||"";
+    if(discordCoverRequests.has(key))return discordCoverRequests.get(key);
+    if(location.protocol!=="http:"&&location.protocol!=="https:"){discordCoverCache.set(key,"");return ""}
+    if(location.hostname==="127.0.0.1"||location.hostname==="localhost"){discordCoverCache.set(key,"");return ""}
+
+    const request=(async()=>{
+      for(const filename of coverFileCandidates(album)){
+        const url=new URL(LOCALIFY_COVER_DIRECTORY+encodeURIComponent(filename),location.href).href;
+        try{
+          const ok=await new Promise(resolve=>{
+            const img=new Image();
+            let done=false;
+            const finish=v=>{if(done)return;done=true;img.onload=null;img.onerror=null;resolve(v)};
+            img.onload=()=>finish(true);
+            img.onerror=()=>finish(false);
+            img.src=url;
+          });
+          if(ok){discordCoverCache.set(key,url);return url}
+        }catch{}
+      }
+      discordCoverCache.set(key,"");
+      return "";
+    })();
+    discordCoverRequests.set(key,request);
+    try{return await request}finally{discordCoverRequests.delete(key)}
+  }
+
+  async function discordPayload(t,playing=true){
     if(!t)return null;
     const duration=Number.isFinite(audio.duration)&&audio.duration>0?audio.duration:Number(t.duration||0);
     const position=Math.max(0,Number(audio.currentTime||0));
     const start=Math.round(Date.now()-position*1000);
     const end=duration>0?Math.round(start+duration*1000):null;
-    return {kind:"presence",playing:!!playing,song:t.title||"Unknown song",artist:artistName(t)||"Unknown artist",album:albumName(t)||"",coverUrl:discordCoverUrl(t),currentTime:position,duration:duration>0?duration:0,start,end};
+    const coverUrl=discordDirectCoverUrl(t)||await resolveGithubAlbumCover(t);
+    return {kind:"presence",playing:!!playing,song:t.title||"Unknown song",artist:artistName(t)||"Unknown artist",album:albumName(t)||"",coverUrl,currentTime:position,duration:duration>0?duration:0,start,end};
   }
 
   function sendDiscordMessage(payload){
@@ -1324,18 +1386,20 @@ main{min-width:0;min-height:0}
     }catch{setDiscordUi("error","Connector not running");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}
   }
 
-  function sendDiscordPresence(force=false){
+  async function sendDiscordPresence(force=false){
     if(state.settings.discordPresence===false)return;
+    const requestId=++discordPresenceRequest;
     const t=trackById(state.currentId);
     if(!t||audio.paused){sendDiscordMessage({kind:"clear"});return}
-    const p=discordPayload(t,true);if(!p)return;
+    const p=await discordPayload(t,true);
+    if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     const key=[p.song,p.artist,p.album,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
     if(!force&&key===discordLastPayloadKey&&now-discordLastSentAt<4500)return;
     discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
     window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
   }
 
-  function clearDiscordPresence(){discordLastPayloadKey="";sendDiscordMessage({kind:"clear"});window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:null}));window.LocalifyDiscordPresence=null}
+  function clearDiscordPresence(){discordPresenceRequest++;discordLastPayloadKey="";sendDiscordMessage({kind:"clear"});window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:null}));window.LocalifyDiscordPresence=null}
 
   function openDiscordSetup(){
     const enabled=state.settings.discordPresence!==false;
@@ -1346,7 +1410,7 @@ main{min-width:0;min-height:0}
         <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">Discord will show the Localify listening activity with the song title, artist, live timer, and artwork when the artwork has a public URL. No Discord Application ID needs to be entered.</div>
+          <div class="help">Discord shows the Localify listening activity with the song title, artists, live timer, and artwork. For your Ye-focused library, add matching images to <code>covers/ALBUM NAME.jpg</code> in the same GitHub Pages repo; Localify will automatically use that GitHub cover when a song's album matches the filename. No Discord Application ID needs to be entered.</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
