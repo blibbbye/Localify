@@ -623,7 +623,9 @@ main{min-width:0;min-height:0}
   }
   function artistIdsForTrack(t){return idsOf(t,"artistIds","artistId")}
   function artistIdsForAlbum(a){return idsOf(a,"artistIds","artistId")}
-  function artistNamesForTrack(t){const n=namesOfIds(artistIdsForTrack(t));return n.length?n:(t.artist?[String(t.artist)]:t.albumArtist?[String(t.albumArtist)]:["Unknown Artist"])}
+  // Track artists never fall back to album artists. The album-artist field is
+  // kept separate for album metadata and is never included in Discord presence.
+  function artistNamesForTrack(t){const n=namesOfIds(artistIdsForTrack(t));return n.length?n:(t.artist?[String(t.artist)]:["Unknown Artist"])}
   function artistNamesForAlbum(a){const n=namesOfIds(artistIdsForAlbum(a));return n.length?n:["Unknown Artist"]}
   function artistName(t){return artistNamesForTrack(t).join(", ")||"Unknown Artist"}
   function albumName(t){return albumById(t.albumId)?.title||t.album||"Unknown Album"}
@@ -1267,8 +1269,12 @@ main{min-width:0;min-height:0}
   let discordPresenceRequest=0;
   const discordCoverCache=new Map();
   const discordCoverRequests=new Map();
-  const LOCALIFY_COVER_DIRECTORY="./covers/";
-  const LOCALIFY_COVER_MAP_URL="./covers.json";
+  // Covers are public files from the Localify GitHub repository. Absolute raw
+  // URLs keep artwork working when the app is embedded in Google Sites or
+  // hosted somewhere other than the GitHub repository itself.
+  const LOCALIFY_GITHUB_RAW_BASE="https://raw.githubusercontent.com/blibbbye/Localify/main/";
+  const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
+  const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
   const LOCALIFY_COVER_EXCLUSIONS=new Set(["vultures 2","vultures ii","vultures 2 v1","vultures 2 version 1"]);
@@ -1339,15 +1345,15 @@ main{min-width:0;min-height:0}
   }
 
   function discordDirectCoverUrl(t){
+    // First use the configured public album cover. This is the most reliable
+    // artwork source for Discord because it is an absolute HTTPS URL.
+    const known=knownCoverUrlForAlbum(albumName(t));
+    if(known)return known;
     const raw=[t?.cover,albumById(t?.albumId)?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     for(const value of raw){
       if(typeof value!=="string"||!value.trim())continue;
-      try{
-        const u=new URL(value,location.href);
-        if(u.protocol!=="http:"&&u.protocol!=="https:")continue;
-        if((location.hostname==="127.0.0.1"||location.hostname==="localhost")&&u.hostname===location.hostname)continue;
-        return u.href;
-      }catch{}
+      const mapped=coverMapUrl(value);
+      if(mapped)return mapped;
     }
     return "";
   }
@@ -1401,11 +1407,18 @@ main{min-width:0;min-height:0}
 
   function coverMapUrl(value){
     if(typeof value!=="string"||!value.trim())return "";
+    const raw=value.trim();
     try{
-      const u=new URL(value.trim(),location.href);
-      if(u.protocol!=="http:"&&u.protocol!=="https:")return "";
-      if((u.username||u.password))return "";
-      return u.href;
+      if(/^https?:\/\//i.test(raw)){
+        const u=new URL(raw);
+        if(u.protocol!=="http:"&&u.protocol!=="https:")return "";
+        if((u.username||u.password))return "";
+        return u.href;
+      }
+      // covers.json stores paths such as covers/donda.jpg. Always resolve
+      // repo-relative artwork against GitHub, never against the embedding page.
+      const repoPath=raw.replace(/^\.\//,"").replace(/^\//,"");
+      return new URL(repoPath,LOCALIFY_GITHUB_RAW_BASE).href;
     }catch{return ""}
   }
 
@@ -1449,59 +1462,19 @@ main{min-width:0;min-height:0}
     for(const key of coverMapCandidates(albumTitle)){
       const file=lookup.get(key);
       if(!file)continue;
-      return new URL(LOCALIFY_COVER_DIRECTORY+encodeURIComponent(file),location.href).href;
+      return new URL(encodeURIComponent(file),LOCALIFY_COVER_DIRECTORY).href;
     }
     return "";
   }
 
-  function coverMatchScore(a,b){
-    const left=canonicalCoverAlbumName(a),right=canonicalCoverAlbumName(b);
-    if(!left||!right)return 0;
-    if(left===right)return 1;
-    if(left.length>=5&&right.length>=5&&(left.includes(right)||right.includes(left))){
-      const shorter=Math.min(left.length,right.length),longer=Math.max(left.length,right.length);
-      return shorter/longer>=0.62?0.94:0;
-    }
-    // Small edit-distance tolerance catches cover aliases such as
-    // "turbografx16" vs "turbografx-16" without matching unrelated albums.
-    const m=left.length,n=right.length;
-    if(Math.max(m,n)>48||Math.abs(m-n)>8)return 0;
-    const prev=new Array(n+1);
-    for(let j=0;j<=n;j++)prev[j]=j;
-    for(let i=1;i<=m;i++){
-      const cur=new Array(n+1);cur[0]=i;
-      for(let j=1;j<=n;j++){
-        const cost=left[i-1]===right[j-1]?0:1;
-        cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+cost);
-      }
-      for(let j=0;j<=n;j++)prev[j]=cur[j];
-    }
-    const maxLen=Math.max(m,n);
-    const similarity=1-(prev[n]/maxLen);
-    return similarity>=0.84?similarity:0;
-  }
-
   function externalCoverForAlbum(albumTitle){
     if(!localifyCoverMap||isExcludedCoverAlbum(albumTitle))return "";
-    const candidates=coverMapCandidates(albumTitle);
-    for(const key of candidates){
+    for(const key of coverMapCandidates(albumTitle)){
       const value=localifyCoverMap[key];
       const mapped=coverMapUrl(value||"");
       if(mapped)return mapped;
     }
-
-    // Fuzzy alias pass. This is still based only on the owner-controlled
-    // covers.json/built-in cover map; album metadata never leaves Localify.
-    let bestUrl="",bestScore=0;
-    for(const [key,value] of Object.entries(localifyCoverMap)){
-      const mapped=coverMapUrl(value||"");
-      if(!mapped)continue;
-      for(const candidate of candidates){
-        const score=coverMatchScore(candidate,key);
-        if(score>bestScore){bestScore=score;bestUrl=mapped}
-      }
-    }
-    return bestScore>=0.84?bestUrl:"";
+    return "";
   }
 
   function knownCoverUrlForAlbum(albumTitle){
@@ -1523,9 +1496,7 @@ main{min-width:0;min-height:0}
       if(typeof v!=="string"||!v.trim())continue;
       for(const key of coverMapCandidates(k))out[key]=v.trim();
     }
-    if(location.protocol!=="http:"&&location.protocol!=="https:"){
-      localifyCoverMap=out;return out;
-    }
+    // Load the public registry independently of the page's own origin.
     localifyCoverMapPromise=(async()=>{
       try{
         const controller=new AbortController();
@@ -1566,8 +1537,9 @@ main{min-width:0;min-height:0}
     if(!cacheKey||/^unknown album$/.test(cacheKey)||isExcludedCoverAlbum(album)){return ""}
     if(discordCoverCache.has(cacheKey))return discordCoverCache.get(cacheKey)||"";
     if(discordCoverRequests.has(cacheKey))return discordCoverRequests.get(cacheKey);
-    if(location.protocol!=="http:"&&location.protocol!=="https:")return "";
-    if(location.hostname==="127.0.0.1"||location.hostname==="localhost")return "";
+    // The cover registry is public and works regardless of where Localify is
+    // hosted, including Google Sites and local development.
+
 
     const request=(async()=>{
       // 1) Deterministic built-in mapping first. These are owner-controlled
@@ -1587,7 +1559,7 @@ main{min-width:0;min-height:0}
       // the candidate before sending it to Discord. Failures are NOT cached,
       // allowing a later timeupdate to retry after GitHub Pages/network delay.
       for(const filename of coverFileCandidates(album)){
-        const url=new URL(LOCALIFY_COVER_DIRECTORY+encodeURIComponent(filename),location.href).href;
+        const url=new URL(encodeURIComponent(filename),LOCALIFY_COVER_DIRECTORY).href;
         if(await checkImageUrl(url)){discordCoverCache.set(cacheKey,url);return url}
       }
 
@@ -1597,6 +1569,10 @@ main{min-width:0;min-height:0}
     discordCoverRequests.set(cacheKey,request);
     try{return await request}finally{discordCoverRequests.delete(cacheKey)}
   }
+
+  // Warm the public registry in the background so covers.json aliases are
+  // normally ready by the time the first track starts playing.
+  void loadLocalifyCoverMap();
 
   function sendDiscordMessage(payload){
     if(!discordSocket||discordSocket.readyState!==WebSocket.OPEN)return false;
@@ -1609,7 +1585,7 @@ main{min-width:0;min-height:0}
     clearTimeout(discordReconnectTimer);setDiscordUi("searching","Connecting to connector…");
     try{
       const ws=new WebSocket("ws://127.0.0.1:4219/presence");discordSocket=ws;
-      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:3});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
+      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:2});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
       ws.onmessage=e=>{try{const m=JSON.parse(e.data||"{}");if(m.kind==="status")setDiscordUi(m.ok?"connected":"error",m.message||"Discord connector status")}catch{}};
       ws.onerror=()=>setDiscordUi("error","Connector not running");
       ws.onclose=()=>{if(discordSocket===ws)discordSocket=null;if(state.settings.discordPresence!==false){setDiscordUi("searching","Connector disconnected — retrying…");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}};
@@ -1623,19 +1599,15 @@ main{min-width:0;min-height:0}
 
   async function discordPayload(t,playing=true,resolveCover=true){
     const song=sanitizeDiscordText(t?.title,"Unknown song");
-    const artists=artistNamesForTrack(t)
-      .map(x=>sanitizeDiscordText(x,""))
-      .filter(Boolean);
+    const artists=artistNamesForTrack(t).filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
     let coverUrl="";
 
-    // IMPORTANT: Only title, artists, artwork and timing are allowed into the
-    // Discord bridge. Album metadata is used ONLY inside Localify to select artwork.
-    // It is never copied into the Discord payload.
-    // Prefer the configured album cover, then fall back to the track/artist artwork.
-    const album=albumName(t);
-    coverUrl=builtInCoverForAlbum(album);
-    if(resolveCover&& !coverUrl){
+    // Album names are only used internally to resolve artwork. They are never
+    // sent as a Discord status/activity field.
+    // Never make the status wait for cover discovery: unknown/missing artwork
+    // must not prevent the song + artist presence from being published.
+    if(resolveCover){
       try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
     }
     if(!coverUrl)coverUrl=discordDirectCoverUrl(t);
@@ -1653,9 +1625,8 @@ main{min-width:0;min-height:0}
       playing:!!playing,
       song,
       artist,
-      artists,
       // Album is deliberately omitted from the payload.
-      // It is only used internally above to find the correct cover.
+      // It is only used above to find the correct cover.
       coverUrl,
       currentTime,
       duration,
@@ -1676,8 +1647,7 @@ main{min-width:0;min-height:0}
     let p;
     try{p=await discordPayload(t,true,false)}catch(e){
       console.warn("Localify Discord payload build failed",e);
-      const fallbackArtists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
-      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(fallbackArtists.join(", "),"Unknown Artist"),artists:fallbackArtists,coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
@@ -1686,12 +1656,12 @@ main{min-width:0;min-height:0}
       window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:p}));window.LocalifyDiscordPresence=p;
     }
 
-    // Resolve configured/fuzzy album artwork in the background. The album is
-    // used only inside Localify for artwork selection and is never transmitted.
+    // Resolve GitHub artwork in the background. When it finishes, update the
+    // same song only if the user is still listening to it.
     resolveGithubAlbumCover(t).then(cover=>{
       if(!cover)return;
       if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
-      const updated={kind:"presence",playing:true,song:p.song,artist:p.artist,artists:Array.isArray(p.artists)?p.artists.slice():String(p.artist||"").split(",").map(x=>x.trim()).filter(Boolean),coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0),duration:Number(p.duration||audio.duration||0),start:Number(p.start||0),end:Number(p.end||0)};
+      const updated={...p,coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0)};
       const updatedKey=[updated.song,updated.artist,updated.coverUrl,Math.floor(updated.currentTime/5),Math.round(updated.duration)].join("|");
       if(updatedKey===discordLastPayloadKey)return;
       discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();sendDiscordMessage(updated);
@@ -1710,7 +1680,7 @@ main{min-width:0;min-height:0}
         <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking connector…</div><div class="discordConnectSub">Localify uses a tiny local connector to publish your current song to Discord Desktop.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">Discord receives only the song title, artists, artwork, and playback timing. Album metadata is used only inside Localify when resolving artwork and is never sent to the connector. For your Ye-focused library, put covers in <code>covers/</code> and optionally map aliases in <code>covers.json</code>. No Discord Application ID needs to be entered.</div>
+          <div class="help">Discord shows the Localify listening activity with the song title, artists, live timer, and artwork. Album names are used only to choose the cover — the album name is not shown in the Discord status. For your Ye-focused library, put covers in <code>covers/</code> and optionally map aliases in <code>covers.json</code>. No Discord Application ID needs to be entered.</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Connector setup</div>
