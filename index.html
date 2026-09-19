@@ -450,6 +450,13 @@ main{min-width:0;min-height:0}
   .playerCenter{max-width:50vw}
   .ctrl{width:30px;height:30px}.ctrl.big{width:36px;height:36px}
 }
+
+/* Library tools desktop alignment fix */
+@media (min-width:1181px){
+  .sideBottom .sideAction{justify-content:flex-start !important;text-align:left !important;}
+  .sideBottom .sideAction > span:first-child{display:inline-flex;align-items:center;justify-content:flex-start;flex:none;}
+  .sideBottom .sideAction > span:last-child{display:inline-block;text-align:left;margin-left:0;}
+}
 </style>
 </head>
 <body>
