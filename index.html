@@ -169,6 +169,12 @@
     .modalSectionTitle{font-weight:900;margin-bottom:10px}
     .help{color:#7d8793;font-size:11px;line-height:1.45}
     .dangerText{color:#ff9aa7}
+    .artistPicker{display:grid;gap:6px;max-height:190px;overflow:auto;padding:8px;background:#0c0f13;border:1px solid #2a3038;border-radius:12px}
+    .artistChoice{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:9px;color:#dfe3e8;cursor:pointer}
+    .artistChoice:hover{background:#171c22}
+    .artistChoice input{width:17px;height:17px;accent-color:var(--accent);flex:none}
+    .artistChoiceName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .artistPickerEmpty{padding:9px;color:#7d8793;font-size:12px}
     @media (max-width:700px){.profileHero{grid-template-columns:110px 1fr}.profileArt{width:110px;height:110px}.collectionArt{width:110px;height:110px;font-size:48px}.creditsGrid{grid-template-columns:1fr}}
     table{width:100%;border-collapse:collapse}
     thead th{text-align:left;color:#707987;text-transform:uppercase;font-size:10px;letter-spacing:.09em;padding:12px 14px;border-bottom:1px solid #1e232a}
@@ -553,7 +559,7 @@ main{min-width:0;min-height:0}
   const audio = $("#audio");
 
   const state = {
-    version: 10, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
+    version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"}, discordPresence:true },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
@@ -575,9 +581,25 @@ main{min-width:0;min-height:0}
   function artistById(id){return state.artists.find(a=>a.id===id)}
   function albumById(id){return state.albums.find(a=>a.id===id)}
   function playlistById(id){return state.playlists.find(p=>p.id===id)}
-  function artistName(t){return artistById(t.artistId)?.name||t.artist||t.albumArtist||"Unknown Artist"}
+  function idsOf(obj,key="artistIds",legacyKey="artistId"){
+    const arr=Array.isArray(obj?.[key])?obj[key].filter(Boolean):[];
+    if(arr.length)return [...new Set(arr)];
+    return obj?.[legacyKey]?[obj[legacyKey]]:[];
+  }
+  function namesOfIds(ids){
+    return [...new Set((ids||[]).map(id=>artistById(id)?.name).filter(Boolean))];
+  }
+  function artistIdsForTrack(t){return idsOf(t,"artistIds","artistId")}
+  function artistIdsForAlbum(a){return idsOf(a,"artistIds","artistId")}
+  function artistNamesForTrack(t){const n=namesOfIds(artistIdsForTrack(t));return n.length?n:(t.artist?[String(t.artist)]:t.albumArtist?[String(t.albumArtist)]:["Unknown Artist"])}
+  function artistNamesForAlbum(a){const n=namesOfIds(artistIdsForAlbum(a));return n.length?n:["Unknown Artist"]}
+  function artistName(t){return artistNamesForTrack(t).join(", ")||"Unknown Artist"}
   function albumName(t){return albumById(t.albumId)?.title||t.album||"Unknown Album"}
-  function albumArtistName(t){return artistById(t.albumArtistId)?.name||t.albumArtist||artistName(t)}
+  function albumArtistName(t){const ids=idsOf(t,"albumArtistIds","albumArtistId");const n=namesOfIds(ids);return (n.length?n:artistNamesForTrack(t)).join(", ")||"Unknown Artist"}
+  function firstArtistId(obj){return idsOf(obj,"artistIds","artistId")[0]||null}
+  function applyArtistIds(obj,ids){const clean=[...new Set((ids||[]).filter(Boolean))];obj.artistIds=clean;obj.artistId=clean[0]||null;return clean}
+  function applyAlbumArtistIds(t,ids){const clean=[...new Set((ids||[]).filter(Boolean))];t.albumArtistIds=clean;t.albumArtistId=clean[0]||null;return clean}
+
   function cloneMeta(){
     const meta=JSON.parse(JSON.stringify({...state,tracks:state.tracks.map(t=>{const x={...t};delete x.blob;delete x._blobDirty;return x})}));
     return meta;
@@ -626,7 +648,7 @@ main{min-width:0;min-height:0}
 
   function fallbackArt(text="music"){const map={artist:"artist",album:"album",playlist:"playlist",queue:"queue",liked:"heart",music:"music"};return `<div class="nowFallback ${text==="artist"?"artistFallback":""}">${uiIcon(map[text]||"music")}</div>`}
   function collectionArt(kind){if(kind==="liked")return `<div class="collectionArt likedArt">${uiIcon("heart")}</div>`;return `<div class="collectionArt">${kind==="queue"?uiIcon("queue"):uiIcon("music")}</div>`}
-  function coverHtml(t,cls=""){const cover=t?.cover||albumById(t?.albumId)?.cover||artistById(t?.artistId)?.image;return cover?`<img class="${cls}" src="${cover}" alt="">`:`<div class="${cls} fallback">${uiIcon("music")}</div>`}
+  function coverHtml(t,cls=""){const artistCover=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);const cover=t?.cover||albumById(t?.albumId)?.cover||artistCover;return cover?`<img class="${cls}" src="${cover}" alt="">`:`<div class="${cls} fallback">${uiIcon("music")}</div>`}
   function artBox(t,cls="art"){return `<div class="${cls}">${coverHtml(t)}</div>`}
   function getUrl(t){if(!t?.blob)return "";if(!objectUrls.has(t.id))objectUrls.set(t.id,URL.createObjectURL(t.blob));return objectUrls.get(t.id)}
   async function ensureTrackBlob(t){
@@ -832,7 +854,6 @@ main{min-width:0;min-height:0}
       try{const raw=localStorage.getItem(META_KEY);if(raw)meta=JSON.parse(raw)}catch(e){console.warn("Localify metadata fallback restore failed",e)}
     }
     if(!meta)return false;
-    // Normalize the current single-artist schema only.
     Object.assign(state,meta);
     state.tracks=Array.isArray(state.tracks)?state.tracks:[];
     state.albums=Array.isArray(state.albums)?state.albums:[];
@@ -842,14 +863,22 @@ main{min-width:0;min-height:0}
     state.recent=Array.isArray(state.recent)?state.recent:[];
     state.queue=Array.isArray(state.queue)?state.queue:[];
     state.selected=[];
-    // Do NOT restore every audio blob at startup. Large libraries became extremely
-    // slow because the old code read every song from IndexedDB before rendering.
-    // Audio is loaded lazily only when a song is played.
+    // Migrate older single-artist libraries to the multi-artist schema.
+    for(const a of state.albums){
+      const ids=idsOf(a,"artistIds","artistId");
+      a.artistIds=ids; a.artistId=ids[0]||null;
+    }
     for(const t of state.tracks){
-      if(Array.isArray(t.artistIds)){t.artistId=t.artistIds[0]||t.artistId;delete t.artistIds}
+      const ids=idsOf(t,"artistIds","artistId");
+      t.artistIds=ids; t.artistId=ids[0]||null;
+      const aids=idsOf(t,"albumArtistIds","albumArtistId");
+      t.albumArtistIds=aids; t.albumArtistId=aids[0]||null;
+      t.artist=artistNamesForTrack(t).join(", ");
+      t.albumArtist=albumArtistName(t);
       t.blob=null;
       t._blobDirty=false;
     }
+    state.version=11;
     return true;
   }
 
@@ -867,16 +896,16 @@ main{min-width:0;min-height:0}
   function getOrCreateAlbum(title, artist, cover=null){
     const n=(title||"Unknown Album").trim() || "Unknown Album";
     const artistId=artist?.id||getOrCreateArtist(artist?.name||"Unknown Artist").id;
-    let a=state.albums.find(x=>x.title.toLowerCase()===n.toLowerCase()&&x.artistId===artistId);
-    if(!a){a={id:uid(),title:n,artistId,cover:cover||null,year:"",genre:"",label:"",description:"",credits:{producer:[],songwriter:[],composer:[],publisher:[],label:[],copyright:[]}};state.albums.push(a)}
+    let a=state.albums.find(x=>x.title.toLowerCase()===n.toLowerCase()&&firstArtistId(x)===artistId);
+    if(!a){a={id:uid(),title:n,artistIds:[artistId],artistId,cover:cover||null,year:"",genre:"",label:"",description:"",credits:{producer:[],songwriter:[],composer:[],publisher:[],label:[],copyright:[]}};state.albums.push(a)}
     else if(cover&&!a.cover)a.cover=cover;
     return a;
   }
   function getOrCreateFolderAlbum(title, cover=null){
     const n=(title||"Unknown Album").trim() || "Unknown Album";
     // Folder imports are intentionally unassigned: do not create an "Unknown Artist" card.
-    let a=state.albums.find(x=>!x.artistId&&x.title.toLowerCase()===n.toLowerCase());
-    if(!a){a={id:uid(),title:n,artistId:null,cover:cover||null,year:"",genre:"",label:"",description:"",credits:{producer:[],songwriter:[],composer:[],publisher:[],label:[],copyright:[]}};state.albums.push(a)}
+    let a=state.albums.find(x=>artistIdsForAlbum(x).length===0&&x.title.toLowerCase()===n.toLowerCase());
+    if(!a){a={id:uid(),title:n,artistIds:[],artistId:null,cover:cover||null,year:"",genre:"",label:"",description:"",credits:{producer:[],songwriter:[],composer:[],publisher:[],label:[],copyright:[]}};state.albums.push(a)}
     else if(cover&&!a.cover)a.cover=cover;
     return a;
   }
@@ -894,16 +923,21 @@ main{min-width:0;min-height:0}
     };
     for(const t of state.tracks){
       if(!t.id)t.id=uid();
-      const a=t.artistId?artistById(t.artistId):ensureA(t.artist||t.albumArtist);if(!a)continue;
-      if(!t.artistId)t.artistId=a.id;if(!t.artist)t.artist=a.name;
-      const aa=t.albumArtistId?artistById(t.albumArtistId):ensureA(t.albumArtist||a.name);if(!aa)continue;
-      if(!t.albumArtistId)t.albumArtistId=aa.id;if(!t.albumArtist)t.albumArtist=aa.name;
+      const ids=idsOf(t,"artistIds","artistId");
+      let a=ids.length?artistById(ids[0]):ensureA(t.artist||t.albumArtist);if(!a)continue;
+      if(!ids.length)ids.push(a.id);
+      t.artistIds=[...new Set(ids)];t.artistId=t.artistIds[0]||null;t.artist=namesOfIds(t.artistIds).join(", ")||a.name;
+      const albumArtistIds=idsOf(t,"albumArtistIds","albumArtistId");
+      const aaId=albumArtistIds[0]||a.id;
+      const aa=artistById(aaId)||a;
+      t.albumArtistIds=albumArtistIds.length?albumArtistIds:[aa.id];t.albumArtistId=t.albumArtistIds[0]||aa.id;t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||aa.name;
       const key=`${(t.album||"Unknown Album").toLowerCase()}|||${aa.id}`;
       let al=t.albumId?albumById(t.albumId):albumMap.get(key);
-      if(!al){al={id:uid(),title:t.album||"Unknown Album",artistId:aa.id,cover:t.cover||null,year:t.year||"",genre:t.genre||"",label:"",description:"",credits:creditsOf(t)};state.albums.push(al);albumMap.set(key,al)}
+      if(!al){al={id:uid(),title:t.album||"Unknown Album",artistIds:[...t.albumArtistIds],artistId:aa.id,cover:t.cover||null,year:t.year||"",genre:t.genre||"",label:"",description:"",credits:creditsOf(t)};state.albums.push(al);albumMap.set(key,al)}
+      al.artistIds=artistIdsForAlbum(al);al.artistId=al.artistIds[0]||null;
       t.albumId=al.id;t.album=al.title;if(!t.cover&&al.cover)t.cover=al.cover;t.credits=normalizeCredits(t.credits||al.credits||{});if(t.explicit==null)t.explicit=false;if(!t.addedAt)t.addedAt=Date.now();if(!t.lyrics)t.lyrics="";
     }
-    state.version=7;
+    state.version=11;
   }
 
   async function openPreviousV6(){
@@ -1043,7 +1077,7 @@ main{min-width:0;min-height:0}
   function renderSearch(){
     const q=state.search.trim().toLowerCase();
     const ft=state.tracks.filter(t=>!q||[t.title,artistName(t),albumName(t),t.genre].some(x=>String(x||"").toLowerCase().includes(q)));
-    const fa=state.albums.filter(a=>!q||[a.title,artistById(a.artistId)?.name,a.genre].some(x=>String(x||"").toLowerCase().includes(q)));
+    const fa=state.albums.filter(a=>!q||[a.title,artistNamesForAlbum(a).join(", "),a.genre].some(x=>String(x||"").toLowerCase().includes(q)));
     const fr=state.artists.filter(a=>!q||[a.name,a.bio,...(a.genres||[])].join(" ").toLowerCase().includes(q));
     $("#content").innerHTML=`<div class="sectionHead"><h2 class="viewTitle">Search</h2><span>${q?`${ft.length} songs • ${fa.length} albums • ${fr.length} artists`:`Search your local catalog`}</span></div>
       <div class="toolbar">${[["all","All"],["songs","Songs"],["albums","Albums"],["artists","Artists"]].map(([k,l])=>`<button class="${state.searchFilter===k?"active":""}" data-search-filter="${k}">${l}</button>`).join("")}</div>${searchResultsHtml(ft,fa,fr)}`;
@@ -1105,8 +1139,8 @@ main{min-width:0;min-height:0}
   }
 
   function trackCard(t){return `<div class="card track-card" data-id="${t.id}" style="cursor:pointer">${artBox(t)}<button class="playOverlay play-track" data-id="${t.id}">${uiIcon("play")}</button><div class="cardTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="cardSub">${esc(artistName(t))}</div></div>`}
-  function albumCard(a){return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${a.cover?`<div class="art"><img src="${a.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistById(a.artistId)?.name||"Unknown Artist")} • ${state.tracks.filter(t=>t.albumId===a.id).length} songs</div></div>`}
-  function artistCard(a){return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${state.tracks.filter(t=>t.artistId===a.id).length} songs</div></div>`}
+  function albumCard(a){return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${a.cover?`<div class="art"><img src="${a.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistNamesForAlbum(a).join(", ")||"Unknown Artist")} • ${state.tracks.filter(t=>t.albumId===a.id).length} songs</div></div>`}
+  function artistCard(a){return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${state.tracks.filter(t=>artistIdsForTrack(t).includes(a.id)).length} songs</div></div>`}
   function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img src="${p.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("playlist")}</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs</div></div>`}
 
   function trackTable(tracks){
@@ -1160,15 +1194,15 @@ main{min-width:0;min-height:0}
   function showAlbum(id,keepDetail=false){
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(state.tracks.filter(t=>t.albumId===id));
-    const artist=artistById(a.artistId);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${a.cover?`<img src="${a.cover}" alt="">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artist?.name||"Unknown Artist")} • ${tracks.length} songs${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary" id="albumShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="albumAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="albumEdit">${uiIcon("edit")} Edit album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    const artistNames=artistNamesForAlbum(a);
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${a.cover?`<img src="${a.cover}" alt="">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary" id="albumShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="albumAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="albumEdit">${uiIcon("edit")} Edit album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
     $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumShuffle").onclick=()=>playQueue(shuffleArr(tracks),0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
   }
 
   function showArtist(id,keepDetail=false){
-    const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=state.tracks.filter(t=>t.artistId===id); const albums=state.albums.filter(x=>x.artistId===id);
+    const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=state.tracks.filter(t=>artistIdsForTrack(t).includes(id)); const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(id));
     $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary" id="artistEdit">${uiIcon("edit")} Edit artist</button><button class="secondary" id="artistAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
-    $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistId:id});bindTrackTable();$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id));
+    $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistIds:[id]});bindTrackTable();$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id));
   }
 
   function showPlaylist(id,keepDetail=false){
@@ -1220,7 +1254,7 @@ main{min-width:0;min-height:0}
   }
 
   function discordCoverUrl(t){
-    const raw=[t?.cover,albumById(t?.albumId)?.cover,artistById(t?.artistId)?.image];
+    const raw=[t?.cover,albumById(t?.albumId)?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     for(const value of raw){
       if(typeof value!=="string"||!value.trim())continue;
       try{
@@ -1503,7 +1537,7 @@ main{min-width:0;min-height:0}
     const arr=files.filter(isAudioFile);
     if(!arr.length){toast("No audio files found.");return}
     const album=context.albumId?albumById(context.albumId):null;
-    const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(album.artistId):null;
+    const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
     const folderAlbums=new Map();
     const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
@@ -1512,7 +1546,7 @@ main{min-width:0;min-height:0}
       const sig=`${f.name}|${f.size}|${f.lastModified}`;
       if(existing.has(sig))continue;
       const folderMode=!!context.folderImport;
-      const unassignedAlbum=!!album&&!album.artistId;
+      const unassignedAlbum=!!album&&!artistIdsForAlbum(album).length;
       const artist=(folderMode||unassignedAlbum)?null:(forcedArtist||getOrCreateArtist("Unknown Artist"));
       let folderCover=null, folderKey="", folderTitle="Unknown Album";
       if(context.folderImageMap||folderMode){
@@ -1529,13 +1563,14 @@ main{min-width:0;min-height:0}
         al=album||getOrCreateAlbum("Unknown Album",artist,folderCover);
       }
       if(folderCover&&!al.cover)al.cover=folderCover;
-      const fallbackArtist=artist?.name||artistById(al.artistId)?.name||"Unknown Artist";
-      const fallbackArtistId=artist?.id||al.artistId||null;
+      const albumArtistIds=artistIdsForAlbum(al);
+      const fallbackArtistIds=artist? [artist.id] : albumArtistIds;
+      const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||"Unknown Artist";
       const t={
         id:uid(),title:f.name.replace(/\.[^.]+$/,"") ,
-        artist:fallbackArtist,artistId:fallbackArtistId,
+        artist:fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
         album:al.title,albumId:al.id,
-        albumArtist:artistById(al.artistId)?.name||artist?.name||"Unknown Artist",albumArtistId:al.artistId||artist?.id||null,
+        albumArtist:namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||"Unknown Artist",albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
         genre:al.genre||"",year:al.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
         explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
         blob:f,_blobDirty:true,cover:al.cover||artist?.image||folderCover||null,
@@ -1628,7 +1663,14 @@ main{min-width:0;min-height:0}
     $("#coverPicker").click();
   }
   function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.name)}</option>`).join("")}
-  function albumOptions(selected=""){return albumList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.title)} — ${esc(artistById(a.artistId)?.name||"Unknown Artist")}</option>`).join("")}
+  function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
+    const selected=new Set(selectedIds||[]);
+    const list=artistList();
+    return `<div class="artistPicker" id="${id}">${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(a.name)}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}</div>`;
+  }
+  function readArtistPicker(id){return $$(`#${id} input[type="checkbox"]:checked`).map(x=>x.value)}
+  function syncArtistText(obj,ids){const names=namesOfIds(ids);obj.artist=names.join(", ")||"Unknown Artist";obj.artistId=ids[0]||null;obj.artistIds=[...ids];}
+  function albumOptions(selected=""){return albumList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.title)} — ${esc(artistNamesForAlbum(a).join(", ")||"Unknown Artist")}</option>`).join("")}
   function yesNoOptions(value){return `<option value="keep" ${value==="keep"?"selected":""}>Keep existing</option><option value="yes" ${value==="yes"?"selected":""}>Yes</option><option value="no" ${value==="no"?"selected":""}>No</option>`}
 
   function editTrack(id){
@@ -1636,32 +1678,33 @@ main{min-width:0;min-height:0}
     bindModalDirty();bindTrackEditorEvents(m,t.id);
   }
   function trackFormHtml(t){
-    const currentAlbum=albumById(t.albumId);const currentArtist=artistById(t.artistId);const cover=t.cover||currentAlbum?.cover||currentArtist?.image;
+    const currentAlbum=albumById(t.albumId);const currentArtist=artistById(firstArtistId(t));const cover=t.cover||currentAlbum?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
     return `<div class="modalHead"><h2>Edit song</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="coverEdit">${cover?`<img id="editCover" src="${cover}" alt="">`:`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("music")}</div>`}<div><button class="secondary" id="songCoverBtn">Choose artwork</button><div class="help" style="margin-top:6px">Artwork can differ from the album artwork.</div></div></div>
       <div class="formGrid" style="margin-top:16px">
         ${field("Title","songTitle",t.title)}
-        <div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="songArtist"><option value="">None</option>${artistOptions(t.artistId)}</select><button class="secondary small" id="newArtistInline">${uiIcon("plus")}</button></div></div>
+        <div class="field full"><label>Artists</label><div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">${artistPickerHtml("songArtists",artistIdsForTrack(t))}</div><button class="secondary small" id="newArtistInline" title="Create artist">${uiIcon("plus")}</button></div><div class="help" style="margin-top:6px">Select multiple artists. Example: Ye, Ty Dolla $ign.</div></div>
         <div class="field"><label>Album</label><div style="display:flex;gap:6px"><select id="songAlbum"><option value="">None</option>${albumOptions(t.albumId)}</select><button class="secondary small" id="newAlbumInline">${uiIcon("plus")}</button></div></div>
-        <div class="field"><label>Album artist</label><select id="songAlbumArtist"><option value="">None</option>${artistOptions(t.albumArtistId||t.artistId)}</select></div>
+
         ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
         <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
-        <div class="field full"><label>Lyrics</label><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Line breaks are preserved when pasting. Credits can contain multiple names, but each song still has one selected artist.</div></div>
+        <div class="field full"><label>Lyrics</label><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Line breaks are preserved when pasting. Credits and the song artist list can contain multiple names.</div></div>
         <div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","credProducer",creditList(t.credits,"producer"))}${field("Songwriter(s)","credSongwriter",creditList(t.credits,"songwriter"))}${field("Composer(s)","credComposer",creditList(t.credits,"composer"))}${field("Publisher(s)","credPublisher",creditList(t.credits,"publisher"))}</div></div>
       </div><div class="modalFoot"><button class="secondary" id="cancelEdit">Cancel</button><button class="primary" id="saveEdit">Save changes</button></div>`;
   }
   function bindTrackEditorEvents(m,id){
-    const t=trackById(id);let newCover=t.cover||albumById(t.albumId)?.cover||artistById(t.artistId)?.image;
+    const t=trackById(id);let newCover=t.cover||albumById(t.albumId)?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
     $("#closeModal").onclick=()=>closeModal();$("#cancelEdit").onclick=()=>closeModal();
     $("#songCoverBtn").onclick=()=>imagePicker(newCover,d=>{newCover=d;const el=$("#editCover");if(d)el.outerHTML=`<img id="editCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`;markDirty()});
     $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
     $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
-    $("#newAlbumInline").onclick=()=>{const ar=artistById($("#songArtist").value);if(!ar){toast("Choose or create an artist first.");return}editAlbum(null,{artistId:ar.id,returnTo:{type:"track",id}})};
-    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const artist=artistById(a.artistId);if(artist){$("#songArtist").value=artist.id;$("#songAlbumArtist").value=a.artistId}const alCover=a.cover||artist?.image;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);$$(`#songArtists input[type="checkbox"]`).forEach(x=>x.checked=ids.includes(x.value));const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
     $("#saveEdit").onclick=async()=>{
-      const artist=artistById($("#songArtist").value),album=albumById($("#songAlbum").value),albumArtist=artistById($("#songAlbumArtist").value);
-      t.title=$("#songTitle").value.trim()||t.title;t.artistId=artist?.id||null;t.artist=artist?.name||"Unknown Artist";t.albumId=album?.id||null;t.album=album?.title||"Unknown Album";t.albumArtistId=albumArtist?.id||artist?.id||null;t.albumArtist=albumArtist?.name||artist?.name||"Unknown Artist";t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
-      if(album){if(!album.cover&&newCover)album.cover=newCover;if(!album.artistId&&artist)album.artistId=artist.id}
+      const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
+      if(!artistIds.length){toast("Choose at least one artist.");return}
+      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||"Unknown Artist";t.albumId=album?.id||null;t.album=album?.title||"Unknown Album";applyAlbumArtistIds(t,album?artistIdsForAlbum(album):artistIds);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||"Unknown Artist";t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
+      if(album){if(!album.cover&&newCover)album.cover=newCover;}
       await save();closeModal(true);renderCurrentViewWithoutScroll();toast("Song updated.");
     };
   }
@@ -1670,10 +1713,13 @@ main{min-width:0;min-height:0}
 
   async function bulkEdit(tracks){
     if(!tracks.length)return;
-    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label><input id="applyArtist" type="checkbox"> Set artist</label><select id="bulkArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field full"><label><input id="applyAlbum" type="checkbox"> Set album</label><select id="bulkAlbum"><option value="">Choose album</option>${albumOptions()}</select></div><div class="field"><label><input id="applyAlbumArtist" type="checkbox"> Set album artist</label><select id="bulkAlbumArtist"><option value="">Choose artist</option>${artistOptions()}</select></div><div class="field"><label><input id="applyGenre" type="checkbox"> Set genre</label><input id="bulkGenre"></div><div class="field"><label><input id="applyYear" type="checkbox"> Set year</label><input id="bulkYear"></div><div class="field"><label><input id="applyExplicit" type="checkbox"> Explicit</label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label><input id="applyCover" type="checkbox"> Apply same artwork</label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
+    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label><input id="applyArtist" type="checkbox"> Set artists</label>${artistPickerHtml("bulkArtists",[])} </div><div class="field full"><label><input id="applyAlbum" type="checkbox"> Set album</label><select id="bulkAlbum"><option value="">Choose album</option>${albumOptions()}</select></div><div class="field full"><label><input id="applyAlbumArtist" type="checkbox"> Set album artists</label>${artistPickerHtml("bulkAlbumArtists",[])}</div><div class="field"><label><input id="applyGenre" type="checkbox"> Set genre</label><input id="bulkGenre"></div><div class="field"><label><input id="applyYear" type="checkbox"> Set year</label><input id="bulkYear"></div><div class="field"><label><input id="applyExplicit" type="checkbox"> Explicit</label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label><input id="applyCover" type="checkbox"> Apply same artwork</label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
     bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
     $("#bulkSave").onclick=async()=>{
-      for(const t of tracks){const artist=$("#applyArtist").checked?artistById($("#bulkArtist").value):null;const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;const albumArtist=$("#applyAlbumArtist").checked?artistById($("#bulkAlbumArtist").value):null;if(artist){t.artistId=artist.id;t.artist=artist.name}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(albumArtist){t.albumArtistId=albumArtist.id;t.albumArtist=albumArtist.name}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
+      const bulkArtistIds=$("#applyArtist").checked?readArtistPicker("bulkArtists"):null;const bulkAlbumArtistIds=$("#applyAlbumArtist").checked?readArtistPicker("bulkAlbumArtists"):null;
+      if($("#applyArtist").checked&&!bulkArtistIds.length){toast("Choose at least one artist.");return}
+      if($("#applyAlbumArtist").checked&&!bulkAlbumArtistIds.length){toast("Choose at least one album artist.");return}
+      for(const t of tracks){const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||"Unknown Artist"}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||"Unknown Artist"}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
       await save();state.selected=[];closeModal(true);renderCurrentViewWithoutScroll();toast("Bulk changes applied.");
     };
   }
@@ -1686,19 +1732,19 @@ main{min-width:0;min-height:0}
   }
 
   function albumModalHtml(a,opts={}){
-    const selectedArtist=a?.artistId||opts.artistId||""; const cover=a?.cover;
-    return `<div class="modalHead"><h2>${a?"Edit album":"Create album"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="modalSection"><div class="coverEdit">${cover?`<img id="entityCover" src="${cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button><div class="help">New songs inherit this album's artwork. Changing the album artist also updates every song's artist.</div></div></div></div><div class="formGrid"><div class="field full"><label>Album title</label><input id="entityTitle" value="${esc(a?.title||"")}" placeholder="Album name"></div><div class="field"><label>Artist</label><div style="display:flex;gap:6px"><select id="entityArtist"><option value="">Choose artist</option>${artistOptions(selectedArtist)}</select><button class="secondary small" id="entityNewArtist">${uiIcon("plus")}</button></div></div>${field("Year","entityYear",a?.year||"")}${field("Genre","entityGenre",a?.genre||"")}${field("Label","entityLabel",a?.label||"")}<div class="field full"><label>Description</label><textarea id="entityDescription">${esc(a?.description||"")}</textarea></div><div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","entityProducer",creditList(a?.credits,"producer"))}${field("Songwriter(s)","entitySongwriter",creditList(a?.credits,"songwriter"))}${field("Composer(s)","entityComposer",creditList(a?.credits,"composer"))}${field("Publisher(s)","entityPublisher",creditList(a?.credits,"publisher"))}${field("Copyright","entityCopyright",creditList(a?.credits,"copyright"))}</div></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteAlbum">Delete album</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create album"}</button></div>`;
+    const selectedArtists=artistIdsForAlbum(a).length?artistIdsForAlbum(a):(opts.artistIds||((opts.artistId)?[opts.artistId]:[])); const cover=a?.cover;
+    return `<div class="modalHead"><h2>${a?"Edit album":"Create album"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="modalSection"><div class="coverEdit">${cover?`<img id="entityCover" src="${cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button><div class="help">New songs inherit this album's artwork. Changing the album artists updates every song in this album.</div></div></div></div><div class="formGrid"><div class="field full"><label>Album title</label><input id="entityTitle" value="${esc(a?.title||"")}" placeholder="Album name"></div><div class="field full"><label>Artists</label><div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">${artistPickerHtml("entityArtists",selectedArtists)}</div><button class="secondary small" id="entityNewArtist" title="Create artist">${uiIcon("plus")}</button></div><div class="help" style="margin-top:6px">Select multiple artists. Example: YS, Kanye West, Ty Dolla $ign.</div></div>${field("Year","entityYear",a?.year||"")}${field("Genre","entityGenre",a?.genre||"")}${field("Label","entityLabel",a?.label||"")}<div class="field full"><label>Description</label><textarea id="entityDescription">${esc(a?.description||"")}</textarea></div><div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","entityProducer",creditList(a?.credits,"producer"))}${field("Songwriter(s)","entitySongwriter",creditList(a?.credits,"songwriter"))}${field("Composer(s)","entityComposer",creditList(a?.credits,"composer"))}${field("Publisher(s)","entityPublisher",creditList(a?.credits,"publisher"))}${field("Copyright","entityCopyright",creditList(a?.credits,"copyright"))}</div></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteAlbum">Delete album</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create album"}</button></div>`;
   }
   function editAlbum(id,opts={}){
     const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
-    $("#saveEntity").onclick=async()=>{const artist=artistById($("#entityArtist").value);if(!$("#entityTitle").value.trim()||!artist){toast("Choose an album title and artist.");return}let target=a;if(!target){target={id:uid(),title:"",artistId:artist.id,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}target.title=$("#entityTitle").value.trim();target.artistId=artist.id;target.cover=cover;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;t.artistId=target.artistId;t.artist=artist.name;t.albumArtistId=target.artistId;t.albumArtist=artist.name;if(cover)t.cover=cover;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);toast(a?"Album updated.":"Album created.")};
+    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()||!artistIds.length){toast("Choose an album title and at least one artist.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);target.cover=cover;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||"Unknown Artist";applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||"Unknown Artist";if(cover)t.cover=cover;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);toast(a?"Album updated.":"Album created.")};
     if(a)$("#deleteAlbum").onclick=async()=>{if(!confirm(`Delete album "${a.title}"? Songs are kept in your library.`))return;state.albums=state.albums.filter(x=>x.id!==a.id);for(const t of state.tracks){if(t.albumId===a.id){t.albumId=null;t.album="Unknown Album";t.albumArtistId=null;t.albumArtist="Unknown Artist"}}await save(true);closeModal(true);state.detail=null;setView("albums");toast("Album deleted.")}
   }
 
   function artistModalHtml(a){return `<div class="modalHead"><h2>${a?"Edit artist":"Create artist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${a?.image?`<img id="entityCover" src="${a.image}" alt="" style="border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose profile picture</button></div></div><div class="formGrid" style="margin-top:16px">${field("Artist name","entityTitle",a?.name||"")}${field("Label","entityLabel",a?.label||"")}${field("Founded / active year","entityYear",a?.year||"")}${field("Website","entityWebsite",a?.website||"")}<div class="field full"><label>Genres</label><input id="entityGenres" value="${esc((a?.genres||[]).join(", "))}" placeholder="Pop, Hip-Hop"></div><div class="field full"><label>Bio</label><textarea id="entityBio">${esc(a?.bio||"")}</textarea></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteArtist">Delete artist</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create artist"}</button></div>`}
   function editArtist(id,opts={}){
     const a=id?artistById(id):null;let img=a?.image||null;setModal(artistModalHtml(a));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(img,d=>{img=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`;markDirty()});
-    $("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim();if(!name){toast("Give the artist a name.");return}let target=a;if(!target){target={id:uid(),name:"",image:null,bio:"",genres:[],website:"",label:"",year:""};state.artists.push(target)}target.name=name;target.image=img;target.label=$("#entityLabel").value;target.year=$("#entityYear").value;target.website=$("#entityWebsite").value;target.genres=$("#entityGenres").value.split(",").map(x=>x.trim()).filter(Boolean);target.bio=$("#entityBio").value;for(const t of state.tracks){if(t.artistId===target.id)t.artist=target.name;if(t.albumArtistId===target.id)t.albumArtist=target.name}await save();closeModal(true);if(opts.returnTo?.type==="track")editTrack(opts.returnTo.id);else if(opts.returnTo?.type==="album")editAlbum(opts.returnTo.id,{artistId:target.id});else showArtist(target.id);toast(a?"Artist updated.":`Artist ${name} created.`)};
+    $("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim();if(!name){toast("Give the artist a name.");return}let target=a;if(!target){target={id:uid(),name:"",image:null,bio:"",genres:[],website:"",label:"",year:""};state.artists.push(target)}target.name=name;target.image=img;target.label=$("#entityLabel").value;target.year=$("#entityYear").value;target.website=$("#entityWebsite").value;target.genres=$("#entityGenres").value.split(",").map(x=>x.trim()).filter(Boolean);target.bio=$("#entityBio").value;for(const t of state.tracks){if(t.artistId===target.id)t.artist=target.name;if(t.albumArtistId===target.id)t.albumArtist=target.name}await save();closeModal(true);if(opts.returnTo?.type==="track")editTrack(opts.returnTo.id);else if(opts.returnTo?.type==="album")editAlbum(opts.returnTo.id,{artistIds:[target.id]});else showArtist(target.id);toast(a?"Artist updated.":`Artist ${name} created.`)};
     if(a)$("#deleteArtist").onclick=async()=>{if(confirm(`Delete artist "${a.name}"? Songs stay in your library.`)){state.artists=state.artists.filter(x=>x.id!==a.id);await save();closeModal(true);setView("artists")}}
   }
 
