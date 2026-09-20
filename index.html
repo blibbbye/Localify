@@ -1276,14 +1276,12 @@ main{min-width:0;min-height:0}
   const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
-  const LOCALIFY_COVER_EXCLUSIONS=new Set(["vultures 2","vultures ii","vultures 2 v1","vultures 2 version 1"]);
+  const LOCALIFY_COVER_EXCLUSIONS=new Set([]);
   let localifyCoverMap=null;
   let localifyCoverMapPromise=null;
 
-  // Built-in Ye cover aliases. covers.json can extend these, but a broken
-  // covers.json entry is NEVER allowed to disable a working built-in cover.
-  // VULTURES 2 is intentionally omitted because you asked it to use its
-  // normal/local artwork instead of the GitHub cover registry.
+  // Built-in cover aliases. covers.json can extend these, and exact
+  // repository mappings are preferred by the live cover registry.
   const LOCALIFY_BUILTIN_COVER_MAP={
     "808s":"808s.png","808s & Heartbreak":"808s.png","808s and Heartbreak":"808s.png","808s and heartbreak":"808s.png",
     "BBP":"BBPB.jpeg","BBPB":"BBPB.jpeg","BBP B":"BBPB.jpeg","BBP V1":"BBPB.jpeg","BBP V2":"BBPB.jpeg","Bad Bitch Playbook":"BBPB.jpeg","Bad Bitch Playbook V1":"BBPB.jpeg","Bad Bitch Playbook V2":"BBPB.jpeg","Bad Bitch Playbook Version 1":"BBPB.jpeg","Bad Bitch Playbook Version 2":"BBPB.jpeg",
