@@ -1580,9 +1580,6 @@ main{min-width:0;min-height:0}
     if(!cacheKey||/^unknown album$/.test(cacheKey)||isExcludedCoverAlbum(album)){return ""}
     if(discordCoverCache.has(cacheKey))return discordCoverCache.get(cacheKey)||"";
     if(discordCoverRequests.has(cacheKey))return discordCoverRequests.get(cacheKey);
-    // Artwork is fetched from public GitHub URLs, so it does not depend on the
-    // page's origin or on a local development hostname.
-
     const request=(async()=>{
       // 1) The live covers.json registry is authoritative. This lets the
       // repo's real current filenames override stale built-in aliases.
@@ -1765,14 +1762,14 @@ main{min-width:0;min-height:0}
         <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking Localify Desktop Player…</div><div class="discordConnectSub">Localify Desktop Player publishes your current song to Discord and provides a mini player with playback controls.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">Discord shows the Localify listening activity with the song title, artists, live timer, and artwork. Album names are used only to choose the cover — the album name is not shown in the Discord status. For your Ye-focused library, put covers in <code>covers/</code> and optionally map aliases in <code>covers.json</code>. No Discord Application ID needs to be entered.</div>
+          <div class="help">OOoo shii</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
-        <div class="modalSection"><div class="modalSectionTitle">Localify Desktop Player setup</div>
-          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download Localify Desktop Player</strong><p>Download and run the standalone Windows mini-player EXE. No Node.js, terminal or setup files are needed.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord Desktop</strong><p>Make sure Discord Desktop is running. Node.js, a terminal and a Discord Application ID are not required.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Keep the mini player running while you use Localify. It listens locally on <code>127.0.0.1:4219</code>.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Play music in Localify</strong><p>The player receives the song, artists, artwork and progress automatically. Its previous, play/pause, next and seek controls control Localify.</p></div></div>
+        <div class="modalSection"><div class="modalSectionTitle">Localify Desktop Player and Discord </div>
+          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download Localify Desktop Player</strong><p>Download and run the exe</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord on Desktop</strong><p>Make sure Discord Desktop is running.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Keep the mini player running while you use Localify.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Play music in Localify</strong><p></p></div></div>
         </div>
         <div class="discordActions"><a class="primary btnIcon" href="https://raw.githubusercontent.com/blibbbye/Localify/main/Localify%20Discord%20Player.exe" download="Localify Discord Player.exe">${uiIcon("download")} Download EXE</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
         <div class="help">The Desktop Player listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
