@@ -36,6 +36,7 @@ jobs:
             "-lgdiplus",
             "-lws2_32",
             "-ldwmapi",
+            "-lole32",
             "-Wl,--gc-sections",
             "-s"
           )
