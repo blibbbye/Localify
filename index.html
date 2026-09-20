@@ -1279,6 +1279,8 @@ main{min-width:0;min-height:0}
   }
 
 
+  // The desktop player uses a simple localhost HTTP bridge. Keeping one
+  // transport avoids the old WebSocket reconnect loop that caused UI flicker.
   let discordSocket=null;
   let discordReconnectTimer=null;
   let discordLastPayloadKey="";
@@ -1652,21 +1654,18 @@ main{min-width:0;min-height:0}
   }
 
   function sendDiscordMessage(payload){
-    if(!discordSocket||discordSocket.readyState!==WebSocket.OPEN)return false;
-    try{discordSocket.send(JSON.stringify(payload));return true}catch{return false}
+    // Legacy WebSocket messages are intentionally no-ops. Presence/control
+    // now travel through the stable localhost HTTP bridge below.
+    return true;
   }
 
-  function connectDiscordBridge(){
+  async function connectDiscordBridge(){
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord off");return}
-    if(discordSocket&&(discordSocket.readyState===WebSocket.OPEN||discordSocket.readyState===WebSocket.CONNECTING))return;
-    clearTimeout(discordReconnectTimer);setDiscordUi("searching","Connecting to connector…");
-    try{
-      const ws=new WebSocket("ws://127.0.0.1:4219/presence");discordSocket=ws;
-      ws.onopen=()=>{setDiscordUi("connected","Connector connected");sendDiscordMessage({kind:"hello",client:"Localify",version:2});const t=trackById(state.currentId);if(t&&!audio.paused)sendDiscordPresence(true)};
-      ws.onmessage=e=>{try{const m=JSON.parse(e.data||"{}");if(m.kind==="status")setDiscordUi(m.ok?"connected":"error",m.message||"Discord connector status")}catch{}};
-      ws.onerror=()=>setDiscordUi("error","Connector not running");
-      ws.onclose=()=>{if(discordSocket===ws)discordSocket=null;if(state.settings.discordPresence!==false){setDiscordUi("searching","Connector disconnected — retrying…");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}};
-    }catch{setDiscordUi("error","Connector not running");discordReconnectTimer=setTimeout(connectDiscordBridge,5000)}
+    clearTimeout(discordReconnectTimer);
+    setDiscordUi("searching","Checking Localify Desktop Player…");
+    await checkDesktopPlayer();
+    const t=trackById(state.currentId);
+    if(t&&!audio.paused)sendDiscordPresence(true);
   }
 
   function sanitizeDiscordText(value,fallback,max=128){
@@ -1770,7 +1769,7 @@ main{min-width:0;min-height:0}
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
         <div class="modalSection"><div class="modalSectionTitle">Localify Desktop Player setup</div>
-          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download Localify Desktop Player</strong><p>Download the Windows mini-player EXE, or use the ZIP package if you want the files together.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download Localify Desktop Player</strong><p>Download and run the standalone Windows mini-player EXE. No Node.js, terminal or setup files are needed.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord Desktop</strong><p>Make sure Discord Desktop is running. Node.js, a terminal and a Discord Application ID are not required.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Keep the mini player running while you use Localify. It listens locally on <code>127.0.0.1:4219</code>.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Play music in Localify</strong><p>The player receives the song, artists, artwork and progress automatically. Its previous, play/pause, next and seek controls control Localify.</p></div></div>
@@ -1780,7 +1779,7 @@ main{min-width:0;min-height:0}
       </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
     $("#discordPresenceToggle").onchange=async e=>{state.settings.discordPresence=!!e.target.checked;await save();if(state.settings.discordPresence===false){clearDiscordPresence();setDiscordUi("disabled","Discord off")}else{connectDiscordBridge();sendDiscordPresence(true)}};
-    $("#discordReconnect").onclick=()=>{if(discordSocket){try{discordSocket.close()}catch{}};connectDiscordBridge()};
+    $("#discordReconnect").onclick=()=>connectDiscordBridge();
     connectDiscordBridge();
   }
 
