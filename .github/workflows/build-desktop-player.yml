@@ -1,0 +1,31 @@
+name: Build Localify Desktop Player
+
+on:
+  push:
+    paths:
+      - "desktop_player/**"
+      - ".github/workflows/build-desktop-player.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          g++ -std=c++17 -Os -DNDEBUG -mwindows -municode -ffunction-sections -fdata-sections desktop_player/LocalifyDesktopPlayer.cpp -o "build/Localify Discord Player.exe" -lwinhttp -lgdiplus -lws2_32 -ldwmapi -Wl,--gc-sections -s
+      - name: Verify size
+        shell: pwsh
+        run: |
+          $f=Get-Item "build/Localify Discord Player.exe"
+          Write-Host "EXE size: $($f.Length) bytes"
+          if($f.Length -ge 7000000){ throw "EXE is too large: $($f.Length) bytes" }
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Localify-Discord-Player
+          path: build/Localify Discord Player.exe
+          if-no-files-found: error
