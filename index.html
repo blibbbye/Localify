@@ -13,13 +13,14 @@
       --accent2:#bae6fd; --danger:#ff5b6e; --shadow:0 18px 60px rgba(0,0,0,.35);
       --radius:18px;
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;scrollbar-width:none;-ms-overflow-style:none}
+    *::-webkit-scrollbar{width:0;height:0;display:none}
     html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     html{width:100%;overflow-x:hidden}
     body{overflow:hidden;width:100%;max-width:100vw;overscroll-behavior-x:none}
     button,input,textarea,select{font:inherit}
     button{border:0;color:inherit;cursor:pointer}
-    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:250px minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:250px minmax(0,1fr) minmax(310px,380px)}
+    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr) minmax(310px,380px)}
     aside{grid-row:1/2;background:#0c0f13;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;min-width:0}
     .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px;font-weight:900;font-size:23px;letter-spacing:-.8px}
     .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px rgba(125,211,252,.24)}
@@ -224,7 +225,7 @@
     .nowArt img{width:100%;height:100%;object-fit:cover}
     .nowText{min-width:0}
     .nowTitle{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#dce2e8;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
+    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px;display:flex;align-items:flex-start;gap:8px;min-width:0}.nowSidebarSongTitle{min-width:0;overflow-wrap:anywhere}.nowExplicit{flex:none;font-size:11px;font-weight:950;line-height:1;padding:4px 6px;border:1px solid #69727d;border-radius:6px;color:#dfe4ea;margin-top:2px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#dce2e8;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
     .playerCenter{display:grid;gap:7px}
     .controls{display:flex;align-items:center;justify-content:center;gap:10px}
     .ctrl{width:34px;height:34px;border-radius:50%;background:transparent;color:#bbc3ce;font-size:15px}
@@ -588,7 +589,7 @@ main{min-width:0;min-height:0}
   const state = {
     version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"}, discordPresence:true },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"}, discordPresence:true, nowSidebarHidden:false },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
     selected:[], detail:null, playlistSort:{}
   };
@@ -1045,7 +1046,7 @@ main{min-width:0;min-height:0}
     await ensureStorageAccess();
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
-    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"},discordPresence:true},state.settings||{});
+    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"},discordPresence:true,nowSidebarHidden:false},state.settings||{});
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat"},state.settings.eq||{});
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
@@ -1784,12 +1785,20 @@ main{min-width:0;min-height:0}
     connectDiscordBridge();
   }
 
-  function setNowSidebar(open){
+  function setNowSidebar(open,remember=true){
     if(innerWidth<=1050)open=false;
     const app=document.querySelector(".app");if(!app)return;
+    if(remember)state.settings.nowSidebarHidden=!open;
     app.classList.toggle("nowPanelOpen",!!open);
-    const btn=$("#nowPanelToggle");if(btn){btn.classList.toggle("liked",!!open);btn.setAttribute("aria-pressed",String(!!open))}
+    const btn=$("#nowPanelToggle");
+    if(btn){
+      btn.classList.toggle("liked",!!open);
+      btn.setAttribute("aria-pressed",String(!!open));
+      btn.title=open?"Hide Now Playing":"Show Now Playing";
+      btn.setAttribute("aria-label",open?"Hide Now Playing panel":"Show Now Playing panel");
+    }
     renderNowSidebar();
+    if(remember)autoSave();
   }
   function renderNowSidebar(){
     const panel=$("#nowSidebar");if(!panel||innerWidth<=1050)return;
@@ -1799,7 +1808,7 @@ main{min-width:0;min-height:0}
     panel.innerHTML='<div class="nowSidebarInner">'+
       '<div class="nowSidebarHead"><div class="nowSidebarTitle">Now Playing</div><button class="circle iconOnly" id="closeNowSidebar" title="Hide panel" aria-label="Hide Now Playing panel">'+uiIcon("close")+'</button></div>'+
       '<div class="nowSidebarCover">'+coverHtml(t)+'</div>'+
-      '<div><div class="nowSidebarSong">'+esc(displayTrackTitle(t,true))+'</div><div class="nowSidebarArtist">'+esc(artists)+'</div></div>'+
+      '<div><div class="nowSidebarSong"><span class="nowSidebarSongTitle">'+esc(displayTrackTitle(t,true))+'</span>'+(t.explicit?'<span class="nowExplicit">[E]</span>':'')+'</div><div class="nowSidebarArtist">'+esc(artists)+'</div></div>'+
       '<div class="nowSidebarMeta">'+
         '<div class="nowSidebarMetaBox"><strong>Album</strong><span>'+esc(album)+'</span></div>'+
         '<div class="nowSidebarMetaBox"><strong>Duration</strong><span>'+esc(fmt(t.duration||audio.duration||0))+'</span></div>'+
@@ -1807,7 +1816,6 @@ main{min-width:0;min-height:0}
         '<div class="nowSidebarMetaBox"><strong>Genre</strong><span>'+esc(t.genre||"None")+'</span></div>'+
         '<div class="nowSidebarMetaBox"><strong>Track</strong><span>'+esc(t.track??"None")+'</span></div>'+
         '<div class="nowSidebarMetaBox"><strong>Disc</strong><span>'+esc(t.disc??"None")+'</span></div>'+
-        '<div class="nowSidebarMetaBox"><strong>Explicit</strong><span>'+esc(t.explicit?"Yes":"No")+'</span></div>'+
       '</div>'+
       '<div class="nowSidebarTitle">Credits</div><div class="nowSidebarLyrics">'+esc([["Producer",creditList(t.credits,"producer")],["Writer",creditList(t.credits,"songwriter")],["Composer",creditList(t.credits,"composer")]].filter(x=>x[1]).map(x=>x[0]+": "+x[1]).join("\n")||"No credits saved.")+'</div>'+
       '<div class="nowSidebarTitle">Lyrics</div><div class="nowSidebarLyrics">'+esc(lyrics)+'</div>'+
@@ -1879,7 +1887,7 @@ main{min-width:0;min-height:0}
     const t=trackById(state.queue[state.queueIndex]);
     if(!t)return;
     state.currentId=t.id;
-    if(innerWidth>1050)setNowSidebar(true);
+    if(innerWidth>1050&&!state.settings.nowSidebarHidden)setNowSidebar(true,false);
     renderPlayer();
 
     const blob=await warmTrack(t.id);
