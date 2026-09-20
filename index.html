@@ -1817,8 +1817,8 @@ main{min-width:0;min-height:0}
         '<div class="nowSidebarMetaBox"><strong>Track</strong><span>'+esc(t.track??"None")+'</span></div>'+
         '<div class="nowSidebarMetaBox"><strong>Disc</strong><span>'+esc(t.disc??"None")+'</span></div>'+
       '</div>'+
-      '<div class="nowSidebarTitle">Credits</div><div class="nowSidebarLyrics">'+esc([["Producer",creditList(t.credits,"producer")],["Writer",creditList(t.credits,"songwriter")],["Composer",creditList(t.credits,"composer")]].filter(x=>x[1]).map(x=>x[0]+": "+x[1]).join("\n")||"No credits saved.")+'</div>'+
       '<div class="nowSidebarTitle">Lyrics</div><div class="nowSidebarLyrics">'+esc(lyrics)+'</div>'+
+      '<div class="nowSidebarTitle">Credits</div><div class="nowSidebarLyrics">'+esc([["Producer",creditList(t.credits,"producer")],["Writer",creditList(t.credits,"songwriter")],["Composer",creditList(t.credits,"composer")]].filter(x=>x[1]).map(x=>x[0]+": "+x[1]).join("\n")||"No credits saved.")+'</div>'+
     '</div>';
     $("#closeNowSidebar").onclick=()=>setNowSidebar(false);
   }
