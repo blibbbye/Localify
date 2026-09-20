@@ -1629,7 +1629,7 @@ main{min-width:0;min-height:0}
   }
 
   async function discordPayload(t,playing=true,resolveCover=true){
-    const song=sanitizeDiscordText(t?.title,"Unknown song");
+    const song=sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song");
     const artists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
     let coverUrl=knownCoverUrlForAlbum(albumName(t));
@@ -1664,7 +1664,7 @@ main{min-width:0;min-height:0}
     let p;
     try{p=await discordPayload(t,true,false)}catch(e){
       console.warn("Localify Discord payload build failed",e);
-      p={kind:"presence",playing:true,song:sanitizeDiscordText(t?.title,"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
