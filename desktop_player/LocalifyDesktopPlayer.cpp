@@ -14,6 +14,7 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdio>
+#include <ctime>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -59,7 +60,11 @@ static void coverLoad(std::string url,uint64_t token){
    for(;;){DWORD n=0;if(!WinHttpQueryDataAvailable(re,&n)||!n)break;size_t z=bytes.size();bytes.resize(z+n);DWORD got=0;if(!WinHttpReadData(re,bytes.data()+z,n,&got)){bytes.resize(z);break;}bytes.resize(z+got);if(bytes.size()>8*1024*1024){bytes.clear();break;}}
   }
   std::unique_ptr<Bitmap> b;
-  if(!bytes.empty()){HGLOBAL h=GlobalAlloc(GMEM_MOVEABLE,bytes.size());if(h){void*p=GlobalLock(h);memcpy(p,bytes.data(),bytes.size());GlobalUnlock(h);IStream*st=nullptr;if(SUCCEEDED(CreateStreamOnHGlobal(h,TRUE,&st))){Bitmap*x=Bitmap::FromStream(st,FALSE);if(x&&x->GetLastStatus()==Ok)b.reset(x);else delete x;st->Release();}else GlobalFree(h);}}
+  if(!bytes.empty()){HGLOBAL h=GlobalAlloc(GMEM_MOVEABLE,bytes.size());if(h){void*p=GlobalLock(h);memcpy(p,bytes.data(),bytes.size());GlobalUnlock(h);IStream*st=nullptr;if(SUCCEEDED(CreateStreamOnHGlobal(h,TRUE,&st))){Bitmap*x=Bitmap::FromStream(st,FALSE);if(x&&x->GetLastStatus()==Ok){
+      UINT bw=x->GetWidth(),bh=x->GetHeight();
+      std::unique_ptr<Bitmap> copy(new Bitmap(bw,bh,PixelFormat32bppARGB));
+      if(copy&&copy->GetLastStatus()==Ok){Graphics cg(copy.get());cg.SetInterpolationMode(InterpolationModeHighQualityBicubic);cg.DrawImage(x,0,0,(INT)bw,(INT)bh);b=std::move(copy);}
+    }delete x;st->Release();}else GlobalFree(h);}}
   if(re)WinHttpCloseHandle(re);if(co)WinHttpCloseHandle(co);WinHttpCloseHandle(se);
   if(b){std::lock_guard<std::mutex>l(M);if(token==CoverToken)Cover=std::move(b);}
   InvalidateRect(H,nullptr,FALSE);
@@ -89,7 +94,8 @@ static bool connectDiscord(){
 }
 static void disconnectDiscord(){if(Pipe!=INVALID_HANDLE_VALUE){CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;}}
 static void activity(const Presence&p){
- if(!connectDiscord())return;long long start=(long long)(GetTickCount64()/1000ULL-p.pos),end=p.dur>0?start+(long long)p.dur:0;
+ if(!connectDiscord())return;
+ long long start=(long long)time(nullptr)-(long long)std::max(0.0,p.pos),end=p.dur>0?start+(long long)p.dur:0;
  std::string q="{\"type\":2,\"name\":\"Localify\",\"details\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
  if(end>0)q+=",\"timestamps\":{\"start\":"+std::to_string(start*1000)+",\"end\":"+std::to_string(end*1000)+"}";
  q+="}";std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":"+q+"},\"nonce\":\""+std::to_string(GetTickCount64())+"\"}";
@@ -193,6 +199,7 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Desktop Player",
   WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,560,340,0,0,hi,0);if(!H)return 1;
  BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
+ SetWindowPos(H,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
  ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
  std::thread(server).detach();std::thread(rpcLoop).detach();MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
