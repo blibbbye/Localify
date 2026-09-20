@@ -97,6 +97,7 @@ static void activity(const Presence&p){
  if(!connectDiscord())return;
  long long start=(long long)time(nullptr)-(long long)std::max(0.0,p.pos),end=p.dur>0?start+(long long)p.dur:0;
  std::string q="{\"type\":2,\"name\":\"Localify\",\"details\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
+ if(!p.cover.empty()&&p.cover.size()<=300)q+=",\"assets\":{\"large_image\":\""+esc(p.cover)+"\",\"large_text\":\""+esc(p.song.empty()?"Localify":p.song)+"\"}";
  if(end>0)q+=",\"timestamps\":{\"start\":"+std::to_string(start*1000)+",\"end\":"+std::to_string(end*1000)+"}";
  q+="}";std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":"+q+"},\"nonce\":\""+std::to_string(GetTickCount64())+"\"}";
  if(!pw(1,z)){disconnectDiscord();}
