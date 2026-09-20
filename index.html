@@ -857,22 +857,26 @@ main{min-width:0;min-height:0}
     const ids=[...pendingBlobIds];pendingBlobIds.clear();
     const deletes=[...pendingBlobDeletes];pendingBlobDeletes.clear();
     const meta=cloneMeta();
-    let okMeta=false,failed=0,deleted=0;
+    let okMeta=false,failed=0,deleted=0,failedIds=[];
     if(!storageReady || storageBlocked){try{writeMetaFallback()}catch{}}
     try{await idbPutMeta(meta);okMeta=true;storageReady=true;storageBlocked=false}
-    catch(e){storageBlocked=true;console.warn("Localify metadata save failed",e);try{writeMetaFallback()}catch{}}
+    catch(e){storageBlocked=true;console.warn('Localify metadata save failed',e);try{writeMetaFallback()}catch{}}
     for(const id of ids){
       const t=trackById(id);
       if(!isBlobLike(t?.blob))continue;
-      try{await idbPutBlob(id,t.blob);t._blobDirty=false}catch(e){failed++;console.warn("Localify audio save failed",id,e)}
+      try{await idbPutBlob(id,t.blob);t._blobDirty=false}catch(e){failed++;failedIds.push(id);console.warn('Localify audio save failed',id,e)}
     }
     for(const id of deletes){
-      try{await idbDeleteBlob(id);deleted++}catch(e){console.warn("Localify audio delete failed",id,e)}
+      try{await idbDeleteBlob(id);deleted++}catch(e){console.warn('Localify audio delete failed',id,e)}
+    }
+    if(failedIds.length){
+      for(const id of failedIds)pendingBlobIds.add(id);
+      dirtySave=true;
     }
     lastSaveAt=Date.now();
     saveInFlight=false;
-    if(dirtySave)setTimeout(()=>flushSave(false),50);
-    if(showMessage)toast(failed?`Saved, but ${failed} audio file(s) could not be stored.`:(okMeta?`Library saved on this device${deleted?` • ${deleted} removed`:""}.`:"Metadata fallback saved; browser storage is blocked."));
+    if(dirtySave)setTimeout(()=>flushSave(false),failedIds.length?5000:50);
+    if(showMessage)toast(failed?'Saved, but '+failed+' audio file(s) could not be stored yet. Localify will retry automatically.':(okMeta?'Library saved on this device'+(deleted?' • '+deleted+' removed':'')+'.':'Metadata fallback saved; browser storage is blocked.'));
     return failed===0 && (okMeta || storageBlocked);
   }
   function save(showMessage=false,blobIds=[]){
