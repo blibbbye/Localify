@@ -2437,7 +2437,47 @@ main{min-width:0;min-height:0}
     }
     return {version:14,schema:'localify-preset-v2',presetKind:kind,presetName:presetLabel(kind),exportedAt:new Date().toISOString(),portableAudio:true,trackCount:tracks.length,audioTrackCount:tracks.filter(t=>t.hasAudio).length,artists:scope.artists.map(cloneEntity),albums:scope.albums.map(cloneEntity),tracks,playlists:scope.playlists.map(cloneEntity),liked:[...scope.liked],recent:[...scope.recent],settings:scope.settings?JSON.parse(JSON.stringify(scope.settings)):null};
   }
-  async function writePresetStreaming(handle,manifest){const writable=await handle.createWritable(),enc=new TextEncoder(),mb=enc.encode(JSON.stringify(manifest)),mn=enc.encode('library.json'),mc=crc32(mb),mh=zipLocalHeader(mn,mc,mb.length);let offset=0,central=[];try{await writable.write(mh);await writable.write(mb);central.push(zipCentralHeader(mn,mc,mb.length,offset));offset+=mh.length+mb.length;let done=0;for(const t of manifest.tracks){const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;if(!isBlobLike(blob))continue;const nb=enc.encode(t.audioFile),size=blob.size,crc=await crc32Blob(blob),h=zipLocalHeader(nb,crc,size);await writable.write(h);for await(const chunk of blob.stream())await writable.write(chunk);central.push(zipCentralHeader(nb,crc,size,offset));offset+=h.length+size;done++;if(done%2===0||done===manifest.tracks.length)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs`) }const cdOffset=offset;let cdSize=0;for(const c of central){await writable.write(c);cdSize+=c.length}await writable.write(zipEnd(central.length,cdSize,cdOffset));await writable.close();toast(`${manifest.presetName} exported.`);return true}catch(e){try{await writable.abort()}catch{}throw e}}
+  async function writePresetStreaming(handle,manifest){
+    const writable=await handle.createWritable();
+    const enc=new TextEncoder(),mb=enc.encode(JSON.stringify(manifest)),mn=enc.encode("library.json"),mc=crc32(mb),mh=zipLocalHeader(mn,mc,mb.length);
+    let offset=0,central=[];
+    const joinParts=parts=>{
+      const total=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(total);
+      let at=0;
+      for(const p of parts){out.set(p,at);at+=p.length}
+      return out;
+    };
+    try{
+      await writable.write(mh);
+      await writable.write(mb);
+      central.push(zipCentralHeader(mn,mc,mb.length,offset));
+      offset+=mh.length+mb.length;
+      let done=0;
+      for(const t of manifest.tracks){
+        const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
+        if(!isBlobLike(blob))continue;
+        const nb=enc.encode(t.audioFile),size=blob.size,crc=await crc32Blob(blob),h=zipLocalHeader(nb,crc,size);
+        await writable.write(h);
+        for await(const chunk of blob.stream())await writable.write(chunk);
+        central.push(zipCentralHeader(nb,crc,size,offset));
+        offset+=h.length+size;
+        done++;
+        if(done%2===0||done===manifest.tracks.length)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs`);
+      }
+      toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
+      const cdOffset=offset;
+      const centralData=joinParts(central);
+      await writable.write(centralData);
+      await writable.write(zipEnd(central.length,centralData.length,cdOffset));
+      toast(`Exporting ${manifest.presetName}… saving file`);
+      await writable.close();
+      toast(`${manifest.presetName} exported.`);
+      return true;
+    }catch(e){
+      try{await writable.abort()}catch{}
+      throw e;
+    }
+  }
   async function exportPreset(kind,ids=[]){let handle=null;try{if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:`Localify-${kind}.localify`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});await flushSave(false);const manifest=await collectPresetMeta(kind,ids);if(handle){await writePresetStreaming(handle,manifest);return true}const entries=[{name:'library.json',bytes:new TextEncoder().encode(JSON.stringify(manifest))}];for(const t of manifest.tracks){const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;if(isBlobLike(blob))entries.push({name:t.audioFile,bytes:await blobToBytes(blob)})}downloadBlob(await makeZip(entries),`Localify-${kind}.localify`);toast(`${manifest.presetName} exported.`);return true}catch(e){if(e?.name==='AbortError')return false;console.error(e);toast(e?.message||'Could not export this preset.');return false}}
   function openPresetExportSelection(kind){const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists},items=lists[kind]||[];setModal(`<div class="modalHead"><h2>Export ${presetLabel(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Choose what to export. Album presets include their connected artists, artist profile pictures/info, and songs. Song and playlist presets include their connected artists and albums.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">${items.length} selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">${items.map(x=>kind==='artists'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName">${esc(x.name)}</span></label>`:kind==='albums'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')}</span></span></label>`:kind==='songs'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistName(x))}</span></span></label>`:`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.name)}</strong> <span class="muted">— ${(x.trackIds||[]).length} songs</span></span></label>`).join('')}</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export preset</button></div>`,{large:true});const refresh=()=>{$('#presetSelectedCount').textContent=`${$$('.presetCheck:checked').length} selected`};$$('.presetCheck').forEach(x=>x.addEventListener('change',refresh));$('#presetSelectAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=true);refresh()};$('#presetClearAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=false);refresh()};$('#closeModal').onclick=()=>closeModal(true);$('#presetCancel').onclick=()=>closeModal(true);$('#presetExport').onclick=async()=>{const ids=$$('.presetCheck:checked').map(x=>x.value);if(!ids.length){toast('Choose at least one item.');return}closeModal(true);await exportPreset(kind,ids)}}
   function openPresetExportChooser(){const kinds=['full','artists','albums','songs','playlists','liked','recent','settings'];setModal(`<div class="modalHead"><h2>Export preset</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Export one part of your Localify library or everything. Nothing is removed. Artist info and profile pictures travel with albums/songs that use those artists.</div><div style="display:grid;gap:8px;margin-top:16px">${kinds.map(k=>`<button class="secondary btnIcon" data-export-kind="${k}" style="justify-content:flex-start;text-align:left"><span style="min-width:28px">${uiIcon(k==='artists'?'artist':k==='albums'?'album':k==='songs'?'music':k==='playlists'?'playlist':k==='liked'?'heart':k==='recent'?'clock':k==='settings'?'save':'download')}</span><span><strong>${presetLabel(k)}</strong><br><span class="help">${({full:'Everything',artists:'Selected artist profiles, info and pictures',albums:'Selected albums + artists + songs',songs:'Selected songs + artists + albums',playlists:'Selected playlists + songs',liked:'Liked songs list + songs',recent:'Recently played list + songs',settings:'Playback and Localify settings'})[k]}</span></span></button>`).join('')}</div>`,{large:true});$('#closeModal').onclick=()=>closeModal(true);$$('[data-export-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.exportKind;closeModal(true);if(['artists','albums','songs','playlists'].includes(k))openPresetExportSelection(k);else exportPreset(k,[])})}
