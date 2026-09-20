@@ -38,6 +38,9 @@ jobs:
             "-ldwmapi",
             "-lole32",
             "-Wl,--gc-sections",
+            "-static-libgcc",
+            "-static-libstdc++",
+            "-static",
             "-s"
           )
           & g++ @gccArgs
