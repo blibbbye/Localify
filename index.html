@@ -2439,7 +2439,7 @@ main{min-width:0;min-height:0}
     const files=new Map();let pos=0;
     for(let i=0;i<count;i++){
       if(pos+46>central.length||dv.getUint32(pos,true)!==0x02014b50)throw Error('Invalid Localify entry');
-      const method=dv.getUint16(pos+10,true),c32=dv.getUint32(pos+20,true),u32v=dv.getUint32(pos+24,true),nameLen=dv.getUint16(pos+28,true),extraLen=dv.getUint16(pos+30,true),commentLen=dv.getUint16(pos+32,true),off32=dv.getUint32(pos+42,true);
+      const method=dv.getUint16(pos+10,true),crc=dv.getUint32(pos+16,true),c32=dv.getUint32(pos+20,true),u32v=dv.getUint32(pos+24,true),nameLen=dv.getUint16(pos+28,true),extraLen=dv.getUint16(pos+30,true),commentLen=dv.getUint16(pos+32,true),off32=dv.getUint32(pos+42,true);
       const recordEnd=pos+46+nameLen+extraLen+commentLen;if(recordEnd>central.length)throw Error('Invalid Localify entry');
       const name=dec.decode(central.slice(pos+46,pos+46+nameLen)),extra=central.slice(pos+46+nameLen,pos+46+nameLen+extraLen);
       const usize=u32v===0xffffffff?zip64Value(extra,'usize'):u32v,csize=c32===0xffffffff?zip64Value(extra,'csize'):c32,localOffset=off32===0xffffffff?zip64Value(extra,'offset'):off32;
@@ -2449,7 +2449,7 @@ main{min-width:0;min-height:0}
       const lhdv=new DataView(lh.buffer,lh.byteOffset,30),ln=lhdv.getUint16(26,true),le=lhdv.getUint16(28,true),dataStart=localOffset+30+ln+le;
       if(dataStart<0||dataStart+csize>file.size)throw Error('Corrupt Localify entry: '+name);
       if(files.has(name))throw Error('Corrupt Localify archive: duplicate entry '+name);
-      files.set(name,{blob:file.slice(dataStart,dataStart+csize),method,size:usize,crc:c32>>>0});
+      files.set(name,{blob:file.slice(dataStart,dataStart+csize),method,size:usize,crc:crc>>>0});
       pos=recordEnd;
     }
     return files;
