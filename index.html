@@ -2112,7 +2112,7 @@ main{min-width:0;min-height:0}
       });
       await Promise.all(workers);
       autoSave();
-      if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search")renderCurrentViewWithoutScroll();
+      if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search"||state.currentView==="albums"||state.currentView==="playlists"||state.currentView==="home")renderCurrentViewWithoutScroll();
     })().catch(e=>console.warn("Localify duration scan failed",e));
   }
   function inferTrackNumberFromFilename(name){const m=String(name||"").match(/^(?:Track\s*)?0*(\d+)(?:[.\-_)\s])/i);return m?parseInt(m[1],10):null}
@@ -2257,7 +2257,7 @@ main{min-width:0;min-height:0}
     bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
     $("#bulkSave").onclick=async()=>{
       const bulkArtistIds=$("#applyArtist").checked?readArtistPicker("bulkArtists"):null;const bulkAlbumArtistIds=$("#applyAlbumArtist").checked?readArtistPicker("bulkAlbumArtists"):null;
-      for(const t of tracks){const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
+      for(const t of tracks){const applyAlbum=$("#applyAlbum").checked;const album=applyAlbum?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(applyAlbum){t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;if(album&&!t.cover&&album.cover)t.cover=album.cover;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
       await save();state.selected=[];closeModal(true);renderCurrentViewWithoutScroll();toast("Bulk changes applied.");
     };
   }
