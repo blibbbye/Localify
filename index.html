@@ -1230,8 +1230,35 @@ main{min-width:0;min-height:0}
   function artistCard(a){return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${state.tracks.filter(t=>artistIdsForTrack(t).includes(a.id)).length} songs</div></div>`}
   function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img src="${p.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("playlist")}</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs • ${durationLabel(p.trackIds.map(trackById).filter(Boolean))}</div></div>`}
 
-  function trackTable(tracks,cleanTrackPrefixes=false){
-    return `<table><thead><tr><th style="width:54px"></th><th>Title</th><th>Artist</th><th>Album</th><th>Duration</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${tracks.length&&tracks.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${tracks.map(t=>`<tr data-id="${t.id}" class="track-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}"><td><button class="rowPlay play-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}" title="${state.currentId===t.id&&!audio.paused?"Pause":"Play"}">${state.currentId===t.id&&!audio.paused?uiIcon("pause"):uiIcon("play")}</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(displayTrackTitle(t,cleanTrackPrefixes))}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${esc(albumArtistName(t))}</div></div></div></td><td>${esc(artistName(t))}</td><td>${esc(albumName(t))}</td><td>${fmt(t.duration)}</td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like" aria-label="Like">${uiIcon("heart")}</button><button class="circle more-row iconOnly" title="More" aria-label="More">${uiIcon("more")}</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`;
+  function trackTableScope(){
+    if(state.detail?.type)return state.detail.type+":"+state.detail.id;
+    if(state.currentView==="search")return "search";
+    if(state.currentView==="library")return "library";
+    if(state.currentView==="liked")return "liked";
+    if(state.currentView==="recent")return "recent";
+    return state.currentView||"default";
+  }
+  function getTrackSort(scope,defaultKey="title"){
+    state.trackSorts=state.trackSorts||{};
+    const s=state.trackSorts[scope];
+    return s&&["title","artist","album","duration"].includes(s.key)?s:{key:defaultKey,dir:"asc"};
+  }
+  function sortedTrackTableTracks(tracks,scope,defaultKey="title"){
+    const s=getTrackSort(scope,defaultKey),dir=s.dir==="desc"?-1:1;
+    const key=t=>s.key==="title"?displayTrackTitle(t,true):s.key==="artist"?artistName(t):s.key==="album"?albumName(t):Number(t.duration)||0;
+    return [...tracks].sort((x,y)=>{
+      const av=key(x),bv=key(y);
+      const primary=typeof av==="number"&&typeof bv==="number"?av-bv:String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"});
+      return primary*dir || String(displayTrackTitle(x,true)).localeCompare(String(displayTrackTitle(y,true)),undefined,{numeric:true,sensitivity:"base"});
+    });
+  }
+  function sortHeader(label,key,scope){
+    const s=getTrackSort(scope),active=s.key===key;
+    return `<button class="tableSort ${active?"active":""}" data-headsort="${key}" data-sort-scope="${esc(scope)}" title="Sort by ${label}">${label}${active?`<span class="tableSortArrow">${s.dir==="asc"?"↑":"↓"}</span>`:""}</button>`;
+  }
+  function trackTable(tracks,cleanTrackPrefixes=false,scope=trackTableScope(),defaultKey="title"){
+    const list=sortedTrackTableTracks(tracks,scope,defaultKey);
+    return `<table><thead><tr><th style="width:54px"></th><th>${sortHeader("Title","title",scope)}</th><th>${sortHeader("Artist","artist",scope)}</th><th>${sortHeader("Album","album",scope)}</th><th>${sortHeader("Duration","duration",scope)}</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${list.length&&list.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${list.map(t=>`<tr data-id="${t.id}" class="track-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}"><td><button class="rowPlay play-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}" title="${state.currentId===t.id&&!audio.paused?"Pause":"Play"}">${state.currentId===t.id&&!audio.paused?uiIcon("pause"):uiIcon("play")}</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(displayTrackTitle(t,cleanTrackPrefixes))}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${esc(albumArtistName(t))}</div></div></div></td><td>${esc(artistName(t))}</td><td>${esc(albumName(t))}</td><td>${fmt(t.duration)}</td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like" aria-label="Like">${uiIcon("heart")}</button><button class="circle more-row iconOnly" title="More" aria-label="More">${uiIcon("more")}</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`;
   }
   function selectionBar(tracks){
     const ids=tracks.map(t=>t.id); const selected=ids.filter(id=>state.selected.includes(id));
@@ -1250,7 +1277,7 @@ main{min-width:0;min-height:0}
     $$(".play-row").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.closest("tr").dataset.id)});
     $$(".like-row").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleLike(b.closest("tr").dataset.id)});
     $$(".more-row").forEach(b=>b.onclick=e=>{e.stopPropagation();const r=b.closest("tr");openContext(e.clientX,e.clientY,r.dataset.id)});
-    $$("[data-headsort]").forEach(b=>b.onclick=()=>{const k=b.dataset.headsort;state.librarySort=k;state.librarySortDir="asc";renderCurrentViewWithoutScroll()});
+    $("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
     $$("#bulkPlay").forEach(b=>b.onclick=()=>bulkPlay(shown));
     $("#bulkEdit")?.addEventListener("click",()=>bulkEdit(state.selected.map(trackById).filter(Boolean)));
     $("#bulkLike")?.addEventListener("click",async()=>{for(const id of state.selected)if(!state.liked.includes(id))state.liked.push(id);await save();renderCurrentViewWithoutScroll()});
