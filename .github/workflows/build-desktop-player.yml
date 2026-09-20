@@ -29,10 +29,10 @@ jobs:
       - name: Publish EXE
         shell: powershell
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view latest --repo "\${{ github.repository }}" *> $null
+          gh release view latest --repo "${{ github.repository }}" *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release delete latest --cleanup-tag -y --repo "\${{ github.repository }}"
+            gh release delete latest --cleanup-tag -y --repo "${{ github.repository }}"
           }
-          gh release create latest "dist\Localify Discord Player.exe" --repo "\${{ github.repository }}" --title "Localify Desktop Player" --notes "Latest Localify Desktop Player. Run it while Discord Desktop and Localify are open." --latest=false
+          gh release create latest "dist\Localify Discord Player.exe" --repo "${{ github.repository }}" --title "Localify Desktop Player" --notes "Latest Localify Desktop Player. Run it while Discord Desktop and Localify are open." --latest=false
