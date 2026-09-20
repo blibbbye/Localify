@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force build | Out-Null
-          g++ -std=c++17 -Os -DNDEBUG -mwindows -municode -ffunction-sections -fdata-sections desktop_player/LocalifyDesktopPlayer.cpp -o "build/Localify Discord Player.exe" -lwinhttp -lgdiplus -lws2_32 -ldwmapi -Wl,--gc-sections -s
+          g++ -std=c++17 -Os -DNDEBUG -mwindows -municode -ffunction-sections -fdata-sections desktop_player/LocalifyDesktopPlayer.cpp -o "build/Localify Discord Player.exe" -lwinhttp -lgdiplus -lws2_32 -ldwmapi '-Wl,--gc-sections' -s
       - name: Verify size
         shell: pwsh
         run: |
