@@ -1,0 +1,38 @@
+name: Build Localify Desktop Player
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "desktop_player/**"
+      - ".github/workflows/build-desktop-player.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build EXE
+        shell: powershell
+        run: |
+          $vs = & "$env:ProgramFiles\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          Import-Module "$vs\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+          Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation
+          New-Item -ItemType Directory -Force dist | Out-Null
+          cl.exe /nologo /std:c++20 /O2 /EHsc /DUNICODE /D_UNICODE /DNOMINMAX desktop_player\LocalifyDesktopPlayer.cpp /link /SUBSYSTEM:WINDOWS /OUT:"dist\Localify Discord Player.exe" user32.lib gdi32.lib gdiplus.lib winhttp.lib ws2_32.lib dwmapi.lib
+
+      - name: Publish EXE
+        shell: powershell
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          gh release view latest --repo "\${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release delete latest --cleanup-tag -y --repo "\${{ github.repository }}"
+          }
+          gh release create latest "dist\Localify Discord Player.exe" --repo "\${{ github.repository }}" --title "Localify Desktop Player" --notes "Latest Localify Desktop Player. Run it while Discord Desktop and Localify are open." --latest=false
