@@ -1290,10 +1290,10 @@ main{min-width:0;min-height:0}
     "CUCK":"CUCK.JPG","C.U.C.K.":"CUCK.JPG","CUCK V1":"CUCK.JPG","CUCK V2":"CUCK.JPG","Cuck":"CUCK.JPG","Cuck V1":"CUCK.JPG","C.U.C.K. V1":"CUCK.JPG",
     "Donda":"donda.jpg","Donda 2021":"donda.jpg","Donda V2":"donda.jpg","Donda Version 2":"donda.jpg",
     "Donda 2":"donda2.jpg","Donda II":"donda2.jpg","Donda 2 V1":"donda2.jpg","Donda 2 Version 1":"donda2.jpg",
-    "Donda With Child":"DONDACHILD.jpg","Donda with Child":"DONDACHILD.jpg","Donda V1":"DONDACHILD.jpg","Donda 2020":"DONDACHILD.jpg","Donda 2020 V1":"DONDACHILD.jpg","Donda With Child V1":"DONDACHILD.jpg","Donda With Child Version 1":"DONDACHILD.jpg",
+    "Donda With Child":"DONDACHIILD.jpg","Donda with Child":"DONDACHIILD.jpg","Donda V1":"DONDACHIILD.jpg","Donda 2020":"DONDACHIILD.jpg","Donda 2020 V1":"DONDACHIILD.jpg","Donda With Child V1":"DONDACHIILD.jpg","Donda With Child Version 1":"DONDACHIILD.jpg",
     "God's Country":"godscountry.jpg","Gods Country":"godscountry.jpg","God's Country V1":"godscountry.jpg","Gods Country V1":"godscountry.jpg","God's Country Version 1":"godscountry.jpg",
     "Good Ass Job":"Good Ass Job.webp","Good Ass Job V1":"Good Ass Job.webp","Good Ass Job Version 1":"Good Ass Job.webp","GAJ":"Good Ass Job.webp","GAJ V1":"Good Ass Job.webp","GAJ Version 1":"Good Ass Job.webp",
-    "Graduation":"graduation.jpg","Graduation V1":"graduation.jpg","Graduation Version 1":"graduation.jpg",
+    "Graduation":"gradutation.jpg","Graduation V1":"gradutation.jpg","Graduation Version 1":"gradutation.jpg",
     "Jesus Is King":"jesusisking.jpg","Jesus Is King V1":"jesusisking.jpg","Jesus Is King Version 1":"jesusisking.jpg","JIK":"jesusisking.jpg","JIK V1":"jesusisking.jpg",
     "Jesus Is King V2":"jesusisking2.jpg","Jesus Is King 2":"jesusisking2.jpg","Jesus Is King II":"jesusisking2.jpg","Jesus Is King V2.0":"jesusisking2.jpg","JIK V2":"jesusisking2.jpg","JIK2":"jesusisking2.jpg",
     "Job Well Done":"JobWellDone.jpg","Job Well Done V1":"JobWellDone.jpg","Job Well Done Version 1":"JobWellDone.jpg","JWD":"JobWellDone.jpg","JWD V1":"JobWellDone.jpg",
@@ -1500,7 +1500,9 @@ main{min-width:0;min-height:0}
   }
 
   function knownCoverUrlForAlbum(albumTitle){
-    return builtInCoverForAlbum(albumTitle)||externalCoverForAlbum(albumTitle)||"";
+    // Prefer the live covers.json registry so an exact repository filename
+    // always wins over an older built-in alias.
+    return externalCoverForAlbum(albumTitle)||builtInCoverForAlbum(albumTitle)||"";
   }
 
   function coverForAlbum(album,existingCover=""){
@@ -1563,18 +1565,15 @@ main{min-width:0;min-height:0}
     // page's origin or on a local development hostname.
 
     const request=(async()=>{
-      // 1) Deterministic built-in mapping first. These are owner-controlled
-      // filenames in the GitHub Pages repo, so do not make Discord wait on an
-      // image probe that can fail because of a temporary network/CORS issue.
-      const builtin=builtInCoverForAlbum(album);
-      if(builtin){discordCoverCache.set(cacheKey,builtin);return builtin;}
-
-      // 2) User-editable covers.json. Treat a valid HTTPS/HTTP mapping as
-      // authoritative too. This means a matching alias always gets sent to
-      // Discord; if the file is missing, Discord itself simply falls back.
+      // 1) The live covers.json registry is authoritative. This lets the
+      // repo's real current filenames override stale built-in aliases.
       await loadLocalifyCoverMap();
       const external=externalCoverForAlbum(album);
       if(external){discordCoverCache.set(cacheKey,external);return external;}
+
+      // 2) Fall back to the built-in aliases when the registry is unavailable.
+      const builtin=builtInCoverForAlbum(album);
+      if(builtin){discordCoverCache.set(cacheKey,builtin);return builtin;}
 
       // 3) Filename fallback. This path is unconfigured/uncertain, so verify
       // the candidate before sending it to Discord. Failures are NOT cached,
