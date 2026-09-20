@@ -16,6 +16,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Build EXE
         shell: powershell
@@ -26,13 +28,16 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           cl.exe /nologo /std:c++20 /O2 /EHsc /DUNICODE /D_UNICODE /DNOMINMAX desktop_player\LocalifyDesktopPlayer.cpp /link /SUBSYSTEM:WINDOWS /OUT:"dist\Localify Discord Player.exe" user32.lib gdi32.lib gdiplus.lib winhttp.lib ws2_32.lib dwmapi.lib
 
-      - name: Publish EXE
+      - name: Publish EXE into repository
         shell: powershell
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view latest --repo "${{ github.repository }}" *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release delete latest --cleanup-tag -y --repo "${{ github.repository }}"
+          Copy-Item "dist\Localify Discord Player.exe" ".\Localify Discord Player.exe" -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "Localify Discord Player.exe"
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Build Localify Desktop Player EXE"
+            git push
+          } else {
+            Write-Host "EXE is already up to date."
           }
-          gh release create latest "dist\Localify Discord Player.exe" --repo "${{ github.repository }}" --title "Localify Desktop Player" --notes "Latest Localify Desktop Player. Run it while Discord Desktop and Localify are open." --latest=false
