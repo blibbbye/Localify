@@ -663,7 +663,7 @@ main{min-width:0;min-height:0}
   function albumName(t){return albumById(t.albumId)?.title||t.album||NONE_LABEL}
   function albumArtistName(t){const ids=idsOf(t,"albumArtistIds","albumArtistId");const n=namesOfIds(ids);return (n.length?n:artistNamesForTrack(t)).join(", ")||NONE_LABEL}
   function totalDuration(tracks){return (tracks||[]).reduce((sum,t)=>sum+(Number(t?.duration)||0),0)}
-  function durationLabel(tracks){return fmt(totalDuration(tracks))}
+  function durationLabel(tracks){const totalMinutes=Math.floor(totalDuration(tracks)/60);if(totalMinutes<60)return `${totalMinutes} min`;const hours=Math.floor(totalMinutes/60),minutes=totalMinutes%60;return `${hours} hr${hours===1?"":"s"}${minutes?` ${minutes} min`:""}`}
   function firstArtistId(obj){return idsOf(obj,"artistIds","artistId")[0]||null}
   function applyArtistIds(obj,ids){const clean=[...new Set((ids||[]).filter(Boolean))];obj.artistIds=clean;obj.artistId=clean[0]||null;return clean}
   function applyAlbumArtistIds(t,ids){const clean=[...new Set((ids||[]).filter(Boolean))];t.albumArtistIds=clean;t.albumArtistId=clean[0]||null;return clean}
