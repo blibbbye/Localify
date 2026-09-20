@@ -100,35 +100,100 @@ static void fill(Graphics&g,float x,float y,float w,float h,float r,const Color&
 static void txt(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetFormatFlags(StringFormatFlagsNoWrap);sf.SetTrimming(StringTrimmingEllipsisCharacter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static void center(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetAlignment(StringAlignmentCenter);sf.SetLineAlignment(StringAlignmentCenter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static RECT closeR(){return{430,8,468,38};}static RECT minR(){return{400,8,430,38};}
-static void paint(HDC out){
- RECT rr;GetClientRect(H,&rr);int w=rr.right,h=rr.bottom;HDC m=CreateCompatibleDC(out);HBITMAP bm=CreateCompatibleBitmap(out,w,h);HGDIOBJ old=SelectObject(m,bm);Graphics g(m);g.SetSmoothingMode(SmoothingModeAntiAlias);g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
- SolidBrush bg(Color(255,10,12,16));g.FillRectangle(&bg,0,0,w,h);fill(g,8,8,w-16,h-16,22,Color(255,18,21,28));
- SolidBrush glow(Color(18,125,211,252));g.FillEllipse(&glow,-90,-100,350,180);txt(g,L"LOCALIFY",24,18,110,22,12,Color(255,125,211,252),true);center(g,L"—",398,8,30,32,17,Color(255,120,130,145));center(g,L"×",430,7,34,33,16,Color(255,120,130,145));
- Presence p;{std::lock_guard<std::mutex>l(M);p=P;}
- fill(g,22,52,92,92,18,Color(255,30,34,42));{
-  std::lock_guard<std::mutex>l(M);if(Cover){g.DrawImage(Cover.get(),RectF(22,52,92,92));}else center(g,L"♪",22,52,92,92,36,Color(255,125,211,252),true);
- }
- std::wstring s=W(p.song.empty()?(p.playing?"Unknown song":"Nothing playing"):p.song),a=W(p.artist.empty()?"Unknown Artist":p.artist);txt(g,s.c_str(),130,54,320,30,19,Color(255,247,248,250),true);txt(g,a.c_str(),130,84,320,23,12,Color(255,157,165,179));txt(g,p.playing?L"PLAYING":L"PAUSED",130,112,90,18,9,p.playing?Color(255,125,211,252):Color(255,145,153,168),true);
- double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0;fill(g,130,142,310,6,3,Color(255,43,48,58));if(ratio>0)fill(g,130,142,(float)(310*ratio),6,3,Color(255,125,211,252));
- center(g,L"PREV",206,168,65,34,9,Color(255,200,207,217),true);fill(g,276,164,58,44,14,Color(255,125,211,252));center(g,p.playing?L"Ⅱ":L"▶",276,164,58,44,18,Color(255,7,16,24),true);center(g,L"NEXT",339,168,65,34,9,Color(255,200,207,217),true);
- BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
+static RECT coverRectFor(int w,int h){
+ int topPad=18, bottomPad=86;
+ int size=std::max(96,std::min(220,std::min(w/3,std::max(96,h-topPad-bottomPad))));
+ int y=topPad+20;
+ return RECT{22,y,22+size,y+size};
 }
+static void paint(HDC out){
+ RECT rr{};GetClientRect(H,&rr);int w=rr.right,h=rr.bottom;
+ if(w<40||h<40)return;
+ HDC m=CreateCompatibleDC(out);if(!m)return;
+ HBITMAP bm=CreateCompatibleBitmap(out,w,h);if(!bm){DeleteDC(m);return;}
+ HGDIOBJ old=SelectObject(m,bm);
+ Graphics g(m);g.SetSmoothingMode(SmoothingModeAntiAlias);g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+ g.Clear(Color(255,9,11,15));
+ fill(g,8,8,(float)w-16,(float)h-16,18,Color(255,18,21,28));
+ SolidBrush glow(Color(18,125,211,252));g.FillEllipse(&glow,-90,-100,340,180);
+ txt(g,L"LOCALIFY",22,16,160,24,12,Color(255,125,211,252),true);
+ Presence p;{
+   std::lock_guard<std::mutex> lock(M);
+   p=P;
+ }
+ RECT cr=coverRectFor(w,h);
+ int coverW=cr.right-cr.left,coverH=cr.bottom-cr.top;
+ fill(g,(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,16,Color(255,30,34,42));
+ {
+   std::lock_guard<std::mutex> lock(M);
+   if(Cover) g.DrawImage(Cover.get(),RectF((REAL)cr.left,(REAL)cr.top,(REAL)coverW,(REAL)coverH));
+   else center(g,L"♪",(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,38,Color(255,125,211,252),true);
+ }
+ float infoX=(float)cr.right+18;
+ float infoW=(float)std::max(150,w-cr.right-34);
+ std::wstring song=W(p.song.empty()?(p.playing?"Unknown song":"Nothing playing"):p.song);
+ std::wstring artist=W(p.artist.empty()?"Unknown Artist":p.artist);
+ txt(g,song.c_str(),infoX,(float)cr.top+4,infoW,34,20,Color(255,247,248,250),true);
+ txt(g,artist.c_str(),infoX,(float)cr.top+39,infoW,26,12,Color(255,157,165,179));
+ txt(g,p.playing?L"PLAYING":L"PAUSED",infoX,(float)cr.top+69,110,18,9,
+     p.playing?Color(255,125,211,252):Color(255,145,153,168),true);
+
+ float controlX=infoX;
+ float controlW=(float)std::max(150,w-(int)controlX-22);
+ int progressY=h-86;
+ fill(g,controlX,(float)progressY,controlW,6,3,Color(255,43,48,58));
+ double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0;
+ if(ratio>0)fill(g,controlX,(float)progressY,controlW*(float)ratio,6,3,Color(255,125,211,252));
+ float by=(float)progressY+16;
+ drawButton(g,L"‹",controlX,by,54,34,18);
+ drawButton(g,p.playing?L"Ⅱ":L"▶",controlX+62,by,66,34,16);
+ drawButton(g,L"›",controlX+136,by,54,34,18);
+ txt(g,L"Discord",22,(float)h-30,70,16,9,g_serverReady?Color(255,130,240,160):Color(255,145,153,168),true);
+ txt(g,g_discord?L"Connected":L"Waiting for Discord",(float)22+58,(float)h-30,180,16,9,
+     g_discord?Color(255,135,230,164):Color(255,145,153,168));
+ BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
+ SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
+}
+
 static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
  switch(msg){
   case WM_ERASEBKGND:return 1;
-  case WM_PAINT:{PAINTSTRUCT ps;HDC dc=BeginPaint(h,&ps);paint(dc);EndPaint(h,&ps);return 0;}
-  case WM_LBUTTONDOWN:{POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};if(p.x>=430&&p.y<40){DestroyWindow(h);return 0;}if(p.x>=400&&p.x<430&&p.y<40){ShowWindow(h,SW_MINIMIZE);return 0;}if(p.y>=164&&p.y<208){if(p.x>=276&&p.x<334)issue("toggle");else if(p.x>=200&&p.x<270)issue("prev");else if(p.x>=334&&p.x<404)issue("next");}if(p.x>=130&&p.x<=440&&p.y>=132&&p.y<=160){double d;{std::lock_guard<std::mutex>l2(M);d=P.dur;}if(d>0)issue("seek",std::clamp((p.x-130)/310.0,0.0,1.0)*d);}return 0;}
-  case WM_NCHITTEST:{POINT p;GetCursorPos(&p);ScreenToClient(h,&p);if(p.x>=400&&p.y<40)return HTCLIENT;return HTCAPTION;}
+  case WM_SIZE:InvalidateRect(h,nullptr,FALSE);return 0;
+  case WM_PAINT:{
+    PAINTSTRUCT ps;HDC dc=BeginPaint(h,&ps);paint(dc);EndPaint(h,&ps);return 0;
+  }
+  case WM_LBUTTONDOWN:{
+    POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};
+    RECT rc{};GetClientRect(h,&rc);RECT cr=coverRectFor(rc.right,rc.bottom);
+    float infoX=(float)cr.right+18;
+    int progressY=rc.bottom-86;
+    float controlW=(float)std::max(150,rc.right-(int)infoX-22);
+    if(p.y>=progressY-8&&p.y<=progressY+14&&p.x>=(int)infoX&&p.x<=(int)(infoX+controlW)){
+      double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
+      if(d>0)issue("seek",std::clamp((p.x-infoX)/(double)controlW,0.0,1.0)*d);
+      return 0;
+    }
+    float by=(float)progressY+16;
+    if(p.y>=(int)by&&p.y<=(int)by+34){
+      if(p.x>=(int)infoX&&p.x<(int)infoX+54)issue("prev");
+      else if(p.x>=(int)infoX+62&&p.x<(int)infoX+128)issue("toggle");
+      else if(p.x>=(int)infoX+136&&p.x<(int)infoX+190)issue("next");
+    }
+    return 0;
+  }
   case WM_TIMER:InvalidateRect(h,nullptr,FALSE);return 0;
+  case WM_CLOSE:DestroyWindow(h);return 0;
   case WM_DESTROY:Run=false;PostQuitMessage(0);return 0;
- }return DefWindowProcW(h,msg,w,l);
+ }
+ return DefWindowProcW(h,msg,w,l);
 }
 int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
  WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer3";wc.hCursor=LoadCursor(0,IDC_ARROW);RegisterClassExW(&wc);
- H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Desktop Player",WS_POPUP,CW_USEDEFAULT,CW_USEDEFAULT,480,220,0,0,hi,0);if(!H)return 1;
- SetWindowRgn(H,CreateRoundRectRgn(0,0,480,220,28,28),TRUE);BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
- RECT work{};SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);SetWindowPos(H,HWND_TOP,work.right-505,work.bottom-260,480,220,SWP_SHOWWINDOW);ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
+ H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Desktop Player",
+  WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,560,340,0,0,hi,0);if(!H)return 1;
+ BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
+ ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
  std::thread(server).detach();std::thread(rpcLoop).detach();MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
 // Clean rebuild trigger: stable, resizable Windows desktop player.
