@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cctype>
+#include <cstring>
 #include <cstdint>
 #include <cstdio>
 #include <memory>
