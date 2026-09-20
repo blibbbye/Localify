@@ -1237,11 +1237,11 @@ main{min-width:0;min-height:0}
   function getTrackSort(scope,defaultKey="title"){
     state.trackSorts=state.trackSorts||{};
     const s=state.trackSorts[scope];
-    return s&&["title","artist","album","duration"].includes(s.key)?s:{key:defaultKey,dir:"asc"};
+    return s&&["track","title","artist","album","duration"].includes(s.key)?s:{key:defaultKey,dir:"asc"};
   }
   function sortedTrackTableTracks(tracks,scope,defaultKey="title"){
     const s=getTrackSort(scope,defaultKey),dir=s.dir==="desc"?-1:1;
-    const key=t=>s.key==="title"?displayTrackTitle(t,true):s.key==="artist"?artistName(t):s.key==="album"?albumName(t):Number(t.duration)||0;
+    const key=t=>s.key==="track"?(trackNo(t)??999999):s.key==="title"?displayTrackTitle(t,true):s.key==="artist"?artistName(t):s.key==="album"?albumName(t):Number(t.duration)||0;
     return [...tracks].sort((x,y)=>{
       const av=key(x),bv=key(y);
       const primary=typeof av==="number"&&typeof bv==="number"?av-bv:String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"});
@@ -2507,8 +2507,32 @@ main{min-width:0;min-height:0}
     if(!persisted)throw new Error('The preset was loaded, but one or more audio files could not be saved by the browser. Keep this tab open or free browser storage, then import the preset again.');
     toast(presetLabel(kind)+' preset '+(mode==='set'?'set':'added')+'.')
   }catch(e){console.error('Localify preset import failed',e);toast(e?.message||'Could not import this Localify preset.')}}
-  function openPresetsMenu(){setModal(`<div class="modalHead"><h2>Presets</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Portable <code>.localify</code> packages include library metadata and the actual audio files, so they can be shared with other people. Large exports use ZIP64 and stream directly to disk when your browser supports it.</div><div style="display:grid;gap:9px;margin-top:16px"><button class="primary btnIcon" id="presetExportBtn">${uiIcon('download')} Export a preset</button><button class="secondary btnIcon" id="presetImportBtn">${uiIcon('upload')} Import a preset</button><button class="secondary btnIcon" id="presetExportArtistsBtn">${uiIcon('artist')} Export artists</button><button class="secondary btnIcon" id="presetImportArtistsBtn">${uiIcon('upload')} Import artists</button><button class="secondary btnIcon" id="presetExportAlbumsBtn">${uiIcon('album')} Export albums</button><button class="secondary btnIcon" id="presetImportAlbumsBtn">${uiIcon('upload')} Import albums</button></div>`);$('#closeModal').onclick=()=>closeModal(true);$('#presetExportBtn').onclick=()=>{closeModal(true);openPresetExportChooser()};$('#presetImportBtn').onclick=()=>{closeModal(true);pickPresetFile()};$('#presetExportArtistsBtn').onclick=()=>{closeModal(true);openPresetExportSelection('artists')};$('#presetImportArtistsBtn').onclick=()=>{closeModal(true);pickPresetFile('artists')};$('#presetExportAlbumsBtn').onclick=()=>{closeModal(true);openPresetExportSelection('albums')};$('#presetImportAlbumsBtn').onclick=()=>{closeModal(true);pickPresetFile('albums')}}
-
+  function openPresetsMenu(){
+    const html =
+      "<div class=\"modalHead\"><h2>Presets</h2><button class=\"circle iconOnly\" id=\"closeModal\" title=\"Close\" aria-label=\"Close\">"+uiIcon("close")+"</button></div>"+
+      "<div class=\"presetHome\">"+
+        "<div class=\"presetHero\"><div class=\"presetHeroTop\"><div><h3>Portable Localify presets</h3><p>Save and share your Localify library as <code>.localify</code> files. Audio is included in the package, and large exports use ZIP64 and streaming when your browser supports it.</p></div><div class=\"presetHeroIcon\">"+uiIcon("save")+"</div></div></div>"+
+        "<div class=\"presetActionGrid\">"+
+          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export preset</strong><span>Back up or share your library</span></span></button>"+
+          "<button class=\"presetAction\" id=\"presetImportBtn\"><span class=\"presetActionIcon\">"+uiIcon("upload")+"</span><span><strong>Import preset</strong><span>Load a Localify file onto this device</span></span></button>"+
+        "</div>"+
+        "<div class=\"presetQuickTitle\">Quick tools</div>"+
+        "<div class=\"presetQuickGrid\">"+
+          "<button class=\"presetQuick\" id=\"presetExportArtistsBtn\"><strong>Export artists</strong><span>Profiles, info and pictures</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetImportArtistsBtn\"><strong>Import artists</strong><span>Add an artist preset</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetExportAlbumsBtn\"><strong>Export albums</strong><span>Albums, artists and songs</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetImportAlbumsBtn\"><strong>Import albums</strong><span>Add an album preset</span></button>"+
+        "</div>"+
+      "</div>";
+    setModal(html,{large:true});
+    $("#closeModal").onclick=()=>closeModal(true);
+    $("#presetExportBtn").onclick=()=>{closeModal(true);openPresetExportChooser()};
+    $("#presetImportBtn").onclick=()=>{closeModal(true);pickPresetFile()};
+    $("#presetExportArtistsBtn").onclick=()=>{closeModal(true);openPresetExportSelection("artists")};
+    $("#presetImportArtistsBtn").onclick=()=>{closeModal(true);pickPresetFile("artists")};
+    $("#presetExportAlbumsBtn").onclick=()=>{closeModal(true);openPresetExportSelection("albums")};
+    $("#presetImportAlbumsBtn").onclick=()=>{closeModal(true);pickPresetFile("albums")};
+  }
   function openMobileTools(){openPresetsMenu()}
 
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
