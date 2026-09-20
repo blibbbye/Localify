@@ -19,7 +19,7 @@
     body{overflow:hidden;width:100%;max-width:100vw;overscroll-behavior-x:none}
     button,input,textarea,select{font:inherit}
     button{border:0;color:inherit;cursor:pointer}
-    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:250px 1fr;grid-template-rows:1fr 92px}
+    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:250px minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:250px minmax(0,1fr) minmax(310px,380px)}
     aside{grid-row:1/2;background:#0c0f13;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;min-width:0}
     .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px;font-weight:900;font-size:23px;letter-spacing:-.8px}
     .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px rgba(125,211,252,.24)}
@@ -130,17 +130,14 @@
     .cardTitle{font-weight:900;margin:10px 2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .cardSub{font-size:12px;color:#7e8794;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .tableWrap{background:#0f1216;border:1px solid #20242b;border-radius:17px;overflow:auto;max-width:100%}
-    .selectionBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#151a20;border:1px solid #2a313a;border-radius:14px;margin:12px 0}
-    .selectionBar strong{margin-right:4px}
+    .selectionBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#151a20;border:1px solid #2a313a;border-radius:14px;margin:12px 0}.selectionBar strong{margin-right:4px}.bulkFieldToggle{display:inline-flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid #2a313a;background:#11161b;border-radius:10px;color:#dce1e7;font-size:12px;font-weight:850;cursor:pointer;user-select:none}.bulkFieldToggle input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.bulkFieldToggle:has(input:checked){border-color:#49622f;background:rgba(125,211,252,.08);color:#fff}.bulkToggleDot{width:18px;height:18px;border-radius:6px;border:1px solid #45505d;background:#0c0f13;display:grid;place-items:center;flex:none}.bulkFieldToggle:has(input:checked) .bulkToggleDot{background:var(--accent);border-color:var(--accent);color:#081017}.bulkToggleDot .svgIcon{width:12px;height:12px;display:none}.bulkFieldToggle:has(input:checked) .bulkToggleDot .svgIcon{display:block}
     .checkCell{width:34px;text-align:center}
     .actionsHead{width:74px;text-align:right!important}
-    .rowPlay{width:38px;height:38px;border-radius:11px;background:var(--accent);color:#071018;display:grid;place-items:center;font-weight:1000;box-shadow:0 8px 22px rgba(125,211,252,.16)}
-    .rowPlay:hover{background:var(--accent2);transform:translateY(-1px)}
+    .rowPlay{width:38px;height:38px;border-radius:11px;background:var(--accent);color:#071018;display:grid;place-items:center;font-weight:1000;box-shadow:0 8px 22px rgba(125,211,252,.16);transition:.16s}.rowPlay:hover{background:var(--accent2);transform:translateY(-1px)}.track-row.isPlaying{background:rgba(125,211,252,.055)}.track-row.isPlaying td{color:#f6fbff}.track-row.isPlaying .miniTitle{color:var(--accent)}.rowPlay.isPlaying{background:#fff;color:#0a0c10;box-shadow:0 8px 24px rgba(255,255,255,.14)}
     .infoBtn{width:34px;height:34px;border-radius:50%;padding:0;display:grid;place-items:center;font-weight:1000}
     .collectionArt.likedArt{background:linear-gradient(145deg,#14334a,#0d1e2b 58%,#112a3a);color:#7dd3fc}
     .trackCheck{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
-    .shuffleToggle{display:inline-flex;align-items:center;gap:7px;color:#aeb6c1;font-size:12px;font-weight:900;white-space:nowrap}
-    .shuffleToggle input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+    .shuffleToggle{display:inline-flex;align-items:center;gap:7px;color:#aeb6c1;font-size:12px;font-weight:900;white-space:nowrap}.shuffleToggle input{width:18px;height:18px;accent-color:var(--accent);margin:0}
     .eqSlider{width:100%}
     .mobileTools{display:none}
     .lyricsEditor{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65;white-space:pre;tab-size:2;min-height:260px}
@@ -174,12 +171,9 @@
     .artistSelectButton:hover,.artistPickerWrap.open .artistSelectButton{border-color:#45505d;background:#10151b}
     .artistSelectSummary{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .artistSelectChevron{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#8c96a3}.artistSelectChevron .svgIcon{width:16px;height:16px}
-    .artistPickerMenu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:80;max-height:220px;overflow:auto;padding:6px;background:#11161c;border:1px solid #313a45;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+    .artistPickerMenu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:300;max-height:min(280px,45vh);overflow:auto;padding:6px;background:#11161c!important;border:1px solid #3a4653;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.65);isolation:isolate}.artistPickerWrap.open{z-index:301}
     .artistPickerWrap.open .artistPickerMenu{display:grid;gap:2px}
-    .artistChoice{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;color:#f0f3f6;cursor:pointer;min-width:0}
-    .artistChoice:hover{background:#1a2027}
-    .artistChoice input{width:17px;height:17px;accent-color:var(--accent);flex:none;margin:0}
-    .artistChoiceName{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0f3f6;font-size:13px;font-weight:650}
+    .artistChoice{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;color:#f5f7fa!important;background:#151a20;cursor:pointer;min-width:0}.artistChoice:hover{background:#1d242c}.artistChoice input{width:17px;height:17px;accent-color:var(--accent);flex:none;margin:0}.artistChoiceName{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f5f7fa!important;font-size:13px;font-weight:750;line-height:1.2;text-shadow:0 1px 8px rgba(0,0,0,.25)}
     .artistPickerEmpty{padding:9px;color:#9aa3ae;font-size:12px}
     @media (max-width:700px){.profileHero{grid-template-columns:110px 1fr}.profileArt{width:110px;height:110px}.collectionArt{width:110px;height:110px;font-size:48px}.creditsGrid{grid-template-columns:1fr}}
     table{width:100%;border-collapse:collapse}
@@ -230,7 +224,7 @@
     .nowArt img{width:100%;height:100%;object-fit:cover}
     .nowText{min-width:0}
     .nowTitle{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#dce2e8;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
     .playerCenter{display:grid;gap:7px}
     .controls{display:flex;align-items:center;justify-content:center;gap:10px}
     .ctrl{width:34px;height:34px;border-radius:50%;background:transparent;color:#bbc3ce;font-size:15px}
@@ -249,14 +243,14 @@
     .chip{padding:8px 11px;background:#171b21;border:1px solid #262c34;border-radius:999px;color:#b3bac4;font-size:12px;font-weight:800}
     .chip.active{background:rgba(125,211,252,.10);border-color:#416274;color:var(--accent)}
     .hidden{display:none!important}
-    @media (max-width:1050px){
+    @media (max-width:1050px){.app.nowPanelOpen{grid-template-columns:84px 1fr}.nowSidebar{display:none!important}
       .app{grid-template-columns:84px 1fr;grid-template-rows:1fr 92px}
       aside{padding:15px 9px}.brand span,.nav button span:last-child,.sectionTitle,.sideAction span{display:none}.brand{justify-content:center;padding-bottom:18px}
       .nav button,.sideAction{justify-content:center}
       .hero{grid-template-columns:1fr}.player{grid-template-columns:1fr 1.2fr}.playerRight{display:none}
     }
     @media (max-width:700px){
-      body{overflow:auto}.app{display:block}.player{position:fixed;bottom:0;left:0;right:0;height:92px}.topbar{padding:10px 12px}.content{padding:18px 12px 115px}
+      body{overflow:auto}.nowSidebar{display:none!important}.app{display:block}.player{position:fixed;bottom:0;left:0;right:0;height:92px}.topbar{padding:10px 12px}.content{padding:18px 12px 115px}
       aside{position:fixed;top:0;left:0;right:0;height:62px;z-index:30;border-right:0;border-bottom:1px solid var(--line);display:flex;flex-direction:row;padding:8px 9px}
       .brand{padding:0 8px}.nav{display:flex;overflow:auto}.nav button{min-width:48px;height:44px;padding:0}.sideBottom{display:none}.app{padding-top:62px}.topbar{position:sticky}.heroCard{min-height:280px;padding:22px} .viewIntro{align-items:center}.viewBigArt{width:110px;height:110px}.viewTitle{font-size:28px}.formGrid{grid-template-columns:1fr}
       .field.full{grid-column:auto}.player{grid-template-columns:minmax(0,1fr) minmax(170px,.9fr);gap:8px;padding:8px}.nowArt{width:48px;height:48px}
@@ -519,7 +513,7 @@ main{min-width:0;min-height:0}
       <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span>Delete library</span></button>
       <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
       <input type="file" id="directoryPicker" webkitdirectory directory mozdirectory multiple hidden accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf,image/*">
-      <input type="file" id="bundlePicker" accept=".localify,.json,.zip,application/zip" hidden>
+      <input type="file" id="bundlePicker" accept="*/*" hidden>
       <input type="file" id="coverPicker" accept="image/*" hidden>
     </div>
   </aside>
@@ -538,6 +532,8 @@ main{min-width:0;min-height:0}
     <div id="content" class="content"></div>
   </main>
 
+  <aside class="nowSidebar" id="nowSidebar" aria-label="Now Playing panel"></aside>
+
   <div class="player">
     <div class="now" id="nowPlaying">
       <div class="nowArt" id="nowArt"><div class="art fallback"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg></div></div>
@@ -549,7 +545,7 @@ main{min-width:0;min-height:0}
     </div>
     <div class="playerCenter">
       <div class="controls">
-        <label class="shuffleToggle" title="Shuffle"><input id="shuffle" type="checkbox"> <span>Shuffle</span></label>
+        <button class="ctrl iconOnly shuffleToggle" id="shuffle" title="Shuffle" aria-label="Shuffle" aria-pressed="false"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3c4 0 6 10 10 10h3M4 17h3c1.4 0 2.4-1.3 3.2-2.8M15 7h2c1.3 0 2.2 1 3 2.2"/><path d="m18 4 3 3-3 3M18 14l3 3-3 3"/></svg></button>
         <button class="ctrl iconOnly" id="prev" title="Previous" aria-label="Previous"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12"/><path d="m18 7-8 5 8 5z"/></svg></button>
         <button class="ctrl big iconOnly" id="playPause" title="Play/Pause" aria-label="Play/Pause"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6z"/></svg></button>
         <button class="ctrl iconOnly" id="next" title="Next" aria-label="Next"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12"/><path d="m6 7 8 5-8 5z"/></svg></button>
@@ -559,7 +555,7 @@ main{min-width:0;min-height:0}
     </div>
     <div class="playerRight">
       <button class="ctrl iconOnly" id="lyricsBtn" title="Lyrics" aria-label="Lyrics"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M6 9h12M6 13h8M6 17h10"/></svg></button>
-      <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound filters" aria-label="Sound filters"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
+      <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly nowPanelToggle" id="nowPanelToggle" title="Now Playing" aria-label="Show Now Playing panel" aria-pressed="false"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 10v6M12 7h.01"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound filters" aria-label="Sound filters"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
       <span style="color:#7e8793;display:inline-flex"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7 7 0 0 1 0 10"/></svg></span><input class="volume" id="volume" type="range" min="0" max="1" step=".01" value=".9">
     </div>
   </div>
