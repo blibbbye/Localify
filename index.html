@@ -2064,7 +2064,7 @@ main{min-width:0;min-height:0}
     return `<div class="artistPickerWrap" id="${id}">
       <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(summary)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
       <div class="artistPickerMenu" role="listbox" aria-label="Select artists">
-        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(a.name)}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
+        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
       </div>
     </div>`;
   }
