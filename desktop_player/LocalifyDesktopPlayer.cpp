@@ -131,4 +131,4 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  RECT work{};SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);SetWindowPos(H,HWND_TOP,work.right-505,work.bottom-260,480,220,SWP_SHOWWINDOW);ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
  std::thread(server).detach();std::thread(rpcLoop).detach();MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
-// Build trigger: stable Desktop Player distribution build.
+// Clean rebuild trigger: stable, resizable Windows desktop player.
