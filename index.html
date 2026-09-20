@@ -617,8 +617,13 @@ main{min-width:0;min-height:0}
     if(arr.length)return [...new Set(arr)];
     return obj?.[legacyKey]?[obj[legacyKey]]:[];
   }
+  function artistDisplayName(a){
+    const n=typeof a?.name==="string"?a.name.trim():"";
+    if(!n||/^(?:no name|undefined|null)$/i.test(n))return "Unknown Artist";
+    return n;
+  }
   function namesOfIds(ids){
-    return [...new Set((ids||[]).map(id=>artistById(id)?.name).filter(Boolean))];
+    return [...new Set((ids||[]).map(id=>artistDisplayName(artistById(id))).filter(Boolean))];
   }
   function artistIdsForTrack(t){return idsOf(t,"artistIds","artistId")}
   function artistIdsForAlbum(a){return idsOf(a,"artistIds","artistId")}
@@ -894,6 +899,7 @@ main{min-width:0;min-height:0}
     state.liked=Array.isArray(state.liked)?state.liked:[];
     state.recent=Array.isArray(state.recent)?state.recent:[];
     state.queue=Array.isArray(state.queue)?state.queue:[];
+    state.artists.forEach(a=>{if(!a.id)a.id=uid();if(!artistDisplayName(a))a.name="Unknown Artist";if(/^(?:no name|undefined|null)$/i.test(String(a.name||"").trim()))a.name="Unknown Artist";});
     state.selected=[];
     // Migrate older single-artist libraries to the multi-artist schema.
     for(const a of state.albums){
@@ -1087,7 +1093,7 @@ main{min-width:0;min-height:0}
   function discNo(t){const n=parseInt(t?.disc,10);return Number.isFinite(n)?n:1}
   function sortAlbumTracks(arr){return [...arr].sort((a,b)=>discNo(a)-discNo(b) || ((trackNo(a)??999999)-(trackNo(b)??999999)) || String(displayTrackTitle(a,true)).localeCompare(String(displayTrackTitle(b,true)),undefined,{numeric:true}));}
 
-  function artistList(){return [...state.artists].sort((a,b)=>a.name.localeCompare(b.name))}
+  function artistList(){return [...state.artists].sort((a,b)=>artistDisplayName(a).localeCompare(artistDisplayName(b)))}
 
   function renderHome(){
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8);
@@ -2049,11 +2055,11 @@ main{min-width:0;min-height:0}
     $("#coverPicker").onchange=async e=>{const f=e.target.files[0];if(f){const data=await readFileImage(f);onDone(data)}};
     $("#coverPicker").click();
   }
-  function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.name)}</option>`).join("")}
+  function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(artistDisplayName(a))}</option>`).join("")}
   function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
     const selected=new Set(selectedIds||[]);
     const list=artistList();
-    const names=list.filter(a=>selected.has(a.id)).map(a=>a.name);
+    const names=list.filter(a=>selected.has(a.id)).map(artistDisplayName);
     const summary=names.length?names.join(", "):"Select artist";
     return `<div class="artistPickerWrap" id="${id}">
       <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(summary)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
