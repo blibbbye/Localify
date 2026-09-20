@@ -51,7 +51,7 @@ static std::string req(SOCKET s){
 static void coverLoad(std::string url,uint64_t token){
  std::thread([url,token]{
   if(url.empty())return;
-  HINTERNET se=WinHttpOpen(L"LocalifyDesktopPlayer/3",WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,0,0,0);if(!se)return;
+  HINTERNET se=WinHttpOpen(L"LocalifyDesktopPlayer/4",WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,0,0,0);if(!se)return;
   URL_COMPONENTS u{};u.dwStructSize=sizeof(u);wchar_t host[256]{},path[4096]{};u.lpszHostName=host;u.dwHostNameLength=256;u.lpszUrlPath=path;u.dwUrlPathLength=4096;
   std::wstring wu=W(url);std::vector<BYTE> bytes;HINTERNET co=nullptr,re=nullptr;
   if(WinHttpCrackUrl(wu.c_str(),0,0,&u)){co=WinHttpConnect(se,host,u.nPort,0);if(co)re=WinHttpOpenRequest(co,L"GET",path,0,0,0,(u.nScheme==INTERNET_SCHEME_HTTPS)?WINHTTP_FLAG_SECURE:0);}
