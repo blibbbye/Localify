@@ -130,7 +130,7 @@ static void paint(HDC out){
    else center(g,L"♪",(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,38,Color(255,125,211,252),true);
  }
  float infoX=(float)cr.right+18;
- float infoW=(float)std::max(150,w-cr.right-34);
+ float infoW=(float)std::max<int>(150,(int)w-cr.right-34);
  std::wstring song=W(p.song.empty()?(p.playing?"Unknown song":"Nothing playing"):p.song);
  std::wstring artist=W(p.artist.empty()?"Unknown Artist":p.artist);
  txt(g,song.c_str(),infoX,(float)cr.top+4,infoW,34,20,Color(255,247,248,250),true);
@@ -139,18 +139,18 @@ static void paint(HDC out){
      p.playing?Color(255,125,211,252):Color(255,145,153,168),true);
 
  float controlX=infoX;
- float controlW=(float)std::max(150,w-(int)controlX-22);
+ float controlW=(float)std::max<int>(150,(int)w-(int)controlX-22);
  int progressY=h-86;
  fill(g,controlX,(float)progressY,controlW,6,3,Color(255,43,48,58));
  double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0;
  if(ratio>0)fill(g,controlX,(float)progressY,controlW*(float)ratio,6,3,Color(255,125,211,252));
  float by=(float)progressY+16;
- drawButton(g,L"‹",controlX,by,54,34,18);
- drawButton(g,p.playing?L"Ⅱ":L"▶",controlX+62,by,66,34,16);
- drawButton(g,L"›",controlX+136,by,54,34,18);
- txt(g,L"Discord",22,(float)h-30,70,16,9,g_serverReady?Color(255,130,240,160):Color(255,145,153,168),true);
- txt(g,g_discord?L"Connected":L"Waiting for Discord",(float)22+58,(float)h-30,180,16,9,
-     g_discord?Color(255,135,230,164):Color(255,145,153,168));
+ fill(g,controlX,by,54,34,10,Color(255,30,35,44));center(g,L"‹",controlX,by,54,34,18,Color(255,214,220,228),true);
+ fill(g,controlX+62,by,66,34,10,Color(255,125,211,252));center(g,p.playing?L"Ⅱ":L"▶",controlX+62,by,66,34,16,Color(255,7,16,24),true);
+ fill(g,controlX+136,by,54,34,10,Color(255,30,35,44));center(g,L"›",controlX+136,by,54,34,18,Color(255,214,220,228),true);
+ txt(g,L"Discord",22,(float)h-30,70,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
+ txt(g,Discord.load()?L"Connected":L"Waiting for Discord",(float)22+58,(float)h-30,180,16,9,
+     Discord.load()?Color(255,135,230,164):Color(255,145,153,168));
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
 }
@@ -167,7 +167,7 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
     RECT rc{};GetClientRect(h,&rc);RECT cr=coverRectFor(rc.right,rc.bottom);
     float infoX=(float)cr.right+18;
     int progressY=rc.bottom-86;
-    float controlW=(float)std::max(150,rc.right-(int)infoX-22);
+    float controlW=(float)std::max<int>(150,rc.right-(int)infoX-22);
     if(p.y>=progressY-8&&p.y<=progressY+14&&p.x>=(int)infoX&&p.x<=(int)(infoX+controlW)){
       double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
       if(d>0)issue("seek",std::clamp((p.x-infoX)/(double)controlW,0.0,1.0)*d);
