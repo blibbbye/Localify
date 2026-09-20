@@ -1073,7 +1073,9 @@ main{min-width:0;min-height:0}
     return raw.match(/^0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
   }
   function trackNo(t){
-    const m=trackPrefixMatch(t?.track??t?.title??"");
+    const explicit=parseInt(t?.track,10);
+    if(Number.isFinite(explicit))return explicit;
+    const m=trackPrefixMatch(t?.title);
     return m?parseInt(m[1],10):null;
   }
   function displayTrackTitle(t,removeTrackNumber=false){
