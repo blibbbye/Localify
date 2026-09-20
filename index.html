@@ -1857,7 +1857,19 @@ main{min-width:0;min-height:0}
     const index=Math.max(0,tracks.findIndex(x=>x.id===id));
     playQueue(tracks,index);
   }
-  function playQueue(tracks,index){state.queue=tracks.map(t=>t.id);state.queueIndex=Math.max(0,index);playCurrent()}
+  function playQueue(tracks,index){
+    const list=[...(tracks||[])];
+    const safeIndex=Math.max(0,Math.min(index||0,Math.max(0,list.length-1)));
+    if(state.settings.shuffle){
+      const current=list[safeIndex];
+      const rest=shuffleArr(list.filter((_,i)=>i!==safeIndex));
+      state.queue=current?[current.id,...rest.map(t=>t.id)]:rest.map(t=>t.id);
+      state.queueIndex=0;
+    }else{
+      state.queue=list.map(t=>t.id);state.queueIndex=safeIndex;
+    }
+    playCurrent();
+  }
   async function playCurrent(){
     const token=++playToken;
     const t=trackById(state.queue[state.queueIndex]);
@@ -1916,7 +1928,14 @@ main{min-width:0;min-height:0}
     if(!state.queue.length)return;
     state.queueIndex++;
     if(state.queueIndex>=state.queue.length){
-      if(state.settings.repeat==="all" || state.settings.shuffle){state.queueIndex=0;return playCurrent()}
+      if(state.settings.repeat==="all"){
+        if(state.settings.shuffle){
+          const current=state.currentId;
+          const rest=shuffleArr(state.queue.filter(id=>id!==current));
+          state.queue=current?[current,...rest]:rest;
+        }
+        state.queueIndex=0;return playCurrent();
+      }
       state.queueIndex=state.queue.length-1;audio.pause();clearDiscordPresence();renderPlayer();return;
     }
     playCurrent();
@@ -2046,7 +2065,7 @@ main{min-width:0;min-height:0}
       }else{
         al=album||null;
       }
-      if(folderCover&&!al.cover)al.cover=folderCover;
+      if(folderCover&&al&&!al.cover)al.cover=folderCover;
       const albumArtistIds=al?artistIdsForAlbum(al):[];
       const fallbackArtistIds=artist?[artist.id]:[];
       const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||NONE_LABEL;
@@ -2058,7 +2077,7 @@ main{min-width:0;min-height:0}
         genre:al?.genre||"",year:al?.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
         explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
         blob:f,_blobDirty:true,cover:al?.cover||artist?.image||folderCover||null,
-        lyrics:"",credits:normalizeCredits(al.credits||{}),addedAt:Date.now()
+        lyrics:"",credits:normalizeCredits(al?.credits||{}),addedAt:Date.now()
       };
       state.tracks.push(t);
       added.push(t);
@@ -2187,8 +2206,8 @@ main{min-width:0;min-height:0}
       syncArtistPickerSummary(wrap);
     });
   }
-  function syncArtistText(obj,ids){const names=namesOfIds(ids);obj.artist=names.join(", ")||"Unknown Artist";obj.artistId=ids[0]||null;obj.artistIds=[...ids];}
-  function albumOptions(selected=""){return albumList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.title)} — ${esc(artistNamesForAlbum(a).join(", ")||"Unknown Artist")}</option>`).join("")}
+  function syncArtistText(obj,ids){const names=namesOfIds(ids);obj.artist=names.join(", ")||NONE_LABEL;obj.artistId=ids[0]||null;obj.artistIds=[...ids];}
+  function albumOptions(selected=""){return albumList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.title)} — ${esc(artistNamesForAlbum(a).join(", ")||NONE_LABEL)}</option>`).join("")}
   function yesNoOptions(value){return `<option value="keep" ${value==="keep"?"selected":""}>Keep existing</option><option value="yes" ${value==="yes"?"selected":""}>Yes</option><option value="no" ${value==="no"?"selected":""}>No</option>`}
 
   function editTrack(id){
@@ -2234,9 +2253,7 @@ main{min-width:0;min-height:0}
     bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
     $("#bulkSave").onclick=async()=>{
       const bulkArtistIds=$("#applyArtist").checked?readArtistPicker("bulkArtists"):null;const bulkAlbumArtistIds=$("#applyAlbumArtist").checked?readArtistPicker("bulkAlbumArtists"):null;
-      if($("#applyArtist").checked&&!bulkArtistIds.length){toast("Choose at least one artist.");return}
-      if($("#applyAlbumArtist").checked&&!bulkAlbumArtistIds.length){toast("Choose at least one album artist.");return}
-      for(const t of tracks){const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||"Unknown Artist"}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||"Unknown Artist"}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
+      for(const t of tracks){const album=$("#applyAlbum").checked?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(album){t.albumId=album.id;t.album=album.title;if(!t.cover&&album.cover)t.cover=album.cover}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
       await save();state.selected=[];closeModal(true);renderCurrentViewWithoutScroll();toast("Bulk changes applied.");
     };
   }
@@ -2455,8 +2472,8 @@ main{min-width:0;min-height:0}
   setInterval(pollDesktopControl,350);
   setInterval(checkDesktopPlayer,4000);
   audio.addEventListener("timeupdate",()=>{updatePlayerTime();sendDiscordPresence(false)});
-  audio.addEventListener("play",()=>{renderPlayer();sendDiscordPresence(true)});
-  audio.addEventListener("pause",()=>{renderPlayer();clearDiscordPresence()});
+  audio.addEventListener("play",()=>{renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
+  audio.addEventListener("pause",()=>{renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
   audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();sendDiscordPresence(true)});
   audio.addEventListener("seeking",()=>sendDiscordPresence(true));
   audio.addEventListener("seeked",()=>sendDiscordPresence(true));
