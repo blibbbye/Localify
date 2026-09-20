@@ -1273,7 +1273,7 @@ main{min-width:0;min-height:0}
     $$(".play-row").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.closest("tr").dataset.id)});
     $$(".like-row").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleLike(b.closest("tr").dataset.id)});
     $$(".more-row").forEach(b=>b.onclick=e=>{e.stopPropagation();const r=b.closest("tr");openContext(e.clientX,e.clientY,r.dataset.id)});
-    $("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
+    $$("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
     $$("#bulkPlay").forEach(b=>b.onclick=()=>bulkPlay(shown));
     $("#bulkEdit")?.addEventListener("click",()=>bulkEdit(state.selected.map(trackById).filter(Boolean)));
     $("#bulkLike")?.addEventListener("click",async()=>{for(const id of state.selected)if(!state.liked.includes(id))state.liked.push(id);await save();renderCurrentViewWithoutScroll()});
