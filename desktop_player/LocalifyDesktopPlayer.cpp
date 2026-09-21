@@ -47,7 +47,29 @@ static void reply(SOCKET s,const char*st,const char*ct,const std::string&b){
  send(s,h.data(),(int)h.size(),0);if(!b.empty())send(s,b.data(),(int)b.size(),0);
 }
 static std::string req(SOCKET s){
- std::string d;char b[8192];for(int i=0;i<16;i++){int n=recv(s,b,sizeof(b),0);if(n<=0)break;d.append(b,n);if(d.find("\r\n\r\n")!=std::string::npos)break;}return d;
+ std::string d;char b[8192];
+ size_t headEnd=std::string::npos;
+ size_t contentLength=0;
+ for(;;){
+  int n=recv(s,b,sizeof(b),0);if(n<=0)break;
+  d.append(b,n);
+  headEnd=d.find("\r\n\r\n");
+  if(headEnd!=std::string::npos){
+    size_t p=d.find("\r\nContent-Length:");
+    if(p==std::string::npos)p=d.find("\r\ncontent-length:");
+    if(p!=std::string::npos){
+      p=d.find(':',p);
+      if(p!=std::string::npos){
+        ++p;while(p<d.size()&&(d[p]==' '||d[p]=='\t'))++p;
+        contentLength=std::strtoull(d.c_str()+p,nullptr,10);
+      }
+    }
+    const size_t bodyStart=headEnd+4;
+    if(d.size()>=bodyStart+contentLength)break;
+  }
+  if(d.size()>1024*1024)break;
+ }
+ return d;
 }
 static void coverLoad(std::string url,uint64_t token){
  std::thread([url,token]{
