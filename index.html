@@ -1468,9 +1468,14 @@ main{min-width:0;min-height:0}
     // Version labels: "V1", "Version 1", "(V1)", etc.
     const versionless=raw.replace(/\s*\(?\s*(?:v|ver|version)\.?\s*\d+(?:\.\d+)?\s*\)?\s*$/i,"").trim();
     if(versionless&&versionless!==raw)add(versionless);
-    // Parenthetical final/deluxe/revised labels should not prevent matching.
-    const common=raw.replace(/\s*\((?:final|complete|deluxe|revised|draft)\)\s*$/i,"").trim();
+    // Common edition labels should not prevent matching.
+    const common=raw
+      .replace(/\s*\((?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|album)\)\s*$/i,"").trim()
+      .replace(/\s+(?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|album)\s*$/i,"").trim();
     if(common&&common!==raw)add(common);
+    // A colon/dash often introduces an edition or version suffix.
+    const beforeSeparator=raw.split(/\s*[:|]\s*/)[0].trim();
+    if(beforeSeparator&&beforeSeparator!==raw)add(beforeSeparator);
     // Roman numerals.
     add(raw.replace(/\bIII\b/gi,"3").replace(/\bII\b/gi,"2").replace(/\bI\b/gi,"1"));
     return [...variants];
@@ -1536,23 +1541,38 @@ main{min-width:0;min-height:0}
     return "";
   }
 
+  function coverVersionInfo(value){
+    const normalized=normalizeCoverAlbumName(value);
+    const tokens=normalized.split(/[^a-z0-9]+/).filter(Boolean);
+    const versions=tokens.filter(t=>/^\\d+(?:\\.\\d+)?$/.test(t));
+    const words=tokens.filter(t=>!/^\\d+(?:\\.\\d+)?$/.test(t)&&!["v","ver","version"].includes(t));
+    return {tokens,versions,words,wordKey:words.join(" "),versionKey:versions.join(".")};
+  }
   function coverNameSimilarity(a,b){
     const x=canonicalCoverAlbumName(a),y=canonicalCoverAlbumName(b);
     if(!x||!y)return 0;
     if(x===y)return 1;
-    if((x.includes(y)||y.includes(x))&&Math.min(x.length,y.length)>=5){
-      return Math.min(x.length,y.length)/Math.max(x.length,y.length)>=0.62?0.94:0;
+    const pa=coverVersionInfo(a),pb=coverVersionInfo(b);
+    // Never let a numbered album fall back to the similarly named unnumbered
+    // album. Example: "Donda 2" must not resolve to "Donda".
+    if(pa.versionKey!==pb.versionKey)return 0;
+    const aw=pa.wordKey,bw=pb.wordKey;
+    if(aw===bw)return pa.versions.length||pb.versions.length?0.99:0.98;
+    if((aw.includes(bw)||bw.includes(aw))&&Math.min(aw.length,bw.length)>=4){
+      const ratio=Math.min(aw.length,bw.length)/Math.max(aw.length,bw.length);
+      return ratio>=0.55?0.93+Math.min(.06,(ratio-.55)*.13):0;
     }
-    if(Math.abs(x.length-y.length)>8||Math.max(x.length,y.length)>48)return 0;
+    if(Math.abs(x.length-y.length)>12||Math.max(x.length,y.length)>64)return 0;
     const prev=Array.from({length:y.length+1},(_,i)=>i);
     for(let i=1;i<=x.length;i++){
       let left=i;
       for(let j=1;j<=y.length;j++){
-        const up=prev[j]+1, ins=left+1, diag=prev[j-1]+(x[i-1]===y[j-1]?0:1);
+        const up=prev[j]+1,ins=left+1,diag=prev[j-1]+(x[i-1]===y[j-1]?0:1);
         const next=Math.min(up,ins,diag);prev[j]=next;left=next;
       }
     }
-    return 1-(prev[y.length]/Math.max(x.length,y.length));
+    const score=1-(prev[y.length]/Math.max(x.length,y.length));
+    return score>=0.84?score:0;
   }
 
   function externalCoverForAlbum(albumTitle){
@@ -1642,7 +1662,9 @@ main{min-width:0;min-height:0}
       // repo's real current filenames override stale built-in aliases.
       await loadLocalifyCoverMap();
       const external=externalCoverForAlbum(album);
-      if(external){discordCoverCache.set(cacheKey,external);return external;}
+      if(external){
+        if(await checkImageUrl(external)){discordCoverCache.set(cacheKey,external);return external;}
+      }
 
       // 2) Fall back to the built-in aliases when the registry is unavailable.
       const builtin=builtInCoverForAlbum(album);
@@ -1756,6 +1778,7 @@ main{min-width:0;min-height:0}
     const requestId=++discordPresenceRequest;
     const t=trackById(state.currentId);
     if(!t||audio.paused){sendDiscordMessage({kind:"clear"});return}
+    repairImportedTrackMetadata(t);
 
     // Publish the status immediately with any already-known cover. Do not wait
     // for album-name/filename probing, otherwise albums without a matching
@@ -2473,6 +2496,62 @@ main{min-width:0;min-height:0}
   function presetLabel(k){return ({full:'Everything',artists:'Artists',albums:'Albums',songs:'Songs',playlists:'Playlists',liked:'Liked Songs',recent:'Recently Played',settings:'Settings'})[k]||'Preset'}
   function presetKey(v){return String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
   function cloneEntity(o){const x=JSON.parse(JSON.stringify(o||{}));delete x.blob;delete x._blobDirty;return x}
+  function importedNameList(value){
+    if(Array.isArray(value))return value.flatMap(v=>typeof v==="string"?v.split(","):[]).map(v=>v.trim()).filter(Boolean);
+    if(typeof value==="string")return value.split(",").map(v=>v.trim()).filter(Boolean);
+    return [];
+  }
+  function findArtistByName(name){
+    const key=String(name||"").trim().toLocaleLowerCase();
+    if(!key)return null;
+    return state.artists.find(a=>artistDisplayName(a).toLocaleLowerCase()===key)||null;
+  }
+  function resolveImportedArtistIds(src,artistMap){
+    const ids=artistIdsForTrack(src).map(id=>artistMap.get(id)||id).filter(id=>artistById(id));
+    if(ids.length)return [...new Set(ids)];
+    const names=importedNameList(src?.artists||src?.artistNames||src?.artist);
+    const out=[];
+    for(const name of names){
+      const existing=findArtistByName(name);
+      if(existing)out.push(existing.id);
+      else{
+        const a=getOrCreateArtist(name);
+        out.push(a.id);
+      }
+    }
+    return [...new Set(out)];
+  }
+  function repairImportedTrackMetadata(t){
+    if(!t)return t;
+    if(!String(t.title||"").trim()){
+      const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
+      if(fallback)t.title=fallback;
+    }
+    if(!Array.isArray(t.artistIds)||!t.artistIds.length){
+      const ids=resolveImportedArtistIds(t,new Map());
+      if(ids.length)applyArtistIds(t,ids);
+    }else{
+      applyArtistIds(t,t.artistIds.filter(id=>artistById(id)));
+    }
+    const names=artistNamesForTrack(t);
+    t.artist=names.join(", ")||String(t.artist||"").trim();
+    if(!t.albumId&&String(t.album||"").trim()){
+      const key=presetKey(t.album);
+      const candidate=state.albums.find(a=>presetKey(a.title)===key);
+      if(candidate)t.albumId=candidate.id;
+    }
+    if(t.albumId){
+      const a=albumById(t.albumId);
+      if(a){
+        t.album=a.title;
+        const aa=idsOf(t,"albumArtistIds","albumArtistId");
+        if(aa.length)applyAlbumArtistIds(t,aa.filter(id=>artistById(id)));
+        else if(artistIdsForAlbum(a).length)applyAlbumArtistIds(t,artistIdsForAlbum(a));
+        t.albumArtist=albumArtistName(t);
+      }
+    }
+    return t;
+  }
   function buildPresetScope(kind,ids=[]){const set=new Set(ids||[]);let artists=[],albums=[],tracks=[],playlists=[],liked=[],recent=[],settings=null;if(kind==='full'){artists=[...state.artists];albums=[...state.albums];tracks=[...state.tracks];playlists=[...state.playlists];liked=[...state.liked];recent=[...state.recent];settings=state.settings}else if(kind==='artists'){artists=state.artists.filter(a=>set.has(a.id))}else if(kind==='albums'){albums=state.albums.filter(a=>set.has(a.id));tracks=state.tracks.filter(t=>set.has(t.albumId))}else if(kind==='songs'){tracks=state.tracks.filter(t=>set.has(t.id));albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='playlists'){playlists=state.playlists.filter(p=>set.has(p.id));const tid=new Set(playlists.flatMap(p=>Array.isArray(p.trackIds)?p.trackIds:[]));tracks=state.tracks.filter(t=>tid.has(t.id));albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='liked'){liked=state.liked.filter(id=>trackById(id));tracks=liked.map(trackById).filter(Boolean);albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='recent'){recent=state.recent.filter(id=>trackById(id));tracks=recent.map(trackById).filter(Boolean);albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='settings')settings=state.settings;const aid=new Set(artists.map(a=>a.id));for(const a of albums)for(const id of artistIdsForAlbum(a))aid.add(id);for(const t of tracks){for(const id of artistIdsForTrack(t))aid.add(id);for(const id of (Array.isArray(t.albumArtistIds)?t.albumArtistIds:[]))aid.add(id)}if(kind!=='artists')artists=state.artists.filter(a=>aid.has(a.id));return {artists,albums,tracks,playlists,liked,recent,settings}}
   async function collectPresetMeta(kind,ids){
     const scope=buildPresetScope(kind,ids),tracks=[],missing=[];
@@ -2591,8 +2670,33 @@ main{min-width:0;min-height:0}
   function findAlbumImport(a,m){const ids=artistIdsForAlbum(a).map(id=>m.get(id)||id).filter(Boolean);return state.albums.find(x=>presetKey(x.title)===presetKey(a.title)&&artistIdsForAlbum(x).length===ids.length&&artistIdsForAlbum(x).every(id=>ids.includes(id)))||null}
   function findTrackImport(t,am,atm){const aid=t.albumId?am.get(t.albumId)||null:null,arts=artistIdsForTrack(t).map(id=>atm.get(id)||id).filter(Boolean);return state.tracks.find(x=>presetKey(x.title)===presetKey(t.title)&&(aid?x.albumId===aid:!x.albumId)&&artistIdsForTrack(x).length===arts.length&&artistIdsForTrack(x).every(id=>arts.includes(id)))||null}
   async function importPresetData(p,files,mode){try{const kind=p.presetKind||'full',artists=Array.isArray(p.artists)?p.artists:[],albums=Array.isArray(p.albums)?p.albums:[],tracks=Array.isArray(p.tracks)?p.tracks:[],playlists=Array.isArray(p.playlists)?p.playlists:[];if(kind==='settings'){state.settings=mode==='set'?JSON.parse(JSON.stringify(p.settings||state.settings)):{...state.settings,...(p.settings||{})};applyEQ();await save(true);render();toast('Settings imported.');return}if(kind==='full'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.artists=[];state.albums=[];state.playlists=[];state.liked=[];state.recent=[];state.tracks=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='artists'&&mode==='set')state.artists=[];if(kind==='albums'&&mode==='set'){state.albums=[];for(const t of state.tracks){if(t.albumId&&!albums.some(a=>a.id===t.albumId)){t.albumId=null;t.album='Unknown Album'}}}if(kind==='songs'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.tracks=[];state.liked=[];state.recent=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='playlists'&&mode==='set')state.playlists=[];if(kind==='liked'&&mode==='set')state.liked=[];if(kind==='recent'&&mode==='set')state.recent=[];
-    const artistMap=new Map();for(const a0 of artists){const a=cloneEntity(a0),existing=mode==='add'?findArtistImport(a):null;if(existing)artistMap.set(a0.id,existing.id);else{a.id=uid();state.artists.push(a);artistMap.set(a0.id,a.id)}}
-    const albumMap=new Map();for(const a0 of albums){const a=cloneEntity(a0);applyArtistIds(a,artistIdsForAlbum(a0).map(id=>artistMap.get(id)||id).filter(id=>artistById(id)));const existing=mode==='add'?findAlbumImport(a,artistMap):null;if(existing)albumMap.set(a0.id,existing.id);else{a.id=uid();state.albums.push(a);albumMap.set(a0.id,a.id)}}
+    const artistMap=new Map();
+    for(const a0 of artists){
+      const a=cloneEntity(a0);
+      const existing=mode==='add'?findArtistImport(a):null;
+      if(existing)artistMap.set(a0.id,existing.id);
+      else{
+        a.id=uid();
+        const name=artistDisplayName(a);
+        if(name&&name!=="Unknown Artist")state.artists.push(a);
+        else continue;
+        artistMap.set(a0.id,a.id);
+      }
+    }
+    const albumMap=new Map();
+    for(const a0 of albums){
+      const a=cloneEntity(a0);
+      const mappedIds=artistIdsForAlbum(a0).map(id=>artistMap.get(id)||id).filter(id=>artistById(id));
+      if(mappedIds.length)applyArtistIds(a,mappedIds);
+      else{
+        const fallbackNames=importedNameList(a0?.artists||a0?.artistNames||a0?.artist||a0?.albumArtist);
+        const fallbackIds=fallbackNames.map(name=>findArtistByName(name)?.id||getOrCreateArtist(name).id).filter(Boolean);
+        applyArtistIds(a,fallbackIds);
+      }
+      const existing=mode==='add'?findAlbumImport(a,artistMap):null;
+      if(existing)albumMap.set(a0.id,existing.id);
+      else{a.id=uid();state.albums.push(a);albumMap.set(a0.id,a.id)}
+    }
     const trackMap=new Map(),dirty=[];
     const persistImportBatch=async(force=false)=>{
       if(!dirty.length)return true;
@@ -2604,11 +2708,34 @@ main{min-width:0;min-height:0}
       return persisted;
     };
     for(const t0 of tracks){
-      const t=cloneEntity(t0);applyArtistIds(t,artistIdsForTrack(t0).map(id=>artistMap.get(id)||id).filter(id=>artistById(id)));
-      t.albumId=t0.albumId?(albumMap.get(t0.albumId)||null):null;t.album=t.albumId?(albumById(t.albumId)?.title||t.album||'Unknown Album'):'Unknown Album';
+      const t=cloneEntity(t0);
+      const importedArtistIds=resolveImportedArtistIds(t0,artistMap);
+      applyArtistIds(t,importedArtistIds);
+      t.artist=artistNamesForTrack(t).join(", ")||String(t0.artist||"").trim();
+      t.albumId=t0.albumId?(albumMap.get(t0.albumId)||null):null;
+      if(!t.albumId&&String(t0.album||"").trim()){
+        const localAlbum=state.albums.find(a=>presetKey(a.title)===presetKey(t0.album));
+        if(localAlbum)t.albumId=localAlbum.id;
+      }
+      t.album=t.albumId?(albumById(t.albumId)?.title||t.album||'Unknown Album'):(String(t.album||t0.album||"").trim()||'Unknown Album');
       if(Array.isArray(t0.albumArtistIds))applyAlbumArtistIds(t,t0.albumArtistIds.map(id=>artistMap.get(id)||id).filter(id=>artistById(id)));
+      if(!artistIdsForTrack(t).length&&artistIdsForAlbum(t.albumId?albumById(t.albumId):null).length)applyArtistIds(t,artistIdsForAlbum(albumById(t.albumId)));
+      if(!Array.isArray(t.albumArtistIds)||!t.albumArtistIds.length){
+        const a=t.albumId?albumById(t.albumId):null;
+        if(a&&artistIdsForAlbum(a).length)applyAlbumArtistIds(t,artistIdsForAlbum(a));
+      }
       const existing=mode==='add'?findTrackImport(t,albumMap,artistMap):null;const target=existing||t;
-      if(existing)trackMap.set(t0.id,target.id);else{t.id=uid();t.blob=null;t._blobDirty=false;state.tracks.push(t);trackMap.set(t0.id,t.id)}
+      if(existing){
+        trackMap.set(t0.id,target.id);
+        if(!String(target.title||"").trim())target.title=t.title;
+        if(!artistIdsForTrack(target).length&&artistIdsForTrack(t).length)applyArtistIds(target,artistIdsForTrack(t));
+        target.artist=artistNamesForTrack(target).join(", ")||String(t.artist||"").trim();
+        if(!target.albumId&&t.albumId)target.albumId=t.albumId;
+        if(target.albumId)target.album=albumById(target.albumId)?.title||target.album;
+      }else{
+        t.id=uid();t.blob=null;t._blobDirty=false;state.tracks.push(t);trackMap.set(t0.id,t.id);
+      }
+      repairImportedTrackMetadata(target);
       const entry=t0.audioFile&&files?.get(t0.audioFile);
       if(entry){target.blob=await zipEntryBlob(entry);target._blobDirty=true;dirty.push(target.id);if(dirty.length>=2)await persistImportBatch();}
     }
