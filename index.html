@@ -1461,26 +1461,33 @@ main{min-width:0;min-height:0}
       const n=normalizeCoverAlbumName(text),c=canonicalCoverAlbumName(text);
       if(n)variants.add(n);if(c)variants.add(c);
     };
-    add(raw);
-    // Normalized punctuation/spaces.
+    const addAcronyms=v=>{
+      const words=normalizeCoverAlbumName(v).replace(/&/g," and ").split(/[^a-z0-9]+/).filter(Boolean);
+      const significant=words.filter(w=>!["the","a","an","of","and","to","in","on","for","with","by","from","at"].includes(w));
+      if(words.length>1)add(words.map(w=>w[0]).join(""));
+      if(significant.length>1)add(significant.map(w=>w[0]).join(""));
+      if(significant.length>0)add(significant.join(" "));
+    };
+    add(raw);addAcronyms(raw);
     add(raw.replace(/[_-]+/g," "));
     add(raw.replace(/\s+/g," "));
-    // Version labels: "V1", "Version 1", "(V1)", etc.
+    add(raw.replace(/[’'`]/g,""));
     const versionless=raw.replace(/\s*\(?\s*(?:v|ver|version)\.?\s*\d+(?:\.\d+)?\s*\)?\s*$/i,"").trim();
-    if(versionless&&versionless!==raw)add(versionless);
-    // Common edition labels should not prevent matching.
-    const common=raw
-      .replace(/\s*\((?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|album)\)\s*$/i,"").trim()
-      .replace(/\s+(?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|album)\s*$/i,"").trim();
-    if(common&&common!==raw)add(common);
-    // A colon/dash often introduces an edition or version suffix.
-    const beforeSeparator=raw.split(/\s*[:|]\s*/)[0].trim();
-    if(beforeSeparator&&beforeSeparator!==raw)add(beforeSeparator);
-    // Roman numerals.
+    if(versionless&&versionless!==raw){add(versionless);addAcronyms(versionless);}
+    const stripped=raw
+      .replace(/\s*\((?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|mix[- ]?tape|album|official(?:\s+mixtape)?|the official(?:\s+mixtape)?)\)\s*$/i,"").trim()
+      .replace(/\s+(?:final|complete|deluxe|revised|draft|edition|remastered|expanded|mixtape|mix[- ]?tape|album|official(?:\s+mixtape)?|the official(?:\s+mixtape)?)\s*$/i,"").trim();
+    if(stripped&&stripped!==raw){add(stripped);addAcronyms(stripped);}
+    const beforeColon=raw.split(/\s*:\s*/)[0].trim();
+    if(beforeColon&&beforeColon!==raw){add(beforeColon);addAcronyms(beforeColon);}
+    const beforeDash=raw.split(/\s+[–—-]\s+/)[0].trim();
+    if(beforeDash&&beforeDash!==raw){add(beforeDash);addAcronyms(beforeDash);}
+    const artistless=raw.replace(/^(?:kanye west|ye)\s*[-:|]\s*/i,"").replace(/\s*[-:|]\s*(?:kanye west|ye)$/i,"").trim();
+    if(artistless&&artistless!==raw){add(artistless);addAcronyms(artistless);}
     add(raw.replace(/\bIII\b/gi,"3").replace(/\bII\b/gi,"2").replace(/\bI\b/gi,"1"));
+    add(raw.replace(/\b3\b/gi,"III").replace(/\b2\b/gi,"II").replace(/\b1\b/gi,"I"));
     return [...variants];
   }
-
   function coverMapUrl(value){
     if(typeof value!=="string"||!value.trim())return "";
     const raw=value.trim();
