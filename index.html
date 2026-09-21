@@ -612,6 +612,7 @@ main{min-width:0;min-height:0}
   const BLOB_STORE = "blobs";
   const DB_KEY = "library";
   const META_KEY = "localify-persistent-meta-v10";
+  const META_BACKUP_KEY = "localify-persistent-meta-backup-v1";
   const LEGACY_DB_NAMES = ["localify-db-v7-save","localify-db-v6","localify-db-v5","localify-db-v1"];
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
@@ -865,9 +866,23 @@ main{min-width:0;min-height:0}
     return p;
   }
 
+  function readMetaFallback(){
+    for(const key of [META_KEY,META_BACKUP_KEY]){
+      try{
+        const raw=localStorage.getItem(key);
+        if(!raw)continue;
+        const parsed=JSON.parse(raw);
+        if(parsed&&Array.isArray(parsed.tracks)&&Array.isArray(parsed.albums)&&Array.isArray(parsed.artists))return parsed;
+      }catch(e){console.warn("Localify metadata fallback read failed",key,e)}
+    }
+    return null;
+  }
+
   function writeMetaFallback(){
     try{
-      localStorage.setItem(META_KEY,JSON.stringify(cloneMeta()));
+      const raw=JSON.stringify(cloneMeta());
+      localStorage.setItem(META_KEY,raw);
+      try{localStorage.setItem(META_BACKUP_KEY,raw)}catch(e){console.warn("Localify backup metadata write failed",e)}
       return true;
     }catch(e){
       console.warn("Localify metadata fallback unavailable",e);
@@ -922,9 +937,11 @@ main{min-width:0;min-height:0}
 
   async function restoreSaved(){
     let meta=null;
+    let restoredFromFallback=false;
     try{meta=await idbGetMeta()}catch(e){console.warn("Localify IndexedDB restore failed",e)}
     if(!meta){
-      try{const raw=localStorage.getItem(META_KEY);if(raw)meta=JSON.parse(raw)}catch(e){console.warn("Localify metadata fallback restore failed",e)}
+      meta=readMetaFallback();
+      restoredFromFallback=!!meta;
     }
     if(!meta)return false;
     Object.assign(state,meta);
@@ -953,6 +970,7 @@ main{min-width:0;min-height:0}
       t._blobDirty=false;
     }
     state.version=11;
+    state._restoredFromFallback=restoredFromFallback;
     return true;
   }
 
@@ -1085,8 +1103,14 @@ main{min-width:0;min-height:0}
     try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{}
     const repaired=repairAllLibraryMetadata();
     if(repaired){try{await save(false);await flushSave(false)}catch(e){console.warn("Localify metadata repair save failed",e)}}
-    if(!restored){writeMetaFallback();toast("Localify started a new saved library on this device.")}
-    else if(storageBlocked)toast("Library loaded, but this browser may be blocking persistent storage.");
+    if(restored&&state._restoredFromFallback&&!storageBlocked){
+      try{await idbPutMeta(cloneMeta())}catch(e){console.warn("Localify could not re-save fallback metadata",e)}
+    }
+    if(!restored){
+      if(storageBlocked)toast("Localify could not access saved storage. Your previous backup was preserved; refresh and try again.");
+      else{writeMetaFallback();toast("Localify started a new saved library on this device.")}
+    }else if(storageBlocked)toast("Library loaded, but this browser may be blocking persistent storage.");
+    delete state._restoredFromFallback;
     return restored;
   }
 
@@ -2972,10 +2996,15 @@ main{min-width:0;min-height:0}
       if(navigator.storage?.persist)try{await navigator.storage.persist()}catch{}
     }catch(e){
       console.error("Localify startup error",e);
-      // Last-resort: keep the app usable and initialize an empty state rather
-      // than making every button appear broken.
-      try{writeMetaFallback()}catch{}
-      toast("Localify opened without restoring the previous library. Check browser storage permissions.");
+      // Never overwrite an existing fallback backup when storage temporarily fails.
+      try{
+        const recovered=await restoreSaved();
+        if(recovered)toast("Localify restored your saved library from its safety backup. Check browser storage permissions.");
+        else toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
+      }catch(recoverError){
+        console.warn("Localify emergency restore failed",recoverError);
+        toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
+      }
     }
     render();
     const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
