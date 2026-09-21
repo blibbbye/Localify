@@ -1083,6 +1083,8 @@ main{min-width:0;min-height:0}
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
     try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{}
+    const repaired=repairAllLibraryMetadata();
+    if(repaired){try{await save(false);await flushSave(false)}catch(e){console.warn("Localify metadata repair save failed",e)}}
     if(!restored){writeMetaFallback();toast("Localify started a new saved library on this device.")}
     else if(storageBlocked)toast("Library loaded, but this browser may be blocking persistent storage.");
     return restored;
@@ -1527,6 +1529,8 @@ main{min-width:0;min-height:0}
   }
 
   let localifyBuiltinCoverLookup=null;
+  let localifyCoverFileIndex=null;
+  let localifyCoverFileIndexPromise=null;
   function getBuiltinCoverLookup(){
     if(localifyBuiltinCoverLookup)return localifyBuiltinCoverLookup;
     const out=new Map();
@@ -1577,6 +1581,14 @@ main{min-width:0;min-height:0}
       const mapped=coverMapUrl(value||"");
       if(mapped)return mapped;
     }
+    const fileIndex=localifyCoverFileIndex||{};
+    for(const key of candidates){
+      const file=fileIndex[key];
+      if(file){
+        const url=new URL(encodeURIComponent(file),LOCALIFY_COVER_DIRECTORY).href;
+        return url;
+      }
+    }
     let best="",score=0;
     for(const [key,value] of Object.entries(localifyCoverMap)){
       const mapped=coverMapUrl(value||"");
@@ -1584,6 +1596,13 @@ main{min-width:0;min-height:0}
       for(const candidate of candidates){
         const match=coverNameSimilarity(candidate,key);
         if(match>score){score=match;best=mapped;}
+      }
+    }
+    if(score>=0.96)return best;
+    for(const [key,file] of Object.entries(fileIndex)){
+      for(const candidate of candidates){
+        const match=coverNameSimilarity(candidate,key);
+        if(match>score){score=match;best=new URL(encodeURIComponent(file),LOCALIFY_COVER_DIRECTORY).href;}
       }
     }
     return score>=0.96?best:"";
@@ -1616,6 +1635,35 @@ main{min-width:0;min-height:0}
     const known=knownCoverUrlForAlbum(title);
     return known||safeExistingCover(title,existingCover)||"";
   }
+  function coverFileStem(name){
+    return String(name||"").replace(/\.[^.\\/]+$/,"").trim();
+  }
+  async function loadLocalifyCoverFileIndex(){
+    if(localifyCoverFileIndex)return localifyCoverFileIndex;
+    if(localifyCoverFileIndexPromise)return localifyCoverFileIndexPromise;
+    localifyCoverFileIndexPromise=(async()=>{
+      const out={};
+      try{
+        const controller=new AbortController();
+        const timeout=setTimeout(()=>controller.abort(),LOCALIFY_COVER_LOAD_TIMEOUT);
+        try{
+          const r=await fetch("https://api.github.com/repos/blibbbye/Localify/contents/covers?ref=main",{cache:"no-store",signal:controller.signal,credentials:"omit"});
+          if(!r.ok)throw new Error(`HTTP ${r.status}`);
+          const files=await r.json();
+          if(Array.isArray(files)){
+            for(const item of files){
+              if(!item||item.type!=="file"||!LOCALIFY_COVER_EXTENSIONS.some(ext=>String(item.name||"").toLowerCase().endsWith(ext)))continue;
+              const file=String(item.name||"");
+              for(const key of coverMapCandidates(coverFileStem(file)))out[key]=file;
+            }
+          }
+        }finally{clearTimeout(timeout)}
+      }catch(e){console.warn("Localify cover directory index could not be loaded.",e)}
+      localifyCoverFileIndex=out;return out;
+    })();
+    return localifyCoverFileIndexPromise;
+  }
+
   async function loadLocalifyCoverMap(){
     if(localifyCoverMap)return localifyCoverMap;
     if(localifyCoverMapPromise)return localifyCoverMapPromise;
@@ -1670,7 +1718,7 @@ main{min-width:0;min-height:0}
     const request=(async()=>{
       // 1) The live covers.json registry is authoritative. This lets the
       // repo's real current filenames override stale built-in aliases.
-      await loadLocalifyCoverMap();
+      await Promise.all([loadLocalifyCoverMap(),loadLocalifyCoverFileIndex()]);
       const external=externalCoverForAlbum(album);
       if(external){
         if(await checkImageUrl(external)){discordCoverCache.set(cacheKey,external);return external;}
@@ -1698,6 +1746,7 @@ main{min-width:0;min-height:0}
   // Warm the public cover registry without blocking playback. Exact built-in
   // covers work immediately; covers.json aliases become available shortly after.
   void loadLocalifyCoverMap();
+  void loadLocalifyCoverFileIndex();
 
   let desktopControlSeq=0;
   function sendDesktopBridgeMessage(payload){
@@ -2505,6 +2554,84 @@ main{min-width:0;min-height:0}
 
   function presetLabel(k){return ({full:'Everything',artists:'Artists',albums:'Albums',songs:'Songs',playlists:'Playlists',liked:'Liked Songs',recent:'Recently Played',settings:'Settings'})[k]||'Preset'}
   function presetKey(v){return String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+  function nonPlaceholderText(value){
+    const s=String(value??"").trim();
+    return s&&!/^(?:unknown|unknown artist|unknown album|none|null|undefined)$/i.test(s)?s:"";
+  }
+  function findArtistIdByName(name){
+    const wanted=nonPlaceholderText(name);
+    if(!wanted)return null;
+    const p=presetKey(wanted);
+    return state.artists.find(a=>presetKey(artistDisplayName(a))===p)?.id||null;
+  }
+  function ensureArtistIdByName(name){
+    const wanted=nonPlaceholderText(name);
+    if(!wanted)return null;
+    return findArtistIdByName(wanted)||getOrCreateArtist(wanted).id;
+  }
+  function repairAllLibraryMetadata(){
+    let changed=false;
+    for(const a of state.artists){
+      const before=a.name;
+      if(!nonPlaceholderText(a.name)){a.name="Unknown Artist";if(before!==a.name)changed=true;}
+      if(!Array.isArray(a.genres))a.genres=[]; 
+    }
+    for(const a of state.albums){
+      const oldIds=artistIdsForAlbum(a);
+      let ids=oldIds.filter(id=>artistById(id));
+      if(!ids.length)ids=importedNameList(a?.artists||a?.artistNames||a?.artist||a?.albumArtist).map(ensureArtistIdByName).filter(Boolean);
+      if(JSON.stringify(ids)!==JSON.stringify(oldIds)){applyArtistIds(a,ids);changed=true;}
+    }
+    for(const t of state.tracks){
+      const oldTitle=t.title;
+      if(!nonPlaceholderText(t.title)){
+        const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
+        if(fallback){t.title=fallback;changed=true;}
+      }
+      const oldArtistIds=artistIdsForTrack(t);
+      let ids=oldArtistIds.filter(id=>artistById(id));
+      if(!ids.length){
+        const names=importedNameList(t?.artists||t?.artistNames||t?.artist);
+        for(const name of names){const id=ensureArtistIdByName(name);if(id)ids.push(id);}
+        if(!ids.length){
+          for(const name of importedNameList(t?.albumArtist)) {const id=ensureArtistIdByName(name);if(id)ids.push(id);}
+        }
+      }
+      ids=[...new Set(ids)];
+      if(JSON.stringify(ids)!==JSON.stringify(oldArtistIds)){applyArtistIds(t,ids);changed=true;}
+      const oldAlbumId=t.albumId;
+      let album=t.albumId?albumById(t.albumId):null;
+      const albumTitle=nonPlaceholderText(t.album);
+      if(!album&&albumTitle){
+        album=state.albums.find(a=>presetKey(a.title)===presetKey(albumTitle))||null;
+        if(album){t.albumId=album.id;changed=true;}
+      }
+      if(album){
+        if(t.album!==album.title){t.album=album.title;changed=true;}
+        const aaOld=idsOf(t,"albumArtistIds","albumArtistId");
+        const aa=aaOld.filter(id=>artistById(id));
+        if(!aa.length)aa.push(...artistIdsForAlbum(album).filter(id=>artistById(id)));
+        if(JSON.stringify(aa)!==JSON.stringify(aaOld)){applyAlbumArtistIds(t,aa);changed=true;}
+      }else if(albumTitle){
+        const albumArtists=idsOf(t,"albumArtistIds","albumArtistId").filter(id=>artistById(id));
+        const albumArtistNames=importedNameList(t?.albumArtist);
+        const fallbackIds=albumArtists.length?albumArtists:albumArtistNames.map(ensureArtistIdByName).filter(Boolean);
+        const albumObj={id:uid(),title:albumTitle,artistIds:[...new Set(fallbackIds)],artistId:fallbackIds[0]||null,cover:t.cover||null,year:t.year||"",genre:t.genre||"",label:t.label||"",description:"",credits:normalizeCredits(t.credits||{})};
+        state.albums.push(albumObj);t.albumId=albumObj.id;changed=true;
+      }
+      const validArtistText=artistNamesForTrack(t).join(", ");
+      if(nonPlaceholderText(validArtistText)&&t.artist!==validArtistText){t.artist=validArtistText;changed=true;}
+      if(t.albumId){
+        const a=albumById(t.albumId);
+        if(a){
+          const albumArtistText=albumArtistName(t);
+          if(nonPlaceholderText(albumArtistText)&&t.albumArtist!==albumArtistText){t.albumArtist=albumArtistText;changed=true;}
+        }
+      }
+    }
+    return changed;
+  }
+
   function cloneEntity(o){const x=JSON.parse(JSON.stringify(o||{}));delete x.blob;delete x._blobDirty;return x}
   function importedNameList(value){
     if(Array.isArray(value))return value.flatMap(v=>typeof v==="string"?v.split(","):[]).map(v=>v.trim()).filter(Boolean);
