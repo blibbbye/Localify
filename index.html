@@ -1418,9 +1418,11 @@ main{min-width:0;min-height:0}
   }
 
   function discordDirectCoverUrl(t){
-    const known=knownCoverUrlForAlbum(albumName(t));
+    const albumTitle=albumName(t);
+    const known=knownCoverUrlForAlbum(albumTitle);
     if(known)return known;
-    const raw=[t?.cover,albumById(t?.albumId)?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
+    const album=albumById(t?.albumId);
+    const raw=[safeExistingCover(albumTitle,t?.cover),safeExistingCover(albumTitle,album?.cover),...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     for(const value of raw){
       if(typeof value!=="string"||!value.trim())continue;
       const mapped=coverMapUrl(value);
@@ -1428,7 +1430,6 @@ main{min-width:0;min-height:0}
     }
     return "";
   }
-
   function normalizeCoverAlbumName(value){
     return String(value||"")
       .normalize("NFKC")
@@ -1558,30 +1559,16 @@ main{min-width:0;min-height:0}
   function coverNameSimilarity(a,b){
     const x=canonicalCoverAlbumName(a),y=canonicalCoverAlbumName(b);
     if(!x||!y)return 0;
-    if(x===y)return 1;
     const pa=coverVersionInfo(a),pb=coverVersionInfo(b);
-    // Never let a numbered album fall back to the similarly named unnumbered
-    // album. Example: "Donda 2" must not resolve to "Donda".
     if(pa.versionKey!==pb.versionKey)return 0;
-    const aw=pa.wordKey,bw=pb.wordKey;
-    if(aw===bw)return pa.versions.length||pb.versions.length?0.99:0.98;
-    if((aw.includes(bw)||bw.includes(aw))&&Math.min(aw.length,bw.length)>=4){
-      const ratio=Math.min(aw.length,bw.length)/Math.max(aw.length,bw.length);
-      return ratio>=0.55?0.93+Math.min(.06,(ratio-.55)*.13):0;
-    }
-    if(Math.abs(x.length-y.length)>12||Math.max(x.length,y.length)>64)return 0;
-    const prev=Array.from({length:y.length+1},(_,i)=>i);
-    for(let i=1;i<=x.length;i++){
-      let left=i;
-      for(let j=1;j<=y.length;j++){
-        const up=prev[j]+1,ins=left+1,diag=prev[j-1]+(x[i-1]===y[j-1]?0:1);
-        const next=Math.min(up,ins,diag);prev[j]=next;left=next;
-      }
-    }
-    const score=1-(prev[y.length]/Math.max(x.length,y.length));
-    return score>=0.84?score:0;
+    if(x===y)return 1;
+    const aw=pa.words,bw=pb.words;
+    if(!aw.length||!bw.length)return 0;
+    const sa=new Set(aw),sb=new Set(bw);
+    const common=[...sa].filter(w=>sb.has(w));
+    const overlap=common.length/Math.max(sa.size,sb.size);
+    return overlap===1?0.96:0;
   }
-
   function externalCoverForAlbum(albumTitle){
     if(!localifyCoverMap||isExcludedCoverAlbum(albumTitle))return "";
     const candidates=coverMapCandidates(albumTitle);
@@ -1599,20 +1586,36 @@ main{min-width:0;min-height:0}
         if(match>score){score=match;best=mapped;}
       }
     }
-    return score>=0.84?best:"";
+    return score>=0.96?best:"";
   }
-
   function knownCoverUrlForAlbum(albumTitle){
-    // Prefer the live covers.json registry so an exact repository filename
-    // always wins over an older built-in alias.
     return externalCoverForAlbum(albumTitle)||builtInCoverForAlbum(albumTitle)||"";
   }
-
-  function coverForAlbum(album,existingCover=""){
-    const known=knownCoverUrlForAlbum(album?.title||album||"");
-    return known||existingCover||"";
+  function repoCoverFile(value){
+    if(typeof value!=="string"||!value.trim())return "";
+    const mapped=coverMapUrl(value);
+    if(!mapped||!mapped.startsWith(LOCALIFY_COVER_DIRECTORY))return "";
+    try{return decodeURIComponent(mapped.slice(LOCALIFY_COVER_DIRECTORY.length));}catch{return mapped.slice(LOCALIFY_COVER_DIRECTORY.length);}
   }
-
+  function isKnownLocalifyCover(value){
+    const file=repoCoverFile(value);
+    if(!file)return false;
+    if(Object.values(LOCALIFY_BUILTIN_COVER_MAP).some(v=>String(v).trim()===file))return true;
+    if(localifyCoverMap&&Object.values(localifyCoverMap).some(v=>repoCoverFile(v)===file))return true;
+    return false;
+  }
+  function safeExistingCover(albumTitle,existingCover=""){
+    if(!existingCover)return "";
+    const known=knownCoverUrlForAlbum(albumTitle);
+    if(known)return known;
+    if(isKnownLocalifyCover(existingCover))return "";
+    return existingCover;
+  }
+  function coverForAlbum(album,existingCover=""){
+    const title=album?.title||album||"";
+    const known=knownCoverUrlForAlbum(title);
+    return known||safeExistingCover(title,existingCover)||"";
+  }
   async function loadLocalifyCoverMap(){
     if(localifyCoverMap)return localifyCoverMap;
     if(localifyCoverMapPromise)return localifyCoverMapPromise;
