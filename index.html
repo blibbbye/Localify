@@ -718,7 +718,24 @@ main{min-width:0;min-height:0}
 
   function fallbackArt(text="music"){const map={artist:"artist",album:"album",playlist:"playlist",queue:"queue",liked:"heart",music:"music"};return `<div class="nowFallback ${text==="artist"?"artistFallback":""}">${uiIcon(map[text]||"music")}</div>`}
   function collectionArt(kind){if(kind==="liked")return `<div class="collectionArt likedArt">${uiIcon("heart")}</div>`;return `<div class="collectionArt">${kind==="queue"?uiIcon("queue"):uiIcon("music")}</div>`}
-  function coverHtml(t,cls=""){const album=albumById(t?.albumId);const known=knownCoverUrlForAlbum(album?.title||t?.album||"");const artistCover=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);const cover=known||t?.cover||album?.cover||artistCover;return cover?`<img class="${cls}" src="${cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:`<div class="${cls} fallback">${uiIcon("music")}</div>`}
+  function trackCoverReference(t){
+    const album=albumById(t?.albumId);
+    const albumTitle=String(album?.title||t?.album||"").trim();
+    const usableAlbum=albumTitle && !/^(?:none|unknown album)$/i.test(albumTitle) ? albumTitle : "";
+    return usableAlbum||displayTrackTitle(t,true);
+  }
+  function knownCoverUrlForTrack(t){
+    const reference=trackCoverReference(t);
+    if(!reference)return "";
+    return knownCoverUrlForAlbum(reference);
+  }
+  function coverHtml(t,cls=""){
+    const album=albumById(t?.albumId);
+    const known=knownCoverUrlForTrack(t);
+    const artistCover=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
+    const cover=known||t?.cover||album?.cover||artistCover;
+    return cover?"<img class=\"" + cls + "\" src=\"" + cover + "\" alt=\"\" loading=\"lazy\" decoding=\"async\" referrerpolicy=\"no-referrer\">":"<div class=\"" + cls + " fallback\">"+uiIcon("music")+"</div>";
+  }
   function artBox(t,cls="art"){return `<div class="${cls}">${coverHtml(t)}</div>`}
   function getUrl(t){if(!t?.blob)return "";if(!objectUrls.has(t.id))objectUrls.set(t.id,URL.createObjectURL(t.blob));return objectUrls.get(t.id)}
   async function ensureTrackBlob(t){
@@ -1444,8 +1461,8 @@ main{min-width:0;min-height:0}
   }
 
   function discordDirectCoverUrl(t){
-    const albumTitle=albumName(t);
-    const known=knownCoverUrlForAlbum(albumTitle);
+    const albumTitle=trackCoverReference(t);
+    const known=knownCoverUrlForTrack(t);
     if(known)return known;
     const album=albumById(t?.albumId);
     const raw=[safeExistingCover(albumTitle,t?.cover),safeExistingCover(albumTitle,album?.cover),...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
@@ -1734,39 +1751,29 @@ main{min-width:0;min-height:0}
 
   async function resolveGithubAlbumCover(t){
     if(!t)return "";
-    const album=albumName(t);
+    const album=trackCoverReference(t);
     const cacheKey=normalizeCoverAlbumName(album);
-    if(!cacheKey||/^unknown album$/.test(cacheKey)||isExcludedCoverAlbum(album)){return ""}
+    if(!cacheKey||/^unknown album$/.test(cacheKey)||/^none$/.test(cacheKey)||isExcludedCoverAlbum(album)){return ""}
     if(discordCoverCache.has(cacheKey))return discordCoverCache.get(cacheKey)||"";
     if(discordCoverRequests.has(cacheKey))return discordCoverRequests.get(cacheKey);
     const request=(async()=>{
-      // 1) The live covers.json registry is authoritative. This lets the
-      // repo's real current filenames override stale built-in aliases.
       await Promise.all([loadLocalifyCoverMap(),loadLocalifyCoverFileIndex()]);
       const external=externalCoverForAlbum(album);
       if(external){
         if(await checkImageUrl(external)){discordCoverCache.set(cacheKey,external);return external;}
       }
-
-      // 2) Fall back to the built-in aliases when the registry is unavailable.
       const builtin=builtInCoverForAlbum(album);
       if(builtin){discordCoverCache.set(cacheKey,builtin);return builtin;}
-
-      // 3) Filename fallback. This path is unconfigured/uncertain, so verify
-      // the candidate before sending it to Discord. Failures are NOT cached,
-      // allowing a later timeupdate to retry after GitHub Pages/network delay.
       for(const filename of coverFileCandidates(album)){
         const url=new URL(encodeURIComponent(filename),LOCALIFY_COVER_DIRECTORY).href;
         if(await checkImageUrl(url)){discordCoverCache.set(cacheKey,url);return url}
       }
-
       discordCoverCache.delete(cacheKey);
       return "";
     })();
     discordCoverRequests.set(cacheKey,request);
     try{return await request}finally{discordCoverRequests.delete(cacheKey)}
   }
-
   // Warm the public cover registry without blocking playback. Exact built-in
   // covers work immediately; covers.json aliases become available shortly after.
   void loadLocalifyCoverMap();
@@ -1836,10 +1843,11 @@ main{min-width:0;min-height:0}
     const song=sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song");
     const artists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
-    let coverUrl=knownCoverUrlForAlbum(albumName(t));
+    let coverUrl=knownCoverUrlForTrack(t);
 
-    // Album title is used ONLY to select artwork. It is never included in the
-    // Discord payload, and album artists are never used here.
+    // Album title is used for artwork when present. For tracks without an album,
+    // the song title itself becomes the artwork lookup reference. Neither is sent
+    // as an album field in the Discord payload, and album artists are never used here.
     if(resolveCover&&!coverUrl){
       try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
     }
