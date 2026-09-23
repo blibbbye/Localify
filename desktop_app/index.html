@@ -1246,7 +1246,7 @@ main{min-width:0;min-height:0}
     $("#content").innerHTML=`
       <div class="hero">
         <div class="heroCard">
-          <div class="heroKicker">LOCALIFY • Built by @blibbbye + @modmodroots</div>
+          <div class="heroKicker">LOCALIFY DESKTOP • Built by @blibbbye + @modmodroots</div>
           <h1>Local Files<br>But better</h1>
           <div class="heroDesc">Locailify, A audio player website made by @blibbbye, Create albums and artists add songs from ur files and listen. This was made for me and my friends at ModMod's Unreleased!</div>
           <div class="heroActions"><button class="primary" id="heroAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="heroFolder">${uiIcon("folder")} Add folder</button><button class="secondary" id="heroAlbum">${uiIcon("plus")} Create album</button><button class="secondary" id="heroArtist">${uiIcon("artist")} Create artist</button></div>
@@ -1983,19 +1983,8 @@ main{min-width:0;min-height:0}
   }
   let desktopControlSeq=0;
   async function sendDesktopBridgeMessage(payload){
-    try{
-      if(LOCALIFY_DESKTOP_MODE && await __localifySetNativeDiscordPresence(payload))return true;
-    }catch{}
-    try{
-      if(typeof window.LocalifyDesktop?.setDiscordPresence==="function")return await Promise.resolve(window.LocalifyDesktop.setDiscordPresence(payload));
-      if(typeof window.LocalifyDesktop?.discordPresence==="function")return await Promise.resolve(window.LocalifyDesktop.discordPresence(payload));
-    }catch{}
-    try{
-      return fetch("http://127.0.0.1:4219/presence",{
-        method:"POST",mode:"cors",cache:"no-store",
-        headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),keepalive:true
-      }).catch(()=>null);
-    }catch{return false}
+    if(!LOCALIFY_DESKTOP_MODE)return false;
+    try{return await __localifySetNativeDiscordPresence(payload)}catch{return false}
   }
   async function checkDesktopPlayer(){
     if(LOCALIFY_DESKTOP_MODE){
@@ -2015,21 +2004,6 @@ main{min-width:0;min-height:0}
       setDiscordUi(m.discordConnected?"connected":"searching",m.discordConnected?"Localify Desktop Player connected":"Localify Desktop Player running");
       const t=trackById(state.currentId);
       if(t&&!audio.paused)sendDiscordPresence(true);
-    }catch{}
-  }
-  async function pollDesktopControl(){
-    try{
-      const r=await fetch("http://127.0.0.1:4219/control?since="+encodeURIComponent(desktopControlSeq),{cache:"no-store"});
-      if(!r.ok)return;
-      const m=await r.json();
-      if(!Number.isFinite(+m.seq)||+m.seq<=desktopControlSeq)return;
-      desktopControlSeq=+m.seq;
-      if(m.action==="toggle"){if(audio.paused)audio.play().catch(()=>{});else audio.pause()}
-      else if(m.action==="next")next();
-      else if(m.action==="prev")prev();
-      else if(m.action==="play")audio.play().catch(()=>{});
-      else if(m.action==="pause")audio.pause();
-      else if(m.action==="seek"&&Number.isFinite(+m.value)&&audio.duration)audio.currentTime=Math.max(0,Math.min(audio.duration,+m.value));
     }catch{}
   }
 
