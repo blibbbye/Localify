@@ -20,7 +20,7 @@
     body{overflow:hidden;width:100%;max-width:100vw;overscroll-behavior-x:none}
     button,input,textarea,select{font:inherit}
     button{border:0;color:inherit;cursor:pointer}
-    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr) minmax(310px,380px)}
+    .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:clamp(170px,16vw,220px) minmax(0,1fr) minmax(260px,320px)}
     aside{grid-row:1/2;background:#0c0f13;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;min-width:0}
     .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px;font-weight:900;font-size:23px;letter-spacing:-.8px}
     .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px rgba(125,211,252,.24)}
@@ -190,8 +190,8 @@
     .creditsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .creditsGrid div{background:#151a20;border:1px solid #232a32;border-radius:10px;padding:9px}
     .creditsGrid strong{display:block;color:#7c8692;font-size:10px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
-    .entityActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .small{padding:7px 10px!important;font-size:11px}
+    .entityActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.iconOnlyAction{width:40px;height:40px;padding:0!important;display:inline-grid!important;place-items:center!important;flex:none}.iconOnlyAction .svgIcon{width:18px;height:18px;margin:0}.infoBtn{display:grid!important;place-items:center!important;padding:0!important}.infoBtn .svgIcon{width:18px;height:18px;margin:0}
+    .small{padding:7px 10px!important;font-size:11px}.iconOnlyCreate{width:42px;height:42px;padding:0!important;display:inline-grid!important;place-items:center!important;border-radius:12px;flex:none}.iconOnlyCreate .svgIcon{width:19px;height:19px;margin:0}
     .modal.large{width:min(940px,100%)}
     .modalSection{padding:12px 0;border-top:1px solid #242a31}
     .modalSection:first-of-type{border-top:0;padding-top:0}
@@ -275,11 +275,16 @@
     .chip{padding:8px 11px;background:#171b21;border:1px solid #262c34;border-radius:999px;color:#b3bac4;font-size:12px;font-weight:800}
     .chip.active{background:rgba(125,211,252,.10);border-color:#416274;color:var(--accent)}
     .hidden{display:none!important}
-    @media (max-width:1050px){.app.nowPanelOpen{grid-template-columns:84px 1fr}.nowSidebar{display:none!important}
-      .app{grid-template-columns:84px 1fr;grid-template-rows:1fr 92px}
-      aside{padding:15px 9px}.brand span,.nav button span:last-child,.sectionTitle,.sideAction span{display:none}.brand{justify-content:center;padding-bottom:18px}
+    @media (max-width:1050px){
+      .app{grid-template-columns:72px minmax(0,1fr);grid-template-rows:1fr 92px}
+      .app.nowPanelOpen{grid-template-columns:72px minmax(0,1fr) minmax(260px,300px)}
+      aside{padding:15px 7px}.brand span,.nav button span:last-child,.sectionTitle,.sideAction span{display:none}.brand{justify-content:center;padding-bottom:18px}
       .nav button,.sideAction{justify-content:center}
-      .hero{grid-template-columns:1fr}.player{grid-template-columns:1fr 1.2fr}.playerRight{display:none}
+      .hero{grid-template-columns:1fr}
+      .player{grid-template-columns:minmax(150px,1fr) minmax(280px,1.25fr) auto;gap:10px;padding-left:12px;padding-right:12px}
+      .playerRight{display:flex;justify-content:flex-end;min-width:0;gap:5px}
+      .playerRight .volume{max-width:90px}
+      .playerRight .ctrl{width:32px;height:32px}
     }
     @media (max-width:700px){
       body{overflow:auto}.nowSidebar{display:none!important}.app{display:block}.player{position:fixed;bottom:0;left:0;right:0;height:92px}.topbar{padding:10px 12px}.content{padding:18px 12px 115px}
@@ -1290,17 +1295,17 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">${uiIcon("plus")}</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); bindAlbumCards();
   }
 
   function renderArtists(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary" id="newArtist">${uiIcon("artist")} Create artist</button></div>${state.artists.length?localifyPagedHtml(artistList(),artistCard,"artists","viewGrid"):empty("No artists","Create an artist or import music to build your artist index.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">${uiIcon("plus")}</button></div>${state.artists.length?localifyPagedHtml(artistList(),artistCard,"artists","viewGrid"):empty("No artists","Create an artist or import music to build your artist index.")}`;
     $("#newArtist").onclick=()=>editArtist(null); $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
   }
 
   function renderPlaylists(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><button class="primary" id="newPlaylist">${uiIcon("playlist")} New playlist</button></div>${state.playlists.length?localifyPagedHtml(state.playlists,playlistCard,"playlists","viewGrid"):empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><button class="primary iconOnlyCreate" id="newPlaylist" title="New playlist" aria-label="New playlist">${uiIcon("plus")}</button></div>${state.playlists.length?localifyPagedHtml(state.playlists,playlistCard,"playlists","viewGrid"):empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.")}`;
     $("#newPlaylist").onclick=()=>editPlaylist(null); $$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
   }
 
@@ -1408,22 +1413,22 @@ main{min-width:0;min-height:0}
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
     const artistNames=artistNamesForAlbum(a);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary" id="albumShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="albumAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="albumEdit">${uiIcon("edit")} Edit album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
-    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumShuffle").onclick=()=>playQueue(shuffleArr(tracks),0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
   }
 
   function showArtist(id,keepDetail=false){
     __prepareLocalifyDerived();
     const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=__localifyCatalog().byArtist.get(id)||[]; const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(id));
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary" id="artistEdit">${uiIcon("edit")} Edit artist</button><button class="secondary" id="artistAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?localifyPagedHtml(albums,albumCard,"artistAlbums:"+id,"grid"):empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="artistEdit" title="Edit artist" aria-label="Edit artist">${uiIcon("edit")}</button><button class="secondary iconOnlyAction" id="artistAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?localifyPagedHtml(albums,albumCard,"artistAlbums:"+id,"grid"):empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
     $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistIds:[id]});bindTrackTable();bindAlbumCards();
   }
 
   function showPlaylist(id,keepDetail=false){
     const p=playlistById(id);if(!p)return; state.detail={type:"playlist",id};
     const tracks=p.trackIds.map(trackById).filter(Boolean);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img src="${p.cover}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs • ${durationLabel(tracks)}</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary" id="plShuffle">${uiIcon("shuffle")} Shuffle</button><button class="secondary" id="plAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="plEdit">${uiIcon("edit")} Edit playlist</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,false,"playlist:"+id,"title")}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song menu.")}`;
-    $("#plPlay").onclick=()=>playQueue(tracks,0);$("#plShuffle").onclick=()=>playQueue(shuffleArr(tracks),0);$("#plAdd").onclick=()=>pickFiles({playlistId:id});$("#plEdit").onclick=()=>editPlaylist(id);$("#plDelete").onclick=async()=>deletePlaylist(id);
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img src="${p.cover}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs • ${durationLabel(tracks)}</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="plAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="plEdit" title="Edit playlist" aria-label="Edit playlist">${uiIcon("edit")}</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,false,"playlist:"+id,"title")}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song menu.")}`;
+    $("#plPlay").onclick=()=>playQueue(tracks,0);$("#plAdd").onclick=()=>pickFiles({playlistId:id});$("#plEdit").onclick=()=>editPlaylist(id);$("#plDelete").onclick=async()=>deletePlaylist(id);
     bindTrackTable();
   }
   function playlistCompare(a,b,k){const dir=1;const av=k==='title'?a.title:k==='artist'?artistName(a):k==='album'?albumName(a):k==='duration'?a.duration:a.addedAt||0;const bv=k==='title'?b.title:k==='artist'?artistName(b):k==='album'?albumName(b):k==='duration'?b.duration:b.addedAt||0;return typeof av==='number'&&typeof bv==='number'?(av-bv)*dir:String(av).localeCompare(String(bv),undefined,{numeric:true})*dir}
@@ -2525,7 +2530,24 @@ main{min-width:0;min-height:0}
     const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
 
   function openContext(x,y,id,kind="song"){
-    const m=$("#contextMenu");m.innerHTML=`<button data-a="play">${uiIcon("play")} Play now</button><button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="select">${uiIcon("check")} Select</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="savePreset">Save preset</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button>`;m.style.left=Math.min(x,innerWidth-220)+"px";m.style.top=Math.min(y,innerHeight-340)+"px";m.classList.add("show");$$("#contextMenu button").forEach(b=>b.onclick=async()=>{const a=b.dataset.a;m.classList.remove("show");if(a==="play")playId(id);if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}if(a==="like")toggleLike(id);if(a==="select"){if(!state.selected.includes(id))state.selected.push(id);renderCurrentViewWithoutScroll()}if(a==="playlist")bulkAddPlaylist([id]);if(a==="lyrics")showLyrics(id);if(a==="savePreset")exportPreset("songs",[id]);if(a==="edit")editTrack(id);if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}})
+    const m=$("#contextMenu");
+    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
+    m.classList.add("show");
+    const rect=m.getBoundingClientRect(),pad=8;
+    m.style.left=Math.max(pad,Math.min(x,innerWidth-rect.width-pad))+"px";
+    m.style.top=Math.max(pad,Math.min(y,innerHeight-rect.height-pad))+"px";
+    $$("\#contextMenu button").forEach(b=>b.onclick=async()=>{
+      const a=b.dataset.a;
+      m.classList.remove("show");
+      if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}
+      if(a==="like")toggleLike(id);
+      if(a==="playlist")bulkAddPlaylist([id]);
+      if(a==="lyrics")showLyrics(id);
+      if(a==="edit")editTrack(id);
+      if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}
+      if(a==="savePreset")exportPreset("songs",[id]);
+      if(a==="download")downloadTrack(id);
+    })
   }
   document.addEventListener("click",e=>{if(!e.target.closest("#contextMenu")&&!e.target.closest(".more-row"))$("#contextMenu").classList.remove("show")});
 
@@ -2581,6 +2603,101 @@ main{min-width:0;min-height:0}
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
+
+  function id3SyncSafe(n){
+    const x=Math.max(0,Number(n)||0);
+    return new Uint8Array([(x>>21)&127,(x>>14)&127,(x>>7)&127,x&127]);
+  }
+  function id3U32(n){
+    const x=Math.max(0,Number(n)||0);
+    return new Uint8Array([(x>>>24)&255,(x>>>16)&255,(x>>>8)&255,x&255]);
+  }
+  function id3Frame(id,body){
+    const enc=new TextEncoder(),name=enc.encode(id),b=body instanceof Uint8Array?body:new Uint8Array(body);
+    const out=new Uint8Array(10+b.length);
+    out.set(name.slice(0,4),0);out.set(id3SyncSafe(b.length),4);out.set([0,0],8);out.set(b,10);
+    return out;
+  }
+  function id3TextFrame(id,value){
+    const text=String(value??"").trim();if(!text)return null;
+    const bytes=new TextEncoder().encode(text),body=new Uint8Array(1+bytes.length);
+    body[0]=3;body.set(bytes,1);return id3Frame(id,body);
+  }
+  function id3Txxx(description,value){
+    const d=String(description||"").trim(),v=String(value||"").trim();if(!v)return null;
+    const enc=new TextEncoder(),db=enc.encode(d),vb=enc.encode(v),body=new Uint8Array(1+db.length+1+vb.length);
+    body[0]=3;body.set(db,1);body[1+db.length]=0;body.set(vb,2+db.length);return id3Frame("TXXX",body);
+  }
+  async function id3Apic(imageBlob){
+    const bytes=new Uint8Array(await imageBlob.arrayBuffer()),mime=imageBlob.type||"image/jpeg",enc=new TextEncoder(),mb=enc.encode(mime);
+    const body=new Uint8Array(1+mb.length+1+1+1+bytes.length);
+    body[0]=3;body.set(mb,1);body[1+mb.length]=0;body[2+mb.length]=3;body[3+mb.length]=0;body.set(bytes,4+mb.length);
+    return id3Frame("APIC",body);
+  }
+  async function coverBlobForTrack(t){
+    let url=knownCoverUrlForTrack(t)||t?.cover||albumById(t?.albumId)?.cover||"";
+    if(!url){try{url=await resolveGithubAlbumCover(t)}catch{}}
+    if(!url)return null;
+    try{
+      if(/^data:image\\//i.test(url)){
+        const mime=url.match(/^data:([^;,]+)[;,]/i)?.[1]||"image/jpeg",raw=url.split(",")[1]||"",bin=atob(raw),bytes=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+        return new Blob([bytes],{type:mime});
+      }
+      const r=await fetch(url,{cache:"no-store",mode:"cors",credentials:"omit"});
+      if(!r.ok)return null;
+      return await r.blob();
+    }catch{return null}
+  }
+  async function mp3WithLocalifyTags(blob,t){
+    const frames=[],lyrics=String(t?.lyrics||"").trim(),album=albumById(t?.albumId),enc=new TextEncoder();
+    const artists=artistNamesForTrack(t).filter(x=>x&&x!==NONE_LABEL).join(", ");
+    const albumArtist=albumArtistName(t),title=displayTrackTitle(t,true);
+    const year=String(t?.year||album?.year||"").trim(),genre=String(t?.genre||album?.genre||"").trim();
+    const tn=trackNo(t),dn=discNo(t),credits=t?.credits||album?.credits||{};
+    for(const [id,value] of [
+      ["TIT2",title],["TPE1",artists],["TPE2",albumArtist],["TALB",album?.title||"N/A"],
+      ["TDRC",year],["TCON",genre],["TRCK",tn!=null?String(tn):""],["TPOS",dn>1?String(dn):""],
+      ["TCOM",Array.isArray(credits.composer)?credits.composer.join(", "):""],
+      ["TPUB",Array.isArray(credits.publisher)?credits.publisher.join(", "):""],
+      ["TCOP",Array.isArray(credits.copyright)?credits.copyright.join(", "):""]
+    ]){const frame=id3TextFrame(id,value);if(frame)frames.push(frame)}
+    for(const [d,v] of [
+      ["PRODUCER",Array.isArray(credits.producer)?credits.producer.join(", "):""],
+      ["SONGWRITER",Array.isArray(credits.songwriter)?credits.songwriter.join(", "):""],
+      ["LABEL",Array.isArray(credits.label)?credits.label.join(", "):""]
+    ]){const frame=id3Txxx(d,v);if(frame)frames.push(frame)}
+    if(lyrics){
+      const lb=enc.encode(lyrics),lang=enc.encode("eng"),body=new Uint8Array(1+3+1+lb.length);
+      body[0]=3;body.set(lang,1);body[4]=0;body.set(lb,5);frames.push(id3Frame("USLT",body));
+    }
+    const cover=await coverBlobForTrack(t);if(cover)frames.push(await id3Apic(cover));
+    const total=frames.reduce((n,x)=>n+x.length,0),header=new Uint8Array(10);
+    header.set([73,68,51,4,0,0],0);header.set(id3SyncSafe(total),6);
+    return new Blob([header,...frames,blob],{type:"audio/mpeg"});
+  }
+  function safeDownloadName(t){
+    const artist=artistNamesForTrack(t).filter(x=>x&&x!==NONE_LABEL).join(", "),title=displayTrackTitle(t,true)||"Unknown song";
+    return (artist?artist+" - "+title:title).replace(/[\\/:*?"<>|]+/g,"-").replace(/\\s+/g," ").trim().slice(0,180)||"Localify song";
+  }
+  async function downloadTrack(id){
+    const t=trackById(id);if(!t)return;
+    const blob=await ensureTrackBlob(t);
+    if(!isBlobLike(blob)){toast("This song's audio is not saved on this device.");return}
+    try{
+      const ext=(t.fileName?.match(/\\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase()||"mp3";
+      let out=blob,name=safeDownloadName(t);
+      if(ext==="mp3"){
+        await flushSave(false);
+        out=await mp3WithLocalifyTags(blob,t);name+=".mp3";
+        downloadBlob(out,name);toast("MP3 downloaded with metadata and cover art.");
+      }else{
+        name+="."+ext;downloadBlob(out,name);
+        toast("Downloaded the original audio. Full MP3 tags are applied when the source is MP3.");
+      }
+    }catch(e){console.error("Localify song download failed",e);toast("Could not download this song.");}
+  }
+
   async function makeZip(entries){const chunks=[],central=[];let offset=0;const enc=new TextEncoder();for(const entry of entries){const nb=enc.encode(entry.name),data=entry.bytes instanceof Uint8Array?entry.bytes:new Uint8Array(entry.bytes),crc=crc32(data),size=data.length,h=zipLocalHeader(nb,crc,size);chunks.push(h,data);central.push(zipCentralHeader(nb,crc,size,offset));offset+=h.length+size}const cdOffset=offset;let cdSize=0;for(const c of central){chunks.push(c);cdSize+=c.length}chunks.push(zipEnd(central.length,cdSize,cdOffset));return new Blob(chunks,{type:'application/zip'})}
   function zip64Value(extra,which){let pos=0;while(pos+4<=extra.length){const id=extra[pos]|(extra[pos+1]<<8),len=extra[pos+2]|(extra[pos+3]<<8),start=pos+4,end=start+len;if(end>extra.length)break;if(id===1){let q=start;for(const key of ['usize','csize','offset']){if(q+8>end)break;const dv=new DataView(extra.buffer,extra.byteOffset+q,8),v=dv.getUint32(0,true)+dv.getUint32(4,true)*4294967296;if(key===which)return v;q+=8}}pos=end}return null}
   async function parseZip(file){
