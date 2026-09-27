@@ -1456,8 +1456,9 @@ main{min-width:0;min-height:0}
   // Public artwork lives in the Localify GitHub repository. Absolute HTTPS
   // URLs make the same cover work in the website, Google Sites embeds, and Discord.
   const LOCALIFY_GITHUB_RAW_BASE="https://raw.githubusercontent.com/blibbbye/Localify/main/";
-  const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
-  const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
+  const LOCALIFY_GITHUB_PAGES_BASE="https://blibbbye.github.io/Localify/";
+  const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_PAGES_BASE+"covers/";
+  const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_PAGES_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
   const LOCALIFY_COVER_EXCLUSIONS=new Set([]);
@@ -1608,7 +1609,7 @@ main{min-width:0;min-height:0}
         return u.href;
       }
       const repoPath=raw.replace(/^\.\//,"").replace(/^\//,"");
-      return new URL(repoPath,LOCALIFY_GITHUB_RAW_BASE).href;
+      return new URL(repoPath,LOCALIFY_GITHUB_PAGES_BASE).href;
     }catch{return ""}
   }
 
@@ -1839,10 +1840,27 @@ main{min-width:0;min-height:0}
     discordCoverRequests.set(cacheKey,request);
     try{return await request}finally{discordCoverRequests.delete(cacheKey)}
   }
-  // Warm the public cover registry without blocking playback. Exact built-in
-  // covers work immediately; covers.json aliases become available shortly after.
-  void loadLocalifyCoverMap();
-  void loadLocalifyCoverFileIndex();
+  let localifyCoverRefreshQueued=false;
+  let localifyCoverRetryTimer=0;
+  function refreshCoverAwareView(){
+    if(localifyCoverRefreshQueued)return;
+    localifyCoverRefreshQueued=true;
+    requestAnimationFrame(()=>{
+      localifyCoverRefreshQueued=false;
+      try{renderCurrentViewWithoutScroll()}catch(e){console.warn("Localify cover refresh failed",e)}
+    });
+  }
+  async function warmAndRefreshCovers(){
+    await Promise.all([loadLocalifyCoverMap(),loadLocalifyCoverFileIndex()]);
+    refreshCoverAwareView();
+  }
+  // Warm the public cover registry and rerender after the async cover data arrives.
+  // This matters for large libraries where the initial render happens before
+  // covers.json/API discovery has completed.
+  warmAndRefreshCovers().catch(()=>{});
+  localifyCoverRetryTimer=setTimeout(()=>{
+    warmAndRefreshCovers().catch(()=>{});
+  },12000);
 
   let desktopControlSeq=0;
   function sendDesktopBridgeMessage(payload){
