@@ -532,11 +532,12 @@ main{min-width:0;min-height:0}
     .track-row{contain:layout paint style;content-visibility:auto;contain-intrinsic-size:1px 64px}
     .tableWrap{contain:layout style}
     .art img{content-visibility:auto}
-  #presetBusy{position:fixed;inset:0;z-index:1000;background:rgba(5,7,10,.72);backdrop-filter:blur(7px);display:none;place-items:center;padding:20px}
-  .presetBusyBox{width:min(420px,calc(100vw - 40px));display:grid;gap:9px;text-align:center;padding:24px;border:1px solid #303946;border-radius:18px;background:#12171d;box-shadow:0 24px 70px rgba(0,0,0,.55)}
-  .presetBusyBox strong{font-size:18px}.presetBusyBox span{color:#87929e;font-size:12px;line-height:1.45}
-  .presetBusySpinner{width:28px;height:28px;margin:0 auto 4px;border:3px solid #33404b;border-top-color:#fff;border-radius:50%;animation:localifySpin .8s linear infinite}
+  #presetBusy{position:fixed;right:16px;bottom:112px;z-index:1000;display:none;pointer-events:none}
+  .presetBusyBox{width:min(340px,calc(100vw - 32px));display:grid;grid-template-columns:auto 1fr;column-gap:11px;row-gap:3px;align-items:center;padding:12px 14px;border:1px solid #303946;border-radius:14px;background:rgba(18,23,29,.97);box-shadow:0 18px 50px rgba(0,0,0,.48);backdrop-filter:blur(14px)}
+  .presetBusyBox strong{font-size:14px}.presetBusyBox span{grid-column:2;color:#87929e;font-size:11px;line-height:1.35}
+  .presetBusySpinner{width:22px;height:22px;margin:0;border:3px solid #33404b;border-top-color:#fff;border-radius:50%;animation:localifySpin .8s linear infinite;grid-row:1/3}
   @keyframes localifySpin{to{transform:rotate(360deg)}}
+  @media(max-width:700px){#presetBusy{left:10px;right:10px;bottom:calc(var(--player-h,86px) + 10px)}.presetBusyBox{width:auto}}
 </style>
 </head>
 <body>
@@ -3090,9 +3091,10 @@ main{min-width:0;min-height:0}
   function presetBusyDone(){
     const el=$("#presetBusy");if(el)el.style.display="none";
   }
+  async function waitForSaveIdle(){while(saveInFlight)await new Promise(resolve=>setTimeout(resolve,50))}
   async function importPresetData(p,files,mode){try{
     const kind=p.presetKind||'full',artists=Array.isArray(p.artists)?p.artists:[],albums=Array.isArray(p.albums)?p.albums:[],tracks=Array.isArray(p.tracks)?p.tracks:[],playlists=Array.isArray(p.playlists)?p.playlists:[];
-    presetBusyText('Importing '+presetLabel(kind)+'…');if(kind==='settings'){state.settings=mode==='set'?JSON.parse(JSON.stringify(p.settings||state.settings)):{...state.settings,...(p.settings||{})};applyEQ();await save(true);render();toast('Settings imported.');return}if(kind==='full'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.artists=[];state.albums=[];state.playlists=[];state.liked=[];state.recent=[];state.tracks=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='artists'&&mode==='set')state.artists=[];if(kind==='albums'&&mode==='set'){state.albums=[];for(const t of state.tracks){if(t.albumId&&!albums.some(a=>a.id===t.albumId)){t.albumId=null;t.album='Unknown Album'}}}if(kind==='songs'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.tracks=[];state.liked=[];state.recent=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='playlists'&&mode==='set')state.playlists=[];if(kind==='liked'&&mode==='set')state.liked=[];if(kind==='recent'&&mode==='set')state.recent=[];
+    presetBusyText('Importing '+presetLabel(kind)+'…');if(kind==='settings'){state.settings=mode==='set'?JSON.parse(JSON.stringify(p.settings||state.settings)):{...state.settings,...(p.settings||{})};applyEQ();await save(true);render();presetBusyDone();toast('Settings imported.');return}if(kind==='full'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.artists=[];state.albums=[];state.playlists=[];state.liked=[];state.recent=[];state.tracks=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='artists'&&mode==='set')state.artists=[];if(kind==='albums'&&mode==='set'){state.albums=[];for(const t of state.tracks){if(t.albumId&&!albums.some(a=>a.id===t.albumId)){t.albumId=null;t.album='Unknown Album'}}}if(kind==='songs'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.tracks=[];state.liked=[];state.recent=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='playlists'&&mode==='set')state.playlists=[];if(kind==='liked'&&mode==='set')state.liked=[];if(kind==='recent'&&mode==='set')state.recent=[];
     const artistMap=new Map();
     for(const a0 of artists){
       const a=cloneEntity(a0);
@@ -3127,6 +3129,7 @@ main{min-width:0;min-height:0}
       if(!ids.length)return true;
       presetBusyText('Saving imported audio… '+ids.length+' song'+(ids.length===1?'':'s')+' in the current batch');
       await save(false,ids);
+      await waitForSaveIdle();
       const persisted=await flushSave(false);
       if(persisted){
         for(const id of ids){
@@ -3175,6 +3178,7 @@ main{min-width:0;min-height:0}
         dirty.push(String(target.id));
         if(dirty.length>=2)await persistImportBatch();
       }
+      if(dirty.length%4===0)await new Promise(resolve=>setTimeout(resolve,0));
     }
     presetBusyText('Finishing import…');
     await persistImportBatch(true);
@@ -3296,6 +3300,7 @@ main{min-width:0;min-height:0}
         toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
       }
     }
+    presetBusyDone();
     render();
     const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
     if("requestIdleCallback"in window)requestIdleCallback(warmFirst,{timeout:1500});else setTimeout(warmFirst,700);
