@@ -1169,25 +1169,47 @@ main{min-width:0;min-height:0}
     return restored;
   }
 
-  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();render();$("#main").scrollTop=0}
+  function ensureRuntimeState(){
+    const defaults={volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"},discordPresence:true,nowSidebarHidden:false};
+    for(const k of ["tracks","albums","artists","playlists","liked","recent","queue","selected"])if(!Array.isArray(state[k]))state[k]=[];
+    state.settings=Object.assign(defaults,state.settings||{});
+    state.settings.eq=Object.assign(defaults.eq,state.settings.eq||{});
+    if(!state.currentView)state.currentView="home";
+    if(state.currentId&&!state.tracks.some(t=>t?.id===state.currentId))state.currentId=null;
+    if(!state.queue.length)state.queueIndex=0;
+  }
+  function setView(v){
+    ensureRuntimeState();
+    state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();
+    try{render()}catch(e){console.error("Localify view render failed",e);toast("This page could not be rendered. Your library data was preserved.");}
+    $("#main").scrollTop=0;
+  }
   function empty(title,desc){return `<div class="empty"><h3>${esc(title)}</h3><div>${esc(desc)}</div></div>`}
   function renderNav(){
     $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
     $("#libraryBadge").textContent=`${state.tracks.length} ${state.tracks.length===1?"track":"tracks"}`;
   }
   function render(){
-    __prepareLocalifyDerived();
-    renderNav();
-    const v=state.currentView;
-    if(v==="home")renderHome();
-    else if(v==="search")renderSearch();
-    else if(v==="library")renderLibrary();
-    else if(v==="albums")renderAlbums();
-    else if(v==="artists")renderArtists();
-    else if(v==="playlists")renderPlaylists();
-    else if(v==="liked")renderLiked();
-    else if(v==="recent")renderRecent();
-    renderPlayer();
+    ensureRuntimeState();
+    try{
+      __prepareLocalifyDerived();
+      renderNav();
+      const v=state.currentView;
+      if(v==="home")renderHome();
+      else if(v==="search")renderSearch();
+      else if(v==="library")renderLibrary();
+      else if(v==="albums")renderAlbums();
+      else if(v==="artists")renderArtists();
+      else if(v==="playlists")renderPlaylists();
+      else if(v==="liked")renderLiked();
+      else if(v==="recent")renderRecent();
+      else{state.currentView="home";renderHome()}
+      renderPlayer();
+    }catch(e){
+      console.error("Localify render failed",e);
+      const content=$("#content");
+      if(content)content.innerHTML="<div class=\"empty\"><h3>Localify could not render this page</h3><div>Your library was not deleted. Try refreshing the page.</div></div>";
+    }
   }
 
   function albumList(){return __localifyCatalog().albums}
