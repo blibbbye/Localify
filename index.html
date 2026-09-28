@@ -533,21 +533,23 @@ main{min-width:0;min-height:0}
     .track-row{contain:layout paint style;content-visibility:auto;contain-intrinsic-size:1px 64px}
     .tableWrap{contain:layout style}
     .art img{content-visibility:auto}
-  .profileTopBtn{order:4}.pill{order:3}.discordTopBtn{order:2}.topbar #quickAdd{order:1}.profileTopBtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;padding:0;background:#151a20;border:1px solid #2c333d;color:#dbe3eb;cursor:pointer}
-  .profileTopBtn:hover{background:#1e252d;border-color:#424d5a}
-  .profileTopBtn .svgIcon{width:18px;height:18px;margin:0}
+  .profileTopBtn{order:4}.pill{order:3}.discordTopBtn{order:2}.topbar #quickAdd{order:1}.profileTopBtn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;padding:0;background:transparent;border:0;color:#dbe3eb;cursor:pointer;overflow:hidden;flex:none;box-shadow:none}
+  .profileTopBtn:hover{background:rgba(255,255,255,.06)}
+  .profileTopBtn #profileGlyph{width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border-radius:50%}
+  .profileTopBtn .svgIcon{width:23px;height:23px;margin:0}
+  .profileTopBtn img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
   .profilePage{display:grid;gap:18px}.profileHeader{display:grid;grid-template-columns:88px minmax(0,1fr);gap:16px;align-items:center;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318)}
   .profileAvatar{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#17212a;border:1px solid #33404c;color:var(--accent);font-size:30px;font-weight:1000}.profileAvatar img{width:100%;height:100%;object-fit:cover}
   .profileName{font-size:28px;font-weight:1000;letter-spacing:-1px}.profileSub{margin-top:5px;color:#7e8793;font-size:12px}.profileActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .profileStatsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.profileStat{padding:15px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileStatLabel{color:#7a8490;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.profileStatValue{margin-top:6px;font-size:23px;font-weight:1000}
   .profileGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px}.profilePanel{padding:15px;border:1px solid #252d36;border-radius:16px;background:#10151b}.profilePanel h3{margin:0 0 10px;font-size:15px}.profileList{display:grid;gap:6px}
-  .profileListRow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 7px;border-radius:9px}.profileListRow:hover{background:#171d24}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
+  .profileListRow{display:grid;grid-template-columns:24px 38px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px;border-radius:10px}.profileListRow:hover{background:#171d24}.profileListArt{width:38px;height:38px;border-radius:8px;overflow:hidden;background:#20252d;display:grid;place-items:center;flex:none;color:#657180}.profileListArt img{width:100%;height:100%;display:block;object-fit:cover}.profileListArt .svgIcon{width:18px;height:18px;margin:0}.profileArtistArt,.profileArtistArt img{border-radius:50%}.profileClickable{cursor:pointer}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
   @media (max-width:780px){.profileTopBtn{display:none!important}.profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.profileGrid{grid-template-columns:1fr}.profileHeader{grid-template-columns:66px minmax(0,1fr);padding:14px}.profileAvatar{width:66px;height:66px;font-size:23px}.profileName{font-size:22px}}
 /* Profile + compact topbar polish */
 .profileRecapMain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.profileRecapMain>div{padding:14px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileRecapMinutes{margin-top:5px;font-size:28px;font-weight:1000;letter-spacing:-.8px}.profileRecapColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profileRecapTitle{font-size:10px;color:#79838f;text-transform:uppercase;letter-spacing:.09em;font-weight:950;margin-bottom:7px}
 @media(max-width:780px){
-  .profileTopBtn{order:initial;display:grid!important;width:40px;height:40px;padding:0;border-radius:50%;overflow:hidden}
-  .topbar{grid-template-columns:minmax(0,1fr) 40px 40px!important;gap:6px!important}
+  .profileTopBtn{order:initial;display:grid!important;width:44px;height:44px;padding:0;border-radius:50%;overflow:hidden;background:transparent;border:0;box-shadow:none}
+  .topbar{grid-template-columns:minmax(0,1fr) 40px 44px!important;gap:6px!important}
   .topbar .search{grid-column:1}.topbar #quickAdd{grid-column:2;width:40px;height:40px;padding:0!important;display:grid!important;place-items:center!important;border-radius:12px}
   .topbar #quickAdd span:last-child{display:none}
   .topbar #quickAdd .svgIcon{width:18px;height:18px;margin:0}
@@ -2236,6 +2238,8 @@ main{min-width:0;min-height:0}
   function profileWeekHistory(){const {start,end}=profileWeekRange();return state.analytics.history.filter(e=>e&&Number(e.at)>=start.getTime()&&Number(e.at)<=end.getTime())}
   function profileWeeklyTopSongs(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const id=e.id;if(id)counts.set(id,(counts.get(id)||0)+1)}return [...counts.entries()].map(([id,count])=>({t:trackById(id),count})).filter(x=>x.t).sort((a,b)=>b.count-a.count||displayTrackTitle(a.t,true).localeCompare(displayTrackTitle(b.t,true),undefined,{sensitivity:"base"})).slice(0,limit)}
   function profileWeeklyTopArtists(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const t=trackById(e.id);if(!t)continue;for(const artist of artistNamesForTrack(t)){if(artist===NONE_LABEL)continue;const key=artist.toLocaleLowerCase();const prev=counts.get(key)||{name:artist,count:0};prev.count++;counts.set(key,prev)}}return [...counts.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,limit)}
+  function profileTrackCover(t){return knownCoverUrlForTrack(t)||t?.cover||albumById(t?.albumId)?.cover||"";}
+  function profileArtistCover(name){const wanted=presetKey(String(name||""));if(!wanted)return "";const artist=state.artists.find(a=>presetKey(artistDisplayName(a))===wanted);if(artist?.image)return artist.image;for(const t of state.tracks){if(artistNamesForTrack(t).some(x=>presetKey(x)===wanted)){const image=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);if(image)return image;}}return "";}
   function profileWeeklyData(){const days=recentAnalyticsDays(7),week=profileWeekRange(),weekDays=days.filter(([key])=>{const parts=key.split("-").map(Number);const d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));return d.getTime()>=Date.UTC(week.start.getFullYear(),week.start.getMonth(),week.start.getDate())}),seconds=weekDays.reduce((n,[,sec])=>n+sec,0),history=profileWeekHistory();return {days:weekDays,seconds,plays:history.length,topSongs:profileWeeklyTopSongs(),topArtists:profileWeeklyTopArtists()}}
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
@@ -2252,6 +2256,8 @@ main{min-width:0;min-height:0}
     const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10);
     const name=String(state.profile?.displayName||"").trim()||"Localify listener";
     const initials=esc(name.slice(0,1).toUpperCase()||"L");
+    const songRow=(x,i)=>{const cover=profileTrackCover(x.t);return `<div class="profileListRow profileClickable" data-profile-song="${esc(x.t.id)}"><div class="profileRank">${i+1}</div><div class="profileListArt">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">`:uiIcon("music")}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`};
+    const artistRow=(x,i)=>{const cover=profileArtistCover(x.name);return `<div class="profileListRow"><div class="profileRank">${i+1}</div><div class="profileListArt profileArtistArt">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">`:uiIcon("artist")}</div><div><div class="profileTrackTitle">${esc(x.name)}</div><div class="profileTrackSub">${x.count} plays</div></div><div class="profileCount">${x.count} plays</div></div>`};
     $( "#content").innerHTML=`
     <div class="profilePage">
       <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button></div></div></div>
@@ -2260,14 +2266,15 @@ main{min-width:0;min-height:0}
         <div class="profilePanel"><h3>Weekly recap</h3>
           <div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened this week</div><div class="profileRecapMinutes">${Math.floor(weekly.seconds/60).toLocaleString()}</div></div><div><div class="profileStatLabel">Plays this week</div><div class="profileRecapMinutes">${weekly.plays.toLocaleString()}</div></div></div>
           <div class="profileRecapColumns">
-            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
-            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(x.name)}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map(songRow).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map(artistRow).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
           </div>
         </div>
-        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
+        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map(songRow).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
       </div>
     </div>`;
     renderProfileTopButton();
+    $$("#content [data-profile-song]").forEach(row=>row.addEventListener("click",()=>showLyrics(row.dataset.profileSong)));
     $("#profileEdit").onclick=()=>editLocalProfile();
   }
   function editLocalProfile(){
