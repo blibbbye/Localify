@@ -1677,12 +1677,21 @@ main{min-width:0;min-height:0}
   let localifyBuiltinCoverLookup=null;
   let localifyCoverFileIndex=null;
   let localifyCoverFileIndexPromise=null;
+  function setPriorityCoverLookup(out,priorityMap,key,value,priority){
+    if(!key||!value)return;
+    const current=priorityMap.get(key)||0;
+    if(!out.has(key)||priority>current){out.set(key,value);priorityMap.set(key,priority)}
+  }
+  function populatePriorityCoverLookup(out,priorityMap,name,value){
+    const exact=new Set([normalizeCoverAlbumName(name),canonicalCoverAlbumName(name)]);
+    for(const key of coverMapCandidates(name))setPriorityCoverLookup(out,priorityMap,key,value,exact.has(key)?100:10);
+  }
   function getBuiltinCoverLookup(){
     if(localifyBuiltinCoverLookup)return localifyBuiltinCoverLookup;
-    const out=new Map();
+    const out=new Map(),priorityMap=new Map();
     for(const [name,file] of Object.entries(LOCALIFY_BUILTIN_COVER_MAP)){
       if(typeof file!=="string"||!file.trim())continue;
-      for(const key of coverMapCandidates(name))out.set(key,file.trim());
+      populatePriorityCoverLookup(out,priorityMap,name,file.trim());
     }
     localifyBuiltinCoverLookup=out;
     return out;
@@ -1797,15 +1806,21 @@ main{min-width:0;min-height:0}
           if(!r.ok)throw new Error(`HTTP ${r.status}`);
           const files=await r.json();
           if(Array.isArray(files)){
+            const priorityMap=new Map();
             for(const item of files){
               if(!item||item.type!=="file"||!LOCALIFY_COVER_EXTENSIONS.some(ext=>String(item.name||"").toLowerCase().endsWith(ext)))continue;
               const file=String(item.name||"");
-              for(const key of coverMapCandidates(coverFileStem(file)))out[key]=file;
+              const stem=coverFileStem(file);
+              const exact=new Set([normalizeCoverAlbumName(stem),canonicalCoverAlbumName(stem)]);
+              for(const key of coverMapCandidates(stem)){
+                const priority=exact.has(key)?100:10;
+                if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=file;priorityMap.set(key,priority)}
+              }
             }
           }
         }finally{clearTimeout(timeout)}
       }catch(e){console.warn("Localify cover directory index could not be loaded.",e)}
-      localifyCoverFileIndex=out;return out;
+      localifyCoverFileIndex=out;discordCoverCache.clear();return out;
     })();
     return localifyCoverFileIndexPromise;
   }
@@ -1816,9 +1831,14 @@ main{min-width:0;min-height:0}
     const out={};
     // External JSON is an extension, not a replacement. The built-in map is
     // always available and is intentionally copied under normalized keys.
+    const priorityMap=new Map();
     for(const [k,v] of Object.entries(LOCALIFY_BUILTIN_COVER_MAP)){
       if(typeof v!=="string"||!v.trim())continue;
-      for(const key of coverMapCandidates(k))out[key]=v.trim();
+      const value=v.trim(),exact=new Set([normalizeCoverAlbumName(k),canonicalCoverAlbumName(k)]);
+      for(const key of coverMapCandidates(k)){
+        const priority=exact.has(key)?100:10;
+        if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=value;priorityMap.set(key,priority)}
+      }
     }
     // The registry is hosted publicly, so it can be loaded from any page origin.
     localifyCoverMapPromise=(async()=>{
@@ -1833,13 +1853,16 @@ main{min-width:0;min-height:0}
           if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
             for(const [k,v] of Object.entries(raw)){
               if(typeof v!=="string"||!v.trim())continue;
-              const value=v.trim();
-              for(const key of coverMapCandidates(k))out[key]=value;
+              const value=v.trim(),exact=new Set([normalizeCoverAlbumName(k),canonicalCoverAlbumName(k)]);
+              for(const key of coverMapCandidates(k)){
+                const priority=exact.has(key)?100:10;
+                if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=value;priorityMap.set(key,priority)}
+              }
             }
           }
         }finally{clearTimeout(timeout)}
       }catch(e){console.warn("Localify covers.json could not be loaded; built-in cover map remains active.",e)}
-      localifyCoverMap=out;return out;
+      localifyCoverMap=out;discordCoverCache.clear();return out;
     })();
     return localifyCoverMapPromise;
   }
