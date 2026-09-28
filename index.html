@@ -543,6 +543,20 @@ main{min-width:0;min-height:0}
   .profileGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px}.profilePanel{padding:15px;border:1px solid #252d36;border-radius:16px;background:#10151b}.profilePanel h3{margin:0 0 10px;font-size:15px}.profileList{display:grid;gap:6px}
   .profileListRow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 7px;border-radius:9px}.profileListRow:hover{background:#171d24}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
   @media (max-width:780px){.profileTopBtn{display:none!important}.profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.profileGrid{grid-template-columns:1fr}.profileHeader{grid-template-columns:66px minmax(0,1fr);padding:14px}.profileAvatar{width:66px;height:66px;font-size:23px}.profileName{font-size:22px}}
+/* Profile + compact topbar polish */
+.profileRecapMain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.profileRecapMain>div{padding:14px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileRecapMinutes{margin-top:5px;font-size:28px;font-weight:1000;letter-spacing:-.8px}.profileRecapColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profileRecapTitle{font-size:10px;color:#79838f;text-transform:uppercase;letter-spacing:.09em;font-weight:950;margin-bottom:7px}
+@media(max-width:780px){
+  .profileTopBtn{display:grid!important;width:40px;height:40px;padding:0;border-radius:50%;overflow:hidden}
+  .topbar{grid-template-columns:minmax(0,1fr) 40px 40px!important;gap:6px!important}
+  .topbar .search{grid-column:1}.topbar #quickAdd{grid-column:2;width:40px;height:40px;padding:0!important;display:grid!important;place-items:center!important;border-radius:12px}
+  .topbar #quickAdd span:last-child{display:none}
+  .topbar #quickAdd .svgIcon{width:18px;height:18px;margin:0}
+  .topbar .profileTopBtn{grid-column:3}
+  .topbar .discordTopBtn,.topbar .discordStatus,.topbar .pill,.topbar .mobileTools{display:none!important}
+  .profileRecapColumns{grid-template-columns:1fr}
+  .profileRecapMain{grid-template-columns:1fr 1fr}
+}
+
 </style>
 </head>
 <body>
@@ -579,10 +593,11 @@ main{min-width:0;min-height:0}
         <input id="globalSearch" type="search" placeholder="Search your local music..." />
       </div>
       <div class="topSpacer"></div>
+      <button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add songs</span></button>
       <button class="profileTopBtn" id="profileBtn" title="Profile" aria-label="Open profile"><span id="profileGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span></button>
       <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span><span class="discordTopDot"></span></button>
       <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
-      <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button><button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add songs</span></button>
+      <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button>
     </div>
     <div id="content" class="content"></div>
   </main>
@@ -2217,17 +2232,55 @@ main{min-width:0;min-height:0}
   function formatHours(seconds){const h=(Number(seconds)||0)/3600;if(h<1)return Math.round(h*60)+" min";return h<10?h.toFixed(1)+" hr":Math.round(h)+" hr"}
   function recentAnalyticsDays(days=7){const out=[],now=Date.now();for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);const key=analyticsDayKey(d.getTime());out.push([key,Number(state.analytics?.days?.[key])||0])}return out}
   function profileTopSongs(limit=10){ensureAnalytics();return Object.entries(state.analytics.plays).map(([id,count])=>({t:trackById(id),count:Number(count)||0,seconds:Number(state.analytics.trackSeconds[id])||0})).filter(x=>x.t).sort((a,b)=>b.count-a.count||b.seconds-a.seconds).slice(0,limit)}
-  function profileWeeklyData(){const days=recentAnalyticsDays(7),seconds=days.reduce((n,x)=>n+x[1],0),plays=days.reduce((n,[key])=>n+state.analytics.history.filter(e=>e&&analyticsDayKey(Number(e.at))===key).length,0);return {days,seconds,plays}}
-  function showProfile(){ensureAnalytics();state.currentView="profile";state.detail=null;state.selected=[];const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10),name=String(state.profile?.displayName||"").trim()||"Localify listener",initials=esc(name.slice(0,1).toUpperCase()||"L");$("#content").innerHTML=`
-    <div class="profilePage">
-      <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button><button class="secondary small" id="profileSettings">Settings</button><button class="primary small" id="profileGoogle">Sign in with Google</button></div></div></div>
-      <div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">${formatHours(total)}</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">${Object.values(state.analytics.plays).reduce((n,v)=>n+(Number(v)||0),0).toLocaleString()}</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">${formatHours(weekly.seconds)}</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">${Object.keys(state.analytics.plays).filter(id=>trackById(id)).length.toLocaleString()}</div></div></div>
-      <div class="profileGrid"><div class="profilePanel"><h3>Top songs</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays • ${Math.max(0,x.count-1)} replays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your top songs.</div>`}</div></div>
-      <div class="profilePanel"><h3>Weekly recap</h3><div class="profileStatsGrid" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="profileStat"><div class="profileStatLabel">Time</div><div class="profileStatValue">${formatHours(weekly.seconds)}</div></div><div class="profileStat"><div class="profileStatLabel">Plays</div><div class="profileStatValue">${weekly.plays.toLocaleString()}</div></div></div><div class="profileList">${weekly.days.map(([day,sec])=>`<div class="profileListRow"><div class="profileRank"></div><div><div class="profileTrackTitle">${day}</div><div class="profileTrackSub">${formatHours(sec)}</div></div><div class="profileCount">${Math.round(sec/60)} min</div></div>`).join("")}</div></div></div>
-    </div>`;
-    $("#profileEdit").onclick=()=>editLocalProfile();$("#profileSettings").onclick=()=>openSettingsPanel();$("#profileGoogle").onclick=()=>openGoogleLoginInfo();
+  function profileWeekRange(){const now=new Date(),day=now.getDay(),daysSinceMonday=(day+6)%7;const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-daysSinceMonday);start.setHours(0,0,0,0);return {start,end:now}}
+  function profileWeekHistory(){const {start,end}=profileWeekRange();return state.analytics.history.filter(e=>e&&Number(e.at)>=start.getTime()&&Number(e.at)<=end.getTime())}
+  function profileWeeklyTopSongs(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const id=e.id;if(id)counts.set(id,(counts.get(id)||0)+1)}return [...counts.entries()].map(([id,count])=>({t:trackById(id),count})).filter(x=>x.t).sort((a,b)=>b.count-a.count||displayTrackTitle(a.t,true).localeCompare(displayTrackTitle(b.t,true),undefined,{sensitivity:"base"})).slice(0,limit)}
+  function profileWeeklyTopArtists(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const t=trackById(e.id);if(!t)continue;for(const artist of artistNamesForTrack(t)){if(artist===NONE_LABEL)continue;const key=artist.toLocaleLowerCase();const prev=counts.get(key)||{name:artist,count:0};prev.count++;counts.set(key,prev)}}return [...counts.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,limit)}
+  function profileWeeklyData(){const days=recentAnalyticsDays(7),week=profileWeekRange(),weekDays=days.filter(([key])=>{const parts=key.split("-").map(Number);const d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));return d.getTime()>=Date.UTC(week.start.getFullYear(),week.start.getMonth(),week.start.getDate())}),seconds=weekDays.reduce((n,[,sec])=>n+sec,0),history=profileWeekHistory();return {days:weekDays,seconds,plays:history.length,topSongs:profileWeeklyTopSongs(),topArtists:profileWeeklyTopArtists()}}
+  function renderProfileTopButton(){
+    const b=$("#profileBtn"),g=$("#profileGlyph");
+    if(!b||!g)return;
+    const name=String(state.profile?.displayName||"").trim()||"Localify listener";
+    if(state.profile?.avatar)g.innerHTML=`<img src="${esc(state.profile.avatar)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    else g.innerHTML=`<span style="display:grid;place-items:center;width:100%;height:100%;font-weight:1000">${esc(name.slice(0,1).toUpperCase()||"L")}</span>`;
+    g.style.cssText="display:grid;place-items:center;width:100%;height:100%;overflow:hidden;border-radius:50%";
+    b.title=name+" — Profile";
+    b.setAttribute("aria-label",name+" — Profile");
   }
-  function editLocalProfile(){const name=String(state.profile?.displayName||"").trim();setModal(`<div class="modalHead"><h2>Edit profile</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="field"><label>Display name</label><input id="profileNameInput" maxlength="60" value="${esc(name)}" placeholder="Your name"></div><div class="modalFoot"><button class="secondary" id="profileCancel">Cancel</button><button class="primary" id="profileSave">Save</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#profileCancel").onclick=()=>closeModal(true);$("#profileSave").onclick=async()=>{state.profile.displayName=$("#profileNameInput").value.trim();await save();closeModal(true);showProfile();}}
+  function showProfile(){
+    ensureAnalytics();state.currentView="profile";state.detail=null;state.selected=[];
+    const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10);
+    const name=String(state.profile?.displayName||"").trim()||"Localify listener";
+    const initials=esc(name.slice(0,1).toUpperCase()||"L");
+    $( "#content").innerHTML=`
+    <div class="profilePage">
+      <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button></div></div></div>
+      <div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">${formatHours(total)}</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">${Object.values(state.analytics.plays).reduce((n,v)=>n+(Number(v)||0),0).toLocaleString()}</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">${Math.floor(weekly.seconds/60).toLocaleString()} min</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">${Object.keys(state.analytics.plays).filter(id=>trackById(id)).length.toLocaleString()}</div></div></div>
+      <div class="profileGrid">
+        <div class="profilePanel"><h3>Weekly recap</h3>
+          <div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened this week</div><div class="profileRecapMinutes">${Math.floor(weekly.seconds/60).toLocaleString()}</div></div><div><div class="profileStatLabel">Plays this week</div><div class="profileRecapMinutes">${weekly.plays.toLocaleString()}</div></div></div>
+          <div class="profileRecapColumns">
+            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(x.name)}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+          </div>
+        </div>
+        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
+      </div>
+    </div>`;
+    renderProfileTopButton();
+    $("#profileEdit").onclick=()=>editLocalProfile();
+  }
+  function editLocalProfile(){
+    const name=String(state.profile?.displayName||"").trim(),avatar=state.profile?.avatar||null;
+    setModal(`<div class="modalHead"><h2>Edit profile</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="coverEdit"><div id="profileEditAvatar" class="profileAvatar" style="width:92px;height:92px;font-size:30px">${avatar?`<img src="${esc(avatar)}" alt="">`:esc(name.slice(0,1).toUpperCase()||"L")}</div><div><button class="secondary" id="profileAvatarBtn">Choose profile picture</button><div class="help" style="margin-top:6px">The picture is saved locally with your Localify profile.</div></div></div>
+      <div class="field"><label>Display name</label><input id="profileNameInput" maxlength="60" value="${esc(name)}" placeholder="Your name"></div>
+      <div class="modalFoot"><button class="secondary" id="profileCancel">Cancel</button><button class="primary" id="profileSave">Save</button></div>`);
+    $("#closeModal").onclick=()=>closeModal(true);$("#profileCancel").onclick=()=>closeModal(true);
+    $("#profileAvatarBtn").onclick=()=>imagePicker(avatar,d=>{state._pendingProfileAvatar=d;const el=$("#profileEditAvatar");if(d)el.innerHTML=`<img src="${esc(d)}" alt="">`;else el.textContent="L";markDirty()});
+    $("#profileSave").onclick=async()=>{state.profile.displayName=$("#profileNameInput").value.trim();if(Object.prototype.hasOwnProperty.call(state,"_pendingProfileAvatar")){state.profile.avatar=state._pendingProfileAvatar;delete state._pendingProfileAvatar}await save();closeModal(true);renderProfileTopButton();showProfile()};
+  }
+
   function openSettingsPanel(){setModal(`<div class="modalHead"><h2>Settings</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">Playback, library and analytics are stored locally. Google account syncing requires Google OAuth credentials for the app.</div><div class="modalFoot"><button class="primary" id="settingsDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#settingsDone").onclick=()=>closeModal(true)}
   function openGoogleLoginInfo(){setModal(`<div class="modalHead"><h2>Google account sync</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">The profile and listening stats are ready locally. Real Google login and cross-device sync still need a Google OAuth client ID. Google supports web-app OAuth clients and the Drive appDataFolder can store per-app data for the signed-in user.</div><div class="modalFoot"><button class="primary" id="googleInfoDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#googleInfoDone").onclick=()=>closeModal(true)}
   function pushRecent(id){state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,50)}
@@ -3245,6 +3298,7 @@ main{min-width:0;min-height:0}
         toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
       }
     }
+    renderProfileTopButton();
     render();
     const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
     if("requestIdleCallback"in window)requestIdleCallback(warmFirst,{timeout:1500});else setTimeout(warmFirst,700);
