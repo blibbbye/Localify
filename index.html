@@ -533,7 +533,7 @@ main{min-width:0;min-height:0}
     .track-row{contain:layout paint style;content-visibility:auto;contain-intrinsic-size:1px 64px}
     .tableWrap{contain:layout style}
     .art img{content-visibility:auto}
-  .profileTopBtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;padding:0;background:#151a20;border:1px solid #2c333d;color:#dbe3eb;cursor:pointer}
+  .profileTopBtn{order:4}.pill{order:3}.discordTopBtn{order:2}.topbar #quickAdd{order:1}.profileTopBtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;padding:0;background:#151a20;border:1px solid #2c333d;color:#dbe3eb;cursor:pointer}
   .profileTopBtn:hover{background:#1e252d;border-color:#424d5a}
   .profileTopBtn .svgIcon{width:18px;height:18px;margin:0}
   .profilePage{display:grid;gap:18px}.profileHeader{display:grid;grid-template-columns:88px minmax(0,1fr);gap:16px;align-items:center;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318)}
@@ -546,7 +546,7 @@ main{min-width:0;min-height:0}
 /* Profile + compact topbar polish */
 .profileRecapMain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.profileRecapMain>div{padding:14px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileRecapMinutes{margin-top:5px;font-size:28px;font-weight:1000;letter-spacing:-.8px}.profileRecapColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profileRecapTitle{font-size:10px;color:#79838f;text-transform:uppercase;letter-spacing:.09em;font-weight:950;margin-bottom:7px}
 @media(max-width:780px){
-  .profileTopBtn{display:grid!important;width:40px;height:40px;padding:0;border-radius:50%;overflow:hidden}
+  .profileTopBtn{order:initial;display:grid!important;width:40px;height:40px;padding:0;border-radius:50%;overflow:hidden}
   .topbar{grid-template-columns:minmax(0,1fr) 40px 40px!important;gap:6px!important}
   .topbar .search{grid-column:1}.topbar #quickAdd{grid-column:2;width:40px;height:40px;padding:0!important;display:grid!important;place-items:center!important;border-radius:12px}
   .topbar #quickAdd span:last-child{display:none}
