@@ -533,6 +533,16 @@ main{min-width:0;min-height:0}
     .track-row{contain:layout paint style;content-visibility:auto;contain-intrinsic-size:1px 64px}
     .tableWrap{contain:layout style}
     .art img{content-visibility:auto}
+  .profileTopBtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;padding:0;background:#151a20;border:1px solid #2c333d;color:#dbe3eb;cursor:pointer}
+  .profileTopBtn:hover{background:#1e252d;border-color:#424d5a}
+  .profileTopBtn .svgIcon{width:18px;height:18px;margin:0}
+  .profilePage{display:grid;gap:18px}.profileHeader{display:grid;grid-template-columns:88px minmax(0,1fr);gap:16px;align-items:center;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318)}
+  .profileAvatar{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#17212a;border:1px solid #33404c;color:var(--accent);font-size:30px;font-weight:1000}.profileAvatar img{width:100%;height:100%;object-fit:cover}
+  .profileName{font-size:28px;font-weight:1000;letter-spacing:-1px}.profileSub{margin-top:5px;color:#7e8793;font-size:12px}.profileActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .profileStatsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.profileStat{padding:15px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileStatLabel{color:#7a8490;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.profileStatValue{margin-top:6px;font-size:23px;font-weight:1000}
+  .profileGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px}.profilePanel{padding:15px;border:1px solid #252d36;border-radius:16px;background:#10151b}.profilePanel h3{margin:0 0 10px;font-size:15px}.profileList{display:grid;gap:6px}
+  .profileListRow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 7px;border-radius:9px}.profileListRow:hover{background:#171d24}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
+  @media (max-width:780px){.profileTopBtn{display:none!important}.profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.profileGrid{grid-template-columns:1fr}.profileHeader{grid-template-columns:66px minmax(0,1fr);padding:14px}.profileAvatar{width:66px;height:66px;font-size:23px}.profileName{font-size:22px}}
 </style>
 </head>
 <body>
@@ -569,6 +579,7 @@ main{min-width:0;min-height:0}
         <input id="globalSearch" type="search" placeholder="Search your local music..." />
       </div>
       <div class="topSpacer"></div>
+      <button class="profileTopBtn" id="profileBtn" title="Profile" aria-label="Open profile"><span id="profileGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span></button>
       <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span><span class="discordTopDot"></span></button>
       <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
       <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button><button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add songs</span></button>
@@ -634,6 +645,8 @@ main{min-width:0;min-height:0}
     version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"}, discordPresence:true, nowSidebarHidden:false },
+    profile: { displayName:"", avatar:null },
+    analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
     selected:[], detail:null, playlistSort:{}, trackSorts:{}
   };
@@ -1008,6 +1021,12 @@ main{min-width:0;min-height:0}
     state.liked=Array.isArray(state.liked)?state.liked:[];
     state.recent=Array.isArray(state.recent)?state.recent:[];
     state.queue=Array.isArray(state.queue)?state.queue:[];
+    state.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},state.analytics||{});
+    state.analytics.plays=state.analytics.plays&&typeof state.analytics.plays==="object"?state.analytics.plays:{};
+    state.analytics.trackSeconds=state.analytics.trackSeconds&&typeof state.analytics.trackSeconds==="object"?state.analytics.trackSeconds:{};
+    state.analytics.days=state.analytics.days&&typeof state.analytics.days==="object"?state.analytics.days:{};
+    state.analytics.history=Array.isArray(state.analytics.history)?state.analytics.history:[];
+    state.profile=Object.assign({displayName:"",avatar:null},state.profile||{});
     state.artists.forEach(a=>{if(!a.id)a.id=uid();if(!artistDisplayName(a))a.name="Unknown Artist";if(/^(?:no name|undefined|null)$/i.test(String(a.name||"").trim()))a.name="Unknown Artist";});
     state.selected=[];
     // Migrate older single-artist libraries to the multi-artist schema.
@@ -1061,6 +1080,8 @@ main{min-width:0;min-height:0}
     if(!raw)return;
     const incoming=raw;
     for(const k of ["tracks","albums","artists","playlists","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
+    incoming.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},incoming.analytics||{});
+    incoming.profile=Object.assign({displayName:"",avatar:null},incoming.profile||{});
     Object.assign(state,incoming);
     const artistMap=new Map(state.artists.map(a=>[(a.name||"").toLowerCase(),a]));
     const albumMap=new Map(state.albums.map(a=>[`${(a.title||"").toLowerCase()}|||${a.artistId||""}`,a]));
@@ -1170,7 +1191,7 @@ main{min-width:0;min-height:0}
     return restored;
   }
 
-  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();render();$("#main").scrollTop=0}
+  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
   function empty(title,desc){return `<div class="empty"><h3>${esc(title)}</h3><div>${esc(desc)}</div></div>`}
   function renderNav(){
     $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
@@ -1188,6 +1209,7 @@ main{min-width:0;min-height:0}
     else if(v==="playlists")renderPlaylists();
     else if(v==="liked")renderLiked();
     else if(v==="recent")renderRecent();
+    else if(v==="profile")showProfile();
     renderPlayer();
   }
 
@@ -2157,7 +2179,7 @@ main{min-width:0;min-height:0}
     }
 
     pushRecent(t.id);
-    autoSave();
+    startAnalyticsSession(t.id);
     renderPlayer();
     if("mediaSession"in navigator){
       try{
@@ -2186,6 +2208,28 @@ main{min-width:0;min-height:0}
   }
   function prev(){if(audio.currentTime>3){audio.currentTime=0;return}state.queueIndex=Math.max(0,state.queueIndex-1);playCurrent()}
   function shuffleArr(a){const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
+  const analyticsRuntime={lastAt:0,trackId:null,lastSaveAt:0};
+  function analyticsDayKey(ts=Date.now()){const d=new Date(ts);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")}
+  function ensureAnalytics(){state.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},state.analytics||{});if(!state.analytics.plays||typeof state.analytics.plays!=="object")state.analytics.plays={};if(!state.analytics.trackSeconds||typeof state.analytics.trackSeconds!=="object")state.analytics.trackSeconds={};if(!state.analytics.days||typeof state.analytics.days!=="object")state.analytics.days={};if(!Array.isArray(state.analytics.history))state.analytics.history=[]}
+  function recordTrackPlay(id){if(!id)return;ensureAnalytics();state.analytics.plays[id]=(Number(state.analytics.plays[id])||0)+1;state.analytics.history.push({id,at:Date.now()});if(state.analytics.history.length>20000)state.analytics.history.splice(0,state.analytics.history.length-20000)}
+  function creditListeningTime(){const now=Date.now(),id=state.currentId;if(!id||audio.paused){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id||null;return}if(!analyticsRuntime.lastAt||analyticsRuntime.trackId!==id){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id;return}const delta=Math.min(5,Math.max(0,(now-analyticsRuntime.lastAt)/1000));if(delta>0){ensureAnalytics();state.analytics.totalSeconds=(Number(state.analytics.totalSeconds)||0)+delta;state.analytics.trackSeconds[id]=(Number(state.analytics.trackSeconds[id])||0)+delta;const day=analyticsDayKey(now);state.analytics.days[day]=(Number(state.analytics.days[day])||0)+delta}analyticsRuntime.lastAt=now;if(now-analyticsRuntime.lastSaveAt>10000){analyticsRuntime.lastSaveAt=now;autoSave()}}
+  function startAnalyticsSession(id){ensureAnalytics();recordTrackPlay(id);analyticsRuntime.lastAt=Date.now();analyticsRuntime.trackId=id;autoSave()}
+  function formatHours(seconds){const h=(Number(seconds)||0)/3600;if(h<1)return Math.round(h*60)+" min";return h<10?h.toFixed(1)+" hr":Math.round(h)+" hr"}
+  function recentAnalyticsDays(days=7){const out=[],now=Date.now();for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);const key=analyticsDayKey(d.getTime());out.push([key,Number(state.analytics?.days?.[key])||0])}return out}
+  function profileTopSongs(limit=10){ensureAnalytics();return Object.entries(state.analytics.plays).map(([id,count])=>({t:trackById(id),count:Number(count)||0,seconds:Number(state.analytics.trackSeconds[id])||0})).filter(x=>x.t).sort((a,b)=>b.count-a.count||b.seconds-a.seconds).slice(0,limit)}
+  function profileWeeklyData(){const days=recentAnalyticsDays(7),seconds=days.reduce((n,x)=>n+x[1],0),plays=days.reduce((n,[key])=>n+state.analytics.history.filter(e=>e&&analyticsDayKey(Number(e.at))===key).length,0);return {days,seconds,plays}}
+  function showProfile(){ensureAnalytics();state.currentView="profile";state.detail=null;state.selected=[];const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10),name=String(state.profile?.displayName||"").trim()||"Localify listener",initials=esc(name.slice(0,1).toUpperCase()||"L");$("#content").innerHTML=`
+    <div class="profilePage">
+      <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button><button class="secondary small" id="profileSettings">Settings</button><button class="primary small" id="profileGoogle">Sign in with Google</button></div></div></div>
+      <div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">${formatHours(total)}</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">${Object.values(state.analytics.plays).reduce((n,v)=>n+(Number(v)||0),0).toLocaleString()}</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">${formatHours(weekly.seconds)}</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">${Object.keys(state.analytics.plays).filter(id=>trackById(id)).length.toLocaleString()}</div></div></div>
+      <div class="profileGrid"><div class="profilePanel"><h3>Top songs</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays • ${Math.max(0,x.count-1)} replays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your top songs.</div>`}</div></div>
+      <div class="profilePanel"><h3>Weekly recap</h3><div class="profileStatsGrid" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="profileStat"><div class="profileStatLabel">Time</div><div class="profileStatValue">${formatHours(weekly.seconds)}</div></div><div class="profileStat"><div class="profileStatLabel">Plays</div><div class="profileStatValue">${weekly.plays.toLocaleString()}</div></div></div><div class="profileList">${weekly.days.map(([day,sec])=>`<div class="profileListRow"><div class="profileRank"></div><div><div class="profileTrackTitle">${day}</div><div class="profileTrackSub">${formatHours(sec)}</div></div><div class="profileCount">${Math.round(sec/60)} min</div></div>`).join("")}</div></div></div>
+    </div>`;
+    $("#profileEdit").onclick=()=>editLocalProfile();$("#profileSettings").onclick=()=>openSettingsPanel();$("#profileGoogle").onclick=()=>openGoogleLoginInfo();
+  }
+  function editLocalProfile(){const name=String(state.profile?.displayName||"").trim();setModal(`<div class="modalHead"><h2>Edit profile</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="field"><label>Display name</label><input id="profileNameInput" maxlength="60" value="${esc(name)}" placeholder="Your name"></div><div class="modalFoot"><button class="secondary" id="profileCancel">Cancel</button><button class="primary" id="profileSave">Save</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#profileCancel").onclick=()=>closeModal(true);$("#profileSave").onclick=async()=>{state.profile.displayName=$("#profileNameInput").value.trim();await save();closeModal(true);showProfile();}}
+  function openSettingsPanel(){setModal(`<div class="modalHead"><h2>Settings</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">Playback, library and analytics are stored locally. Google account syncing requires Google OAuth credentials for the app.</div><div class="modalFoot"><button class="primary" id="settingsDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#settingsDone").onclick=()=>closeModal(true)}
+  function openGoogleLoginInfo(){setModal(`<div class="modalHead"><h2>Google account sync</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">The profile and listening stats are ready locally. Real Google login and cross-device sync still need a Google OAuth client ID. Google supports web-app OAuth clients and the Drive appDataFolder can store per-app data for the signed-in user.</div><div class="modalFoot"><button class="primary" id="googleInfoDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#googleInfoDone").onclick=()=>closeModal(true)}
   function pushRecent(id){state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,50)}
 
   function toggleLike(id){
@@ -3150,31 +3194,31 @@ main{min-width:0;min-height:0}
       else if(state.currentView==="search"){state.currentView="home";render()}
     },90);
   });
-  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
+  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=showProfile;$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#nowPanelToggle").onclick=()=>setNowSidebar(!document.querySelector(".app")?.classList.contains("nowPanelOpen"));
   $("#next").onclick=next;$("#prev").onclick=prev;$("#shuffle").onclick=async()=>{state.settings.shuffle=!state.settings.shuffle;if(state.settings.shuffle&&state.currentId&&state.queue.length){const current=state.currentId;const rest=shuffleArr(state.queue.filter(id=>id!==current));state.queue=[current,...rest];state.queueIndex=0}await save();renderPlayer();renderCurrentViewWithoutScroll()};$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
   setInterval(pollDesktopControl,350);
   setInterval(checkDesktopPlayer,4000);
-  audio.addEventListener("timeupdate",()=>{updatePlayerTime();sendDiscordPresence(false)});
+  audio.addEventListener("timeupdate",()=>{updatePlayerTime();creditListeningTime();sendDiscordPresence(false)});
   audio.addEventListener("play",()=>{renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
-  audio.addEventListener("pause",()=>{renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
+  audio.addEventListener("pause",()=>{creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
   audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();sendDiscordPresence(true)});
   audio.addEventListener("seeking",()=>sendDiscordPresence(true));
   audio.addEventListener("seeked",()=>sendDiscordPresence(true));
   audio.addEventListener("error",()=>{
     if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play this audio format.");
   });
-  audio.addEventListener("ended",()=>{
+  audio.addEventListener("ended",()=>{creditListeningTime();autoSave();
     if(state.settings.repeat==="one"){
       try{audio.currentTime=0;const p=audio.play();if(p?.catch)p.catch(()=>{})}catch{}
     }else next();
   });
   window.addEventListener("keydown",e=>{if(e.code==="Space"&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();$("#playPause").click()}if(e.key==="ArrowRight"&&e.shiftKey)next();if(e.key==="ArrowLeft"&&e.shiftKey)prev()});
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next)}
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")save(false)});
-  window.addEventListener("pagehide",()=>{flushSave(false)});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
+  window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
