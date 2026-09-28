@@ -533,23 +533,21 @@ main{min-width:0;min-height:0}
     .track-row{contain:layout paint style;content-visibility:auto;contain-intrinsic-size:1px 64px}
     .tableWrap{contain:layout style}
     .art img{content-visibility:auto}
-  .profileTopBtn{order:4}.pill{order:3}.discordTopBtn{order:2}.topbar #quickAdd{order:1}.profileTopBtn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;padding:0;background:transparent;border:0;color:#dbe3eb;cursor:pointer;overflow:hidden;flex:none;box-shadow:none}
-  .profileTopBtn:hover{background:rgba(255,255,255,.06)}
-  .profileTopBtn #profileGlyph{width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border-radius:50%}
-  .profileTopBtn .svgIcon{width:23px;height:23px;margin:0}
-  .profileTopBtn img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
+  .profileTopBtn{order:4}.pill{order:3}.discordTopBtn{order:2}.topbar #quickAdd{order:1}.profileTopBtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;padding:0;background:#151a20;border:1px solid #2c333d;color:#dbe3eb;cursor:pointer}
+  .profileTopBtn:hover{background:#1e252d;border-color:#424d5a}
+  .profileTopBtn .svgIcon{width:18px;height:18px;margin:0}
   .profilePage{display:grid;gap:18px}.profileHeader{display:grid;grid-template-columns:88px minmax(0,1fr);gap:16px;align-items:center;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318)}
   .profileAvatar{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#17212a;border:1px solid #33404c;color:var(--accent);font-size:30px;font-weight:1000}.profileAvatar img{width:100%;height:100%;object-fit:cover}
   .profileName{font-size:28px;font-weight:1000;letter-spacing:-1px}.profileSub{margin-top:5px;color:#7e8793;font-size:12px}.profileActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .profileStatsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.profileStat{padding:15px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileStatLabel{color:#7a8490;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.profileStatValue{margin-top:6px;font-size:23px;font-weight:1000}
   .profileGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px}.profilePanel{padding:15px;border:1px solid #252d36;border-radius:16px;background:#10151b}.profilePanel h3{margin:0 0 10px;font-size:15px}.profileList{display:grid;gap:6px}
-  .profileListRow{display:grid;grid-template-columns:24px 38px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px;border-radius:10px}.profileListRow:hover{background:#171d24}.profileListArt{width:38px;height:38px;border-radius:8px;overflow:hidden;background:#20252d;display:grid;place-items:center;flex:none;color:#657180}.profileListArt img{width:100%;height:100%;display:block;object-fit:cover}.profileListArt .svgIcon{width:18px;height:18px;margin:0}.profileArtistArt,.profileArtistArt img{border-radius:50%}.profileClickable{cursor:pointer}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
+  .profileListRow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 7px;border-radius:9px}.profileListRow:hover{background:#171d24}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
   @media (max-width:780px){.profileTopBtn{display:none!important}.profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.profileGrid{grid-template-columns:1fr}.profileHeader{grid-template-columns:66px minmax(0,1fr);padding:14px}.profileAvatar{width:66px;height:66px;font-size:23px}.profileName{font-size:22px}}
 /* Profile + compact topbar polish */
 .profileRecapMain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.profileRecapMain>div{padding:14px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileRecapMinutes{margin-top:5px;font-size:28px;font-weight:1000;letter-spacing:-.8px}.profileRecapColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profileRecapTitle{font-size:10px;color:#79838f;text-transform:uppercase;letter-spacing:.09em;font-weight:950;margin-bottom:7px}
 @media(max-width:780px){
-  .profileTopBtn{order:initial;display:grid!important;width:44px;height:44px;padding:0;border-radius:50%;overflow:hidden;background:transparent;border:0;box-shadow:none}
-  .topbar{grid-template-columns:minmax(0,1fr) 40px 44px!important;gap:6px!important}
+  .profileTopBtn{order:initial;display:grid!important;width:40px;height:40px;padding:0;border-radius:50%;overflow:hidden}
+  .topbar{grid-template-columns:minmax(0,1fr) 40px 40px!important;gap:6px!important}
   .topbar .search{grid-column:1}.topbar #quickAdd{grid-column:2;width:40px;height:40px;padding:0!important;display:grid!important;place-items:center!important;border-radius:12px}
   .topbar #quickAdd span:last-child{display:none}
   .topbar #quickAdd .svgIcon{width:18px;height:18px;margin:0}
@@ -1265,10 +1263,6 @@ main{min-width:0;min-height:0}
     const count=Math.min(list.length,localifyPage(key)*LOCALIFY_LARGE_PAGE);
     return '<div class="'+(wrapper||"grid")+'">'+list.slice(0,count).map(renderer).join("")+'</div>'+localifyLoadMoreHtml(key,list.length,count);
   }
-  document.addEventListener("error",e=>{
-    const img=e.target?.closest?.("img[data-localify-cover]");
-    if(img)coverImgFallbackImage(img);
-  },true);
   document.addEventListener("click",e=>{
     const b=e.target.closest?.("[data-localify-load-more]");
     if(!b)return;
@@ -1368,7 +1362,7 @@ main{min-width:0;min-height:0}
   }
 
   function trackCard(t){return `<div class="card track-card" data-id="${t.id}" style="cursor:pointer">${artBox(t)}<button class="playOverlay play-track" data-id="${t.id}">${uiIcon("play")}</button><div class="cardTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="cardSub">${esc(artistName(t))}</div></div>`}
-  function albumCard(a){const tracks=__localifyCatalog().byAlbum.get(a.id)||[];const cover=coverForAlbum(a,a.cover);return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${cover?`<div class="art">${coverImgHtml(cover,"localifyAlbumCover",a.title)}</div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistNamesForAlbum(a).join(", ")||NONE_LABEL)} • ${tracks.length} songs • ${durationLabel(tracks)}</div><div class="albumHoverInfo"><div class="albumHoverItem"><strong>Year</strong><span>${esc(a.year||"None")}</span></div><div class="albumHoverItem"><strong>Genre</strong><span>${esc(a.genre||"None")}</span></div><div class="albumHoverItem"><strong>Label</strong><span>${esc(a.label||"None")}</span></div></div></div>`}
+  function albumCard(a){const tracks=__localifyCatalog().byAlbum.get(a.id)||[];const cover=coverForAlbum(a,a.cover);return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${cover?`<div class="art"><img src="${cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistNamesForAlbum(a).join(", ")||NONE_LABEL)} • ${tracks.length} songs • ${durationLabel(tracks)}</div><div class="albumHoverInfo"><div class="albumHoverItem"><strong>Year</strong><span>${esc(a.year||"None")}</span></div><div class="albumHoverItem"><strong>Genre</strong><span>${esc(a.genre||"None")}</span></div><div class="albumHoverItem"><strong>Label</strong><span>${esc(a.label||"None")}</span></div></div></div>`}
   function bindAlbumCards(){$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id))}
 
   function artistCard(a){const count=(__localifyCatalog().byArtist.get(a.id)||[]).length;return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${count} songs</div></div>`}
@@ -1500,8 +1494,7 @@ main{min-width:0;min-height:0}
   // Public artwork lives in the Localify GitHub repository. Absolute HTTPS
   // URLs make the same cover work in the website, Google Sites embeds, and Discord.
   const LOCALIFY_GITHUB_RAW_BASE="https://raw.githubusercontent.com/blibbbye/Localify/main/";
-  const LOCALIFY_GITHUB_PAGES_BASE="https://blibbbye.github.io/Localify/";
-  // Keep artwork on GitHub Raw as the primary source so newly uploaded covers\n  // do not depend on GitHub Pages deployment/cache timing.\n  const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
+  const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
   const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
@@ -1682,21 +1675,12 @@ main{min-width:0;min-height:0}
   let localifyBuiltinCoverLookup=null;
   let localifyCoverFileIndex=null;
   let localifyCoverFileIndexPromise=null;
-  function setPriorityCoverLookup(out,priorityMap,key,value,priority){
-    if(!key||!value)return;
-    const current=priorityMap.get(key)||0;
-    if(!out.has(key)||priority>current){out.set(key,value);priorityMap.set(key,priority)}
-  }
-  function populatePriorityCoverLookup(out,priorityMap,name,value){
-    const exact=new Set([normalizeCoverAlbumName(name),canonicalCoverAlbumName(name)]);
-    for(const key of coverMapCandidates(name))setPriorityCoverLookup(out,priorityMap,key,value,exact.has(key)?100:10);
-  }
   function getBuiltinCoverLookup(){
     if(localifyBuiltinCoverLookup)return localifyBuiltinCoverLookup;
-    const out=new Map(),priorityMap=new Map();
+    const out=new Map();
     for(const [name,file] of Object.entries(LOCALIFY_BUILTIN_COVER_MAP)){
       if(typeof file!=="string"||!file.trim())continue;
-      populatePriorityCoverLookup(out,priorityMap,name,file.trim());
+      for(const key of coverMapCandidates(name))out.set(key,file.trim());
     }
     localifyBuiltinCoverLookup=out;
     return out;
@@ -1773,11 +1757,8 @@ main{min-width:0;min-height:0}
   function repoCoverFile(value){
     if(typeof value!=="string"||!value.trim())return "";
     const mapped=coverMapUrl(value);
-    if(!mapped)return "";
-    const bases=[LOCALIFY_COVER_DIRECTORY,LOCALIFY_GITHUB_RAW_BASE+"covers/"];
-    const base=bases.find(x=>mapped.startsWith(x));
-    if(!base)return "";
-    try{return decodeURIComponent(mapped.slice(base.length));}catch{return mapped.slice(base.length);}
+    if(!mapped||!mapped.startsWith(LOCALIFY_COVER_DIRECTORY))return "";
+    try{return decodeURIComponent(mapped.slice(LOCALIFY_COVER_DIRECTORY.length));}catch{return mapped.slice(LOCALIFY_COVER_DIRECTORY.length);}
   }
   function isKnownLocalifyCover(value){
     const file=repoCoverFile(value);
@@ -1798,27 +1779,6 @@ main{min-width:0;min-height:0}
     const known=knownCoverUrlForAlbum(title);
     return known||safeExistingCover(title,existingCover)||"";
   }
-  function coverImgHtml(url,cls="",alt=""){
-    if(!url)return "";
-    const safe=String(url).replace(/&/g,"&amp;").replace(/"/g,"&quot;");
-    const rawFallback=safe.startsWith(LOCALIFY_COVER_DIRECTORY)
-      ? LOCALIFY_GITHUB_RAW_BASE+"covers/"+safe.slice(LOCALIFY_COVER_DIRECTORY.length)
-      : "";
-    const rawSafe=rawFallback.replace(/&/g,"&amp;").replace(/"/g,"&quot;");
-    return `<img class="${cls}" src="${safe}" alt="${String(alt||"").replace(/"/g,"&quot;")}" loading="eager" decoding="async" referrerpolicy="no-referrer" data-localify-cover="1" data-localify-cover-retry="0" ${rawFallback?`data-localify-raw="${rawSafe}"`:""}>`;
-  }
-  function coverImgFallbackImage(img){
-    if(!img)return;
-    const raw=img.getAttribute("data-localify-raw");
-    const tries=Number(img.getAttribute("data-localify-cover-retry")||0);
-    if(raw&&tries<2){
-      img.setAttribute("data-localify-cover-retry",String(tries+1));
-      const sep=raw.includes("?")?"&":"?";
-      img.src=raw+sep+"v="+Date.now();
-      return;
-    }
-    img.style.display="none";
-  }
   function coverFileStem(name){
     return String(name||"").replace(/\.[^.\\/]+$/,"").trim();
   }
@@ -1835,21 +1795,15 @@ main{min-width:0;min-height:0}
           if(!r.ok)throw new Error(`HTTP ${r.status}`);
           const files=await r.json();
           if(Array.isArray(files)){
-            const priorityMap=new Map();
             for(const item of files){
               if(!item||item.type!=="file"||!LOCALIFY_COVER_EXTENSIONS.some(ext=>String(item.name||"").toLowerCase().endsWith(ext)))continue;
               const file=String(item.name||"");
-              const stem=coverFileStem(file);
-              const exact=new Set([normalizeCoverAlbumName(stem),canonicalCoverAlbumName(stem)]);
-              for(const key of coverMapCandidates(stem)){
-                const priority=exact.has(key)?100:10;
-                if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=file;priorityMap.set(key,priority)}
-              }
+              for(const key of coverMapCandidates(coverFileStem(file)))out[key]=file;
             }
           }
         }finally{clearTimeout(timeout)}
       }catch(e){console.warn("Localify cover directory index could not be loaded.",e)}
-      localifyCoverFileIndex=out;discordCoverCache.clear();if(typeof renderCurrentViewWithoutScroll==="function")renderCurrentViewWithoutScroll();return out;
+      localifyCoverFileIndex=out;return out;
     })();
     return localifyCoverFileIndexPromise;
   }
@@ -1860,14 +1814,9 @@ main{min-width:0;min-height:0}
     const out={};
     // External JSON is an extension, not a replacement. The built-in map is
     // always available and is intentionally copied under normalized keys.
-    const priorityMap=new Map();
     for(const [k,v] of Object.entries(LOCALIFY_BUILTIN_COVER_MAP)){
       if(typeof v!=="string"||!v.trim())continue;
-      const value=v.trim(),exact=new Set([normalizeCoverAlbumName(k),canonicalCoverAlbumName(k)]);
-      for(const key of coverMapCandidates(k)){
-        const priority=exact.has(key)?100:10;
-        if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=value;priorityMap.set(key,priority)}
-      }
+      for(const key of coverMapCandidates(k))out[key]=v.trim();
     }
     // The registry is hosted publicly, so it can be loaded from any page origin.
     localifyCoverMapPromise=(async()=>{
@@ -1882,16 +1831,13 @@ main{min-width:0;min-height:0}
           if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
             for(const [k,v] of Object.entries(raw)){
               if(typeof v!=="string"||!v.trim())continue;
-              const value=v.trim(),exact=new Set([normalizeCoverAlbumName(k),canonicalCoverAlbumName(k)]);
-              for(const key of coverMapCandidates(k)){
-                const priority=exact.has(key)?100:10;
-                if(!out[key]||priority>(priorityMap.get(key)||0)){out[key]=value;priorityMap.set(key,priority)}
-              }
+              const value=v.trim();
+              for(const key of coverMapCandidates(k))out[key]=value;
             }
           }
         }finally{clearTimeout(timeout)}
       }catch(e){console.warn("Localify covers.json could not be loaded; built-in cover map remains active.",e)}
-      localifyCoverMap=out;discordCoverCache.clear();if(typeof renderCurrentViewWithoutScroll==="function")renderCurrentViewWithoutScroll();return out;
+      localifyCoverMap=out;return out;
     })();
     return localifyCoverMapPromise;
   }
@@ -2290,8 +2236,6 @@ main{min-width:0;min-height:0}
   function profileWeekHistory(){const {start,end}=profileWeekRange();return state.analytics.history.filter(e=>e&&Number(e.at)>=start.getTime()&&Number(e.at)<=end.getTime())}
   function profileWeeklyTopSongs(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const id=e.id;if(id)counts.set(id,(counts.get(id)||0)+1)}return [...counts.entries()].map(([id,count])=>({t:trackById(id),count})).filter(x=>x.t).sort((a,b)=>b.count-a.count||displayTrackTitle(a.t,true).localeCompare(displayTrackTitle(b.t,true),undefined,{sensitivity:"base"})).slice(0,limit)}
   function profileWeeklyTopArtists(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const t=trackById(e.id);if(!t)continue;for(const artist of artistNamesForTrack(t)){if(artist===NONE_LABEL)continue;const key=artist.toLocaleLowerCase();const prev=counts.get(key)||{name:artist,count:0};prev.count++;counts.set(key,prev)}}return [...counts.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,limit)}
-  function profileTrackCover(t){return knownCoverUrlForTrack(t)||t?.cover||albumById(t?.albumId)?.cover||"";}
-  function profileArtistCover(name){const wanted=presetKey(String(name||""));if(!wanted)return "";const artist=state.artists.find(a=>presetKey(artistDisplayName(a))===wanted);if(artist?.image)return artist.image;for(const t of state.tracks){if(artistNamesForTrack(t).some(x=>presetKey(x)===wanted)){const image=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);if(image)return image;}}return "";}
   function profileWeeklyData(){const days=recentAnalyticsDays(7),week=profileWeekRange(),weekDays=days.filter(([key])=>{const parts=key.split("-").map(Number);const d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));return d.getTime()>=Date.UTC(week.start.getFullYear(),week.start.getMonth(),week.start.getDate())}),seconds=weekDays.reduce((n,[,sec])=>n+sec,0),history=profileWeekHistory();return {days:weekDays,seconds,plays:history.length,topSongs:profileWeeklyTopSongs(),topArtists:profileWeeklyTopArtists()}}
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
@@ -2308,8 +2252,6 @@ main{min-width:0;min-height:0}
     const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10);
     const name=String(state.profile?.displayName||"").trim()||"Localify listener";
     const initials=esc(name.slice(0,1).toUpperCase()||"L");
-    const songRow=(x,i)=>{const cover=profileTrackCover(x.t);return `<div class="profileListRow profileClickable" data-profile-song="${esc(x.t.id)}"><div class="profileRank">${i+1}</div><div class="profileListArt">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">`:uiIcon("music")}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`};
-    const artistRow=(x,i)=>{const cover=profileArtistCover(x.name);return `<div class="profileListRow"><div class="profileRank">${i+1}</div><div class="profileListArt profileArtistArt">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">`:uiIcon("artist")}</div><div><div class="profileTrackTitle">${esc(x.name)}</div><div class="profileTrackSub">${x.count} plays</div></div><div class="profileCount">${x.count} plays</div></div>`};
     $( "#content").innerHTML=`
     <div class="profilePage">
       <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button></div></div></div>
@@ -2318,15 +2260,14 @@ main{min-width:0;min-height:0}
         <div class="profilePanel"><h3>Weekly recap</h3>
           <div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened this week</div><div class="profileRecapMinutes">${Math.floor(weekly.seconds/60).toLocaleString()}</div></div><div><div class="profileStatLabel">Plays this week</div><div class="profileRecapMinutes">${weekly.plays.toLocaleString()}</div></div></div>
           <div class="profileRecapColumns">
-            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map(songRow).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
-            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map(artistRow).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(x.name)}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
           </div>
         </div>
-        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map(songRow).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
+        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
       </div>
     </div>`;
     renderProfileTopButton();
-    $$("#content [data-profile-song]").forEach(row=>row.addEventListener("click",()=>showLyrics(row.dataset.profileSong)));
     $("#profileEdit").onclick=()=>editLocalProfile();
   }
   function editLocalProfile(){
