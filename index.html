@@ -2792,18 +2792,42 @@ main{min-width:0;min-height:0}
     };
     [bass,mid,treble,gain].forEach(bindEqSlider);
 
+    // Some browsers/webviews can move a range input visually without delivering
+    // the expected input event. Keep a tiny value watcher as a reliable fallback.
+    let lastEqValues="";
+    const syncEqFromInputs=()=>{
+      if(!bass||!mid||!treble||!gain)return;
+      const values=[bass.value,mid.value,treble.value,gain.value,preset?.value||"flat"];
+      const key=values.join("|");
+      if(key===lastEqValues)return;
+      lastEqValues=key;
+      update();
+    };
+    [bass,mid,treble,gain].forEach(el=>{
+      if(!el)return;
+      el.oninput=syncEqFromInputs;
+      el.onchange=syncEqFromInputs;
+    });
     preset?.addEventListener("change",()=>{
       const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;
       if(bass)bass.value=String(p.bass);
       if(mid)mid.value=String(p.mid);
       if(treble)treble.value=String(p.treble);
       if(gain)gain.value=String(p.gain);
-      update();
+      syncEqFromInputs();
     });
 
     update();
-    $("#closeModal").onclick=()=>closeModal(true);
-    $("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
+    lastEqValues=[bass?.value||"0",mid?.value||"0",treble?.value||"0",gain?.value||"0",preset?.value||"flat"].join("|");
+    const eqWatch=setInterval(()=>{
+      if(!document.getElementById("eqBass")){
+        clearInterval(eqWatch);
+        return;
+      }
+      syncEqFromInputs();
+    },80);
+    $("#closeModal").onclick=()=>{clearInterval(eqWatch);closeModal(true)};
+    $("#eqDone").onclick=()=>{clearInterval(eqWatch);applyEQ();closeModal(true)};
   }
 
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
