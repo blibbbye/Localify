@@ -116,7 +116,7 @@
       .heroActions .secondary{display:none}
     }
     .section{margin-top:28px}
-    .sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:11px}.albumCount{margin-left:auto;color:#737c89;font-size:12px;font-weight:800;white-space:nowrap;align-self:center}
+    .sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:11px}
     .sectionHead h2{margin:0;font-size:20px;letter-spacing:-.4px}
     .sectionHead span{color:#737c89;font-size:12px;font-weight:800}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:15px}
@@ -150,7 +150,7 @@
     .collectionArt.likedArt{background:linear-gradient(145deg,#14334a,#0d1e2b 58%,#112a3a);color:#7dd3fc}
     .trackCheck{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
     .shuffleToggle{display:inline-flex;align-items:center;gap:7px;color:#aeb6c1;font-size:12px;font-weight:900;white-space:nowrap}.shuffleToggle input{width:18px;height:18px;accent-color:var(--accent);margin:0}
-    .eqSlider{width:100%;height:22px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;accent-color:var(--accent);cursor:pointer;touch-action:none;display:block} .field input[type="range"].eqSlider{appearance:auto;-webkit-appearance:auto;box-shadow:none!important} .field input[type="range"].eqSlider::-webkit-slider-runnable-track{cursor:pointer} .field input[type="range"].eqSlider::-moz-range-track{cursor:pointer}
+    .eqSlider{width:100%}
     .mobileTools{display:none}
     .lyricsEditor{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65;white-space:pre;tab-size:2;min-height:260px}
     .lyricsHint{font-size:11px;color:#77818e;margin-top:6px}
@@ -235,7 +235,7 @@
     .empty{padding:54px 22px;text-align:center;border:1px dashed #2d343e;border-radius:18px;color:#7f8894}
     .empty h3{color:#d7dbe0;margin:0 0 6px}
     .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#e9ebee;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
-    .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}\n    .modalShade.show{pointer-events:auto}.modalShade.show .modal{pointer-events:auto}.modal .modalHead button,.modal .modalFoot button{position:relative;z-index:100;pointer-events:auto;touch-action:manipulation;cursor:pointer}
+    .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
     .modalShade.show{display:flex}
     .modalShade .modal{overscroll-behavior:contain}
     .modal{width:min(760px,100%);max-height:min(88vh,760px);overflow:auto;background:#12161b;border:1px solid #2b313a;border-radius:22px;box-shadow:0 30px 100px rgba(0,0,0,.6);padding:22px}
@@ -344,7 +344,7 @@ main,#main,.content{min-width:0;max-width:100%;overflow-x:hidden}
 .btnIcon{display:inline-flex;align-items:center;justify-content:center;gap:7px}.btnIcon .svgIcon{width:16px;height:16px}.iconOnly .svgIcon{width:18px;height:18px}
 .btnIcon .iconInline{display:inline-flex;align-items:center;justify-content:center}.btnIcon{vertical-align:middle}
 .primary .svgIcon,.secondary .svgIcon,.dangerBtn .svgIcon,.toolbar button .svgIcon,.entityActions button .svgIcon,.contextMenu button .svgIcon,.sideAction .svgIcon{display:inline-block;vertical-align:middle;margin-right:6px}.contextMenu button .svgIcon{width:16px;height:16px}
-.repeatOneBadge{position:absolute;right:2px;bottom:2px;min-width:11px;height:11px;padding:0 2px;border-radius:6px;background:currentColor;color:#0b0e12;font-size:8px;font-weight:1000;line-height:11px;text-align:center;box-sizing:border-box;pointer-events:none}.ctrl.iconOnly{position:relative;display:grid!important;place-items:center!important;padding:0!important;line-height:0}.discordGlyph{display:inline-grid;place-items:center}.discordGlyph .svgIcon{width:17px;height:17px}
+.repeatOneBadge{position:absolute;font-size:9px;font-weight:900;line-height:1;bottom:6px;right:6px}.ctrl.iconOnly{position:relative;display:grid;place-items:center}.discordGlyph{display:inline-grid;place-items:center}.discordGlyph .svgIcon{width:17px;height:17px}
 .icon .svgIcon{width:19px;height:19px}
 .icon,.discordGlyph,.discordConnectIcon{font-family:inherit}
 .phoneIcon{display:inline-grid;place-items:center}
@@ -1333,9 +1333,10 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><div class="albumCount">${state.albums.length} ${state.albums.length===1?"album":"albums"}</div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">${uiIcon("plus")}</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); bindAlbumCards();
   }
+
   function renderArtists(){
     $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">${uiIcon("plus")}</button></div>${state.artists.length?localifyPagedHtml(artistList(),artistCard,"artists","viewGrid"):empty("No artists","Create an artist or import music to build your artist index.")}`;
     $("#newArtist").onclick=()=>editArtist(null); $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
@@ -2511,74 +2512,35 @@ main{min-width:0;min-height:0}
   }
   function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(artistDisplayName(a))}</option>`).join("")}
   function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
-    const order=[...(selectedIds||[])].filter(Boolean);
-    const selected=new Set(order);
+    const selected=new Set(selectedIds||[]);
     if(!selected.size)selected.add("__none__");
-    const orderMap=new Map(order.map((artistId,index)=>[artistId,index+1]));
     const list=artistList();
-    const selectedNames=order.map(v=>artistDisplayName(artistById(v))).filter(Boolean);
+    const selectedNames=[...selected].map(v=>v==="__none__"?NONE_LABEL:artistDisplayName(artistById(v))).filter(Boolean);
     const summary=selectedNames.length?selectedNames.join(", "):NONE_LABEL;
     return `<div class="artistPickerWrap" id="${id}">
       <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(summary)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
       <div class="artistPickerMenu" role="listbox" aria-label="Select artists">
-        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${selected.has("__none__")?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${NONE_LABEL}</span></label>
-        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""} ${orderMap.has(a.id)?`data-pick-order="${orderMap.get(a.id)}"`:""}><span class="artistChoiceOrder">${orderMap.get(a.id)||""}</span><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
+        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${selected.has("__none__")?"checked":""}><span class="artistChoiceName">${NONE_LABEL}</span></label>
+        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
       </div>
     </div>`;
   }
-  function artistPickerOrder(wrap){
-    if(!wrap)return [];
-    return [...wrap.querySelectorAll('input[type="checkbox"]:checked')].filter(x=>x.value!=="__none__").sort((a,b)=>(Number(a.dataset.pickOrder)||999999)-(Number(b.dataset.pickOrder)||999999));
-  }
-  function readArtistPicker(id){
-    const wrap=$(`#${id}`);if(!wrap)return [];
-    if(wrap.querySelector('input[value="__none__"]')?.checked)return [];
-    return artistPickerOrder(wrap).map(x=>x.value);
-  }
+  function readArtistPicker(id){const wrap=$(`#${id}`);if(!wrap)return [];const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);return checked.includes("__none__")?[]:checked}
   function syncArtistPickerSummary(wrap){
     if(!wrap)return;
-    const ordered=artistPickerOrder(wrap);
-    const names=ordered.map(x=>x.closest(".artistChoice")?.querySelector(".artistChoiceName")?.textContent?.trim()).filter(Boolean);
+    const checked=[...wrap.querySelectorAll("input[type='checkbox']:checked")];
+    const names=checked.map(x=>x.value==="__none__"?NONE_LABEL:x.closest(".artistChoice")?.querySelector(".artistChoiceName")?.textContent?.trim()).filter(Boolean);
     const btn=wrap.querySelector(".artistSelectSummary");
     if(btn)btn.textContent=names.length?names.join(", "):NONE_LABEL;
-    ordered.forEach((input,index)=>{
-      const number=input.closest(".artistChoice")?.querySelector(".artistChoiceOrder");
-      if(number)number.textContent=String(index+1);
-    });
-    $('input[type="checkbox"]',wrap).filter(x=>x.value!=="__none__"&&!x.checked).forEach(input=>{
-      const number=input.closest(".artistChoice")?.querySelector(".artistChoiceOrder");
-      if(number)number.textContent="";
-    });
-  }
-  function setArtistPickerSelection(wrap,ids=[]){
-    if(!wrap)return;
-    const wanted=new Set(ids||[]);
-    const none=wrap.querySelector('input[value="__none__"]');
-    if(none)none.checked=!wanted.size;
-    let order=0;
-    $('input[type="checkbox"]',wrap).forEach(input=>{
-      if(input.value==="__none__")return;
-      input.checked=wanted.has(input.value);
-      if(input.checked)input.dataset.pickOrder=String(++order);
-      else delete input.dataset.pickOrder;
-    });
-    syncArtistPickerSummary(wrap);
   }
   function bindArtistPickers(){
-    $(".artistPickerWrap").forEach(wrap=>{
+    $$(".artistPickerWrap").forEach(wrap=>{
       const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");
       if(!btn||!menu)return;
-      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
-      $('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
-        if(input.value==="__none__"&&input.checked){
-          $('input[type="checkbox"]',wrap).forEach(x=>{if(x!==input){x.checked=false;delete x.dataset.pickOrder}});
-        }else if(input.value!=="__none__"&&input.checked){
-          const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false;
-          if(!input.dataset.pickOrder){
-            const used=artistPickerOrder(wrap).map(x=>Number(x.dataset.pickOrder)||0);
-            input.dataset.pickOrder=String(Math.max(0,...used)+1);
-          }
-        }else if(input.value!=="__none__")delete input.dataset.pickOrder;
+      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
+      $$('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
+        if(input.value==="__none__"&&input.checked)$$('input[type="checkbox"]',wrap).forEach(x=>{if(x!==input)x.checked=false});
+        else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false}
         if(!wrap.querySelector('input[type="checkbox"]:checked')){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=true}
         syncArtistPickerSummary(wrap);
       }));
@@ -2615,7 +2577,7 @@ main{min-width:0;min-height:0}
     $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
     $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
     $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
-    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection($("#songArtists"),ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);$$(`#songArtists input[type="checkbox"]`).forEach(x=>x.checked=ids.includes(x.value));const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
     $("#saveEdit").onclick=async()=>{
       const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
       t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
@@ -2695,139 +2657,25 @@ main{min-width:0;min-height:0}
     try{
       audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       audioSource=audioCtx.createMediaElementSource(audio);
-      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),compressor:audioCtx.createDynamicsCompressor(),output:audioCtx.createGain()};
-      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.7;
-      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=900;eqNodes.mid.Q.value=.85;
-      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.7;
-      eqNodes.compressor.threshold.value=-13;eqNodes.compressor.knee.value=18;eqNodes.compressor.ratio.value=3.2;eqNodes.compressor.attack.value=.006;eqNodes.compressor.release.value=.16;
-      eqNodes.output.gain.value=1;
-      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
+      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain()};
+      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=120;
+      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=1000;eqNodes.mid.Q.value=.9;
+      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5000;
+      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(audioCtx.destination);
       applyEQ();
     }catch(e){console.warn("EQ unavailable",e)}
   }
-  function applyEQ(){
-    if(!eqNodes)return;
-    const q=state.settings.eq||{bass:0,mid:0,treble:0,gain:0};
-    const bass=Number(q.bass)||0,mid=Number(q.mid)||0,treble=Number(q.treble)||0,userGain=Number(q.gain)||0;
-    eqNodes.bass.gain.value=bass;eqNodes.mid.gain.value=mid;eqNodes.treble.gain.value=treble;
-    const boost=Math.max(0,bass)+Math.max(0,mid)+Math.max(0,treble);
-    eqNodes.gain.gain.value=Math.pow(10,(userGain-Math.min(9,boost*.32))/20);
-    eqNodes.output.gain.value=1;
-  }
-  const EQ_PRESETS={flat:{bass:0,mid:0,treble:0,gain:0},bass:{bass:7,mid:1,treble:0,gain:0},deep:{bass:9,mid:0,treble:-1,gain:-1},vocal:{bass:-2,mid:4,treble:3,gain:-1},treble:{bass:0,mid:2,treble:6,gain:-1}};
+  function applyEQ(){if(!eqNodes)return;const q=state.settings.eq||{bass:0,mid:0,treble:0,gain:0};eqNodes.bass.gain.value=q.bass;eqNodes.mid.gain.value=q.mid;eqNodes.treble.gain.value=q.treble;eqNodes.gain.gain.value=Math.pow(10,q.gain/20);}
+  const EQ_PRESETS={flat:{bass:0,mid:0,treble:0,gain:0},bass:{bass:9,mid:1,treble:0,gain:0},deep:{bass:12,mid:0,treble:-1,gain:-1},vocal:{bass:-3,mid:5,treble:3,gain:-1},treble:{bass:0,mid:2,treble:8,gain:-1}};
   function openEQ(){
-    ensureAudioGraph();
-    try{audioCtx?.resume()}catch{}
-    const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
-    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
-      <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
-      <div class="formGrid" style="margin-top:14px">
-        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1" inputmode="numeric" aria-label="Bass"></div>
-        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1" inputmode="numeric" aria-label="Mid"></div>
-        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1" inputmode="numeric" aria-label="Treble"></div>
-        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1" inputmode="numeric" aria-label="Gain"></div>
-      </div>
-      <div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div>
-      <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
+    ensureAudioGraph();try{audioCtx?.resume()}catch{}
+    const q=state.settings.eq||EQ_PRESETS.flat;
+    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="field"><label>Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div><div class="formGrid" style="margin-top:14px"><div class="field"><label>Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1"></div><div class="field"><label>Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1"></div><div class="field"><label>Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1"></div><div class="field"><label>Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1"></div></div><div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div><div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
-
-    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset");
-    const update=()=>{
-      state.settings.eq={
-        bass:Number(bass?.value)||0,
-        mid:Number(mid?.value)||0,
-        treble:Number(treble?.value)||0,
-        gain:Number(gain?.value)||0,
-        preset:preset?.value||"flat"
-      };
-      applyEQ();
-      const labels=[
-        ["#eqBassLabel","Bass",state.settings.eq.bass],
-        ["#eqMidLabel","Mid",state.settings.eq.mid],
-        ["#eqTrebleLabel","Treble",state.settings.eq.treble],
-        ["#eqGainLabel","Gain",state.settings.eq.gain]
-      ];
-      labels.forEach(([sel,name,value])=>{const el=$(sel);if(el)el.textContent=`${name} ${value} dB`});
-      autoSave();
-    };
-
-    const bindEqSlider=(el)=>{
-      if(!el)return;
-      const setFromPointer=(clientX)=>{
-        const rect=el.getBoundingClientRect();
-        if(!rect.width)return;
-        const min=Number(el.min)||0,max=Number(el.max)||100;
-        const ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
-        const step=Number(el.step)||1;
-        const raw=min+ratio*(max-min);
-        const value=Math.round((raw-min)/step)*step+min;
-        el.value=String(Math.max(min,Math.min(max,value)));
-        el.dispatchEvent(new Event("input",{bubbles:true}));
-      };
-      let active=false;
-      el.addEventListener("pointerdown",e=>{
-        active=true;
-        try{el.setPointerCapture(e.pointerId)}catch{}
-        e.preventDefault();
-        setFromPointer(e.clientX);
-      });
-      el.addEventListener("pointermove",e=>{
-        if(!active)return;
-        e.preventDefault();
-        setFromPointer(e.clientX);
-      });
-      const endPointer=e=>{
-        if(!active)return;
-        active=false;
-        try{el.releasePointerCapture(e.pointerId)}catch{}
-        el.dispatchEvent(new Event("change",{bubbles:true}));
-      };
-      el.addEventListener("pointerup",endPointer);
-      el.addEventListener("pointercancel",endPointer);
-      el.addEventListener("input",update);
-      el.addEventListener("change",update);
-      el.addEventListener("keydown",e=>{
-        if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(e.key))setTimeout(update,0);
-      });
-    };
-    [bass,mid,treble,gain].forEach(bindEqSlider);
-
-    // Some browsers/webviews can move a range input visually without delivering
-    // the expected input event. Keep a tiny value watcher as a reliable fallback.
-    let lastEqValues="";
-    const syncEqFromInputs=()=>{
-      if(!bass||!mid||!treble||!gain)return;
-      const values=[bass.value,mid.value,treble.value,gain.value,preset?.value||"flat"];
-      const key=values.join("|");
-      if(key===lastEqValues)return;
-      lastEqValues=key;
-      update();
-    };
-    [bass,mid,treble,gain].forEach(el=>{
-      if(!el)return;
-      el.oninput=syncEqFromInputs;
-      el.onchange=syncEqFromInputs;
-    });
-    preset?.addEventListener("change",()=>{
-      const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;
-      if(bass)bass.value=String(p.bass);
-      if(mid)mid.value=String(p.mid);
-      if(treble)treble.value=String(p.treble);
-      if(gain)gain.value=String(p.gain);
-      syncEqFromInputs();
-    });
-
-    update();
-    lastEqValues=[bass?.value||"0",mid?.value||"0",treble?.value||"0",gain?.value||"0",preset?.value||"flat"].join("|");
-    const eqWatch=setInterval(()=>{
-      if(!document.getElementById("eqBass")){
-        clearInterval(eqWatch);
-        return;
-      }
-      syncEqFromInputs();
-    },80);
-    $("#closeModal").onclick=()=>{clearInterval(eqWatch);closeModal(true)};
-    $("#eqDone").onclick=()=>{clearInterval(eqWatch);applyEQ();closeModal(true)};
+    const update=()=>{state.settings.eq={bass:+$("#eqBass").value,mid:+$("#eqMid").value,treble:+$("#eqTreble").value,gain:+$("#eqGain").value,preset:$("#eqPreset").value};applyEQ();$("#eqBass").previousElementSibling.textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMid").previousElementSibling.textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTreble").previousElementSibling.textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGain").previousElementSibling.textContent=`Gain ${state.settings.eq.gain} dB`;autoSave()};
+    ["#eqBass","#eqMid","#eqTreble","#eqGain"].forEach(id=>$(id).addEventListener("input",update));
+    $("#eqPreset").onchange=()=>{const p=EQ_PRESETS[$("#eqPreset").value];$("#eqBass").value=p.bass;$("#eqMid").value=p.mid;$("#eqTreble").value=p.treble;$("#eqGain").value=p.gain;update()};
+    $("#closeModal").onclick=()=>closeModal();$("#eqDone").onclick=()=>closeModal(true);
   }
 
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
@@ -3428,16 +3276,6 @@ main{min-width:0;min-height:0}
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
-  document.addEventListener("click",e=>{
-    const target=e.target.closest?.("#eqDone,#modal #closeModal");
-    if(!target)return;
-    if(target.id==="eqDone"||target.id==="closeModal"){
-      e.preventDefault();
-      e.stopPropagation();
-      applyEQ();
-      closeModal(true);
-    }
-  },true);
   document.addEventListener("click",e=>{
     const picker=e.target.closest?.(".artistPickerWrap");
     if(!picker)$$(".artistPickerWrap.open").forEach(x=>{x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")});
