@@ -116,7 +116,7 @@
       .heroActions .secondary{display:none}
     }
     .section{margin-top:28px}
-    .sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:11px}
+    .sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:11px}.albumCount{margin-left:auto;color:#737c89;font-size:12px;font-weight:800;white-space:nowrap;align-self:center}
     .sectionHead h2{margin:0;font-size:20px;letter-spacing:-.4px}
     .sectionHead span{color:#737c89;font-size:12px;font-weight:800}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:15px}
@@ -235,7 +235,7 @@
     .empty{padding:54px 22px;text-align:center;border:1px dashed #2d343e;border-radius:18px;color:#7f8894}
     .empty h3{color:#d7dbe0;margin:0 0 6px}
     .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#e9ebee;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
-    .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+    .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}\n    .modalShade.show{pointer-events:auto}.modalShade.show .modal{pointer-events:auto}.modal .modalHead button,.modal .modalFoot button{position:relative;z-index:100;pointer-events:auto;touch-action:manipulation;cursor:pointer}
     .modalShade.show{display:flex}
     .modalShade .modal{overscroll-behavior:contain}
     .modal{width:min(760px,100%);max-height:min(88vh,760px);overflow:auto;background:#12161b;border:1px solid #2b313a;border-radius:22px;box-shadow:0 30px 100px rgba(0,0,0,.6);padding:22px}
@@ -1333,7 +1333,7 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div><div class="subtle albumCount" style="margin-top:4px">${state.albums.length} ${state.albums.length===1?"album":"albums"}</div></div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><div class="albumCount">${state.albums.length} ${state.albums.length===1?"album":"albums"}</div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); bindAlbumCards();
   }
   function renderArtists(){
@@ -2723,7 +2723,7 @@ main{min-width:0;min-height:0}
     const update=()=>{state.settings.eq={bass:+$("#eqBass").value,mid:+$("#eqMid").value,treble:+$("#eqTreble").value,gain:+$("#eqGain").value,preset:$("#eqPreset").value};applyEQ();$("#eqBass").previousElementSibling.textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMid").previousElementSibling.textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTreble").previousElementSibling.textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGain").previousElementSibling.textContent=`Gain ${state.settings.eq.gain} dB`;autoSave()};
     ["#eqBass","#eqMid","#eqTreble","#eqGain"].forEach(id=>$(id).addEventListener("input",update));
     $("#eqPreset").onchange=()=>{const p=EQ_PRESETS[$("#eqPreset").value];$("#eqBass").value=p.bass;$("#eqMid").value=p.mid;$("#eqTreble").value=p.treble;$("#eqGain").value=p.gain;update()};
-    $("#closeModal").onclick=()=>closeModal();$("#eqDone").onclick=()=>closeModal(true);
+    $("#closeModal").onclick=()=>closeModal(true);$("#eqDone").onclick=()=>{applyEQ();closeModal(true);};
   }
 
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
@@ -3324,6 +3324,16 @@ main{min-width:0;min-height:0}
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
+  document.addEventListener("click",e=>{
+    const target=e.target.closest?.("#eqDone,#modal #closeModal");
+    if(!target)return;
+    if(target.id==="eqDone"||target.id==="closeModal"){
+      e.preventDefault();
+      e.stopPropagation();
+      applyEQ();
+      closeModal(true);
+    }
+  },true);
   document.addEventListener("click",e=>{
     const picker=e.target.closest?.(".artistPickerWrap");
     if(!picker)$$(".artistPickerWrap.open").forEach(x=>{x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")});
