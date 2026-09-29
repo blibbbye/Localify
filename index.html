@@ -150,7 +150,7 @@
     .collectionArt.likedArt{background:linear-gradient(145deg,#14334a,#0d1e2b 58%,#112a3a);color:#7dd3fc}
     .trackCheck{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
     .shuffleToggle{display:inline-flex;align-items:center;gap:7px;color:#aeb6c1;font-size:12px;font-weight:900;white-space:nowrap}.shuffleToggle input{width:18px;height:18px;accent-color:var(--accent);margin:0}
-    .eqSlider{width:100%;height:22px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;accent-color:var(--accent);cursor:pointer;touch-action:pan-x;display:block} .field input[type="range"].eqSlider{appearance:auto;-webkit-appearance:auto;box-shadow:none!important} .field input[type="range"].eqSlider::-webkit-slider-runnable-track{cursor:pointer} .field input[type="range"].eqSlider::-moz-range-track{cursor:pointer}
+    .eqSlider{width:100%;height:22px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;accent-color:var(--accent);cursor:pointer;touch-action:none;display:block} .field input[type="range"].eqSlider{appearance:auto;-webkit-appearance:auto;box-shadow:none!important} .field input[type="range"].eqSlider::-webkit-slider-runnable-track{cursor:pointer} .field input[type="range"].eqSlider::-moz-range-track{cursor:pointer}
     .mobileTools{display:none}
     .lyricsEditor{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65;white-space:pre;tab-size:2;min-height:260px}
     .lyricsHint{font-size:11px;color:#77818e;margin-top:6px}
@@ -2751,11 +2751,46 @@ main{min-width:0;min-height:0}
       autoSave();
     };
 
-    [bass,mid,treble,gain].forEach(el=>{
+    const bindEqSlider=(el)=>{
       if(!el)return;
-      el.addEventListener("input",update,{passive:true});
-      el.addEventListener("change",update,{passive:true});
-    });
+      const setFromPointer=(clientX)=>{
+        const rect=el.getBoundingClientRect();
+        if(!rect.width)return;
+        const min=Number(el.min)||0,max=Number(el.max)||100;
+        const ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+        const step=Number(el.step)||1;
+        const raw=min+ratio*(max-min);
+        const value=Math.round((raw-min)/step)*step+min;
+        el.value=String(Math.max(min,Math.min(max,value)));
+        el.dispatchEvent(new Event("input",{bubbles:true}));
+      };
+      let active=false;
+      el.addEventListener("pointerdown",e=>{
+        active=true;
+        try{el.setPointerCapture(e.pointerId)}catch{}
+        e.preventDefault();
+        setFromPointer(e.clientX);
+      });
+      el.addEventListener("pointermove",e=>{
+        if(!active)return;
+        e.preventDefault();
+        setFromPointer(e.clientX);
+      });
+      const endPointer=e=>{
+        if(!active)return;
+        active=false;
+        try{el.releasePointerCapture(e.pointerId)}catch{}
+        el.dispatchEvent(new Event("change",{bubbles:true}));
+      };
+      el.addEventListener("pointerup",endPointer);
+      el.addEventListener("pointercancel",endPointer);
+      el.addEventListener("input",update);
+      el.addEventListener("change",update);
+      el.addEventListener("keydown",e=>{
+        if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(e.key))setTimeout(update,0);
+      });
+    };
+    [bass,mid,treble,gain].forEach(bindEqSlider);
 
     preset?.addEventListener("change",()=>{
       const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;
