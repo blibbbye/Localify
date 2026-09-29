@@ -150,7 +150,7 @@
     .collectionArt.likedArt{background:linear-gradient(145deg,#14334a,#0d1e2b 58%,#112a3a);color:#7dd3fc}
     .trackCheck{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
     .shuffleToggle{display:inline-flex;align-items:center;gap:7px;color:#aeb6c1;font-size:12px;font-weight:900;white-space:nowrap}.shuffleToggle input{width:18px;height:18px;accent-color:var(--accent);margin:0}
-    .eqSliderHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.eqSliderHead label{margin:0}.eqSliderValue{font-size:11px;color:#aeb6c1;font-weight:900;white-space:nowrap}.eqSliderCustom{position:relative;width:100%;height:28px;padding:7px 0;cursor:pointer;touch-action:none;user-select:none;outline:none}.eqSliderTrack{position:relative;width:100%;height:8px;margin-top:3px;border-radius:999px;background:#2b3139}.eqSliderFill{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--accent)}.eqSliderThumb{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.28);transform:translate(-50%,-50%)}.eqSliderCustom:focus-visible .eqSliderThumb{box-shadow:0 0 0 4px rgba(125,211,252,.16),0 2px 10px rgba(0,0,0,.28)}
+    .eqSlider{width:100%;height:22px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;accent-color:var(--accent);cursor:pointer;touch-action:none;display:block} .field input[type="range"].eqSlider{appearance:auto;-webkit-appearance:auto;box-shadow:none!important} .field input[type="range"].eqSlider::-webkit-slider-runnable-track{cursor:pointer} .field input[type="range"].eqSlider::-moz-range-track{cursor:pointer}
     .mobileTools{display:none}
     .lyricsEditor{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65;white-space:pre;tab-size:2;min-height:260px}
     .lyricsHint{font-size:11px;color:#77818e;margin-top:6px}
@@ -2718,132 +2718,94 @@ main{min-width:0;min-height:0}
   function openEQ(){
     ensureAudioGraph();
     try{audioCtx?.resume()}catch{}
-
     const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
-    const controls=[
-      {key:"bass",label:"Bass",min:-12,max:12},
-      {key:"mid",label:"Mid",min:-12,max:12},
-      {key:"treble",label:"Treble",min:-12,max:12},
-      {key:"gain",label:"Gain",min:-6,max:6}
-    ];
-
-    const sliderHtml=(cfg)=>{
-      const value=Math.max(cfg.min,Math.min(cfg.max,Number(q[cfg.key])||0));
-      const pct=((value-cfg.min)/(cfg.max-cfg.min))*100;
-      return `
-        <div class="field">
-          <div class="eqSliderHead"><label id="eq${cfg.key}Label">${cfg.label} ${value} dB</label><span class="eqSliderValue" id="eq${cfg.key}Value">${value} dB</span></div>
-          <div class="eqSliderCustom" id="eq${cfg.key}" role="slider" tabindex="0" aria-label="${cfg.label}" aria-valuemin="${cfg.min}" aria-valuemax="${cfg.max}" aria-valuenow="${value}" data-eq-key="${cfg.key}" data-min="${cfg.min}" data-max="${cfg.max}" data-value="${value}">
-            <div class="eqSliderTrack"><div class="eqSliderFill" style="width:${pct}%"></div><div class="eqSliderThumb" style="left:${pct}%"></div></div>
-          </div>
-        </div>`;
-    };
-
-    setModal(`
-      <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
       <div class="formGrid" style="margin-top:14px">
-        ${controls.map(sliderHtml).join("")}
+        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1" inputmode="numeric" aria-label="Bass"></div>
+        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1" inputmode="numeric" aria-label="Mid"></div>
+        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1" inputmode="numeric" aria-label="Treble"></div>
+        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1" inputmode="numeric" aria-label="Gain"></div>
       </div>
       <div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div>
       <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
 
-    const preset=$("#eqPreset");
-    const controlsEls=controls.map(cfg=>({cfg,el:$("[data-eq-key="+cfg.key+"]")}));
-
-    const clampValue=(cfg,v)=>{
-      const n=Number(v);
-      if(!Number.isFinite(n))return 0;
-      return Math.max(cfg.min,Math.min(cfg.max,Math.round(n)));
-    };
-
-    const paint=(item,value)=>{
-      const cfg=item.cfg,el=item.el;
-      const v=clampValue(cfg,value),pct=((v-cfg.min)/(cfg.max-cfg.min))*100;
-      el.dataset.value=String(v);
-      el.setAttribute("aria-valuenow",String(v));
-      const fill=el.querySelector(".eqSliderFill"),thumb=el.querySelector(".eqSliderThumb");
-      if(fill)fill.style.width=pct+"%";
-      if(thumb)thumb.style.left=pct+"%";
-      const label=$("#eq"+cfg.key+"Label"),badge=$("#eq"+cfg.key+"Value");
-      if(label)label.textContent=`${cfg.label} ${v} dB`;
-      if(badge)badge.textContent=`${v} dB`;
-      return v;
-    };
-
+    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset");
     const update=()=>{
-      for(const item of controlsEls)paint(item,item.el.dataset.value);
       state.settings.eq={
-        bass:clampValue(controlsEls[0].cfg,controlsEls[0].el.dataset.value),
-        mid:clampValue(controlsEls[1].cfg,controlsEls[1].el.dataset.value),
-        treble:clampValue(controlsEls[2].cfg,controlsEls[2].el.dataset.value),
-        gain:clampValue(controlsEls[3].cfg,controlsEls[3].el.dataset.value),
+        bass:Number(bass?.value)||0,
+        mid:Number(mid?.value)||0,
+        treble:Number(treble?.value)||0,
+        gain:Number(gain?.value)||0,
         preset:preset?.value||"flat"
       };
       applyEQ();
+      const labels=[
+        ["#eqBassLabel","Bass",state.settings.eq.bass],
+        ["#eqMidLabel","Mid",state.settings.eq.mid],
+        ["#eqTrebleLabel","Treble",state.settings.eq.treble],
+        ["#eqGainLabel","Gain",state.settings.eq.gain]
+      ];
+      labels.forEach(([sel,name,value])=>{const el=$(sel);if(el)el.textContent=`${name} ${value} dB`});
       autoSave();
     };
 
-    const setValue=(item,value)=>{
-      const v=paint(item,value);
-      update();
-      return v;
-    };
-
-    const setFromPointer=(item,clientX)=>{
-      const rect=item.el.getBoundingClientRect();
-      if(!rect.width)return;
-      const cfg=item.cfg;
-      const ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
-      const raw=cfg.min+ratio*(cfg.max-cfg.min);
-      setValue(item,raw);
-    };
-
-    controlsEls.forEach(item=>{
+    const bindEqSlider=(el)=>{
+      if(!el)return;
+      const setFromPointer=(clientX)=>{
+        const rect=el.getBoundingClientRect();
+        if(!rect.width)return;
+        const min=Number(el.min)||0,max=Number(el.max)||100;
+        const ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+        const step=Number(el.step)||1;
+        const raw=min+ratio*(max-min);
+        const value=Math.round((raw-min)/step)*step+min;
+        el.value=String(Math.max(min,Math.min(max,value)));
+        el.dispatchEvent(new Event("input",{bubbles:true}));
+      };
       let active=false;
-      item.el.addEventListener("pointerdown",e=>{
+      el.addEventListener("pointerdown",e=>{
         active=true;
-        try{item.el.setPointerCapture(e.pointerId)}catch{}
+        try{el.setPointerCapture(e.pointerId)}catch{}
         e.preventDefault();
-        setFromPointer(item,e.clientX);
+        setFromPointer(e.clientX);
       });
-      item.el.addEventListener("pointermove",e=>{
+      el.addEventListener("pointermove",e=>{
         if(!active)return;
         e.preventDefault();
-        setFromPointer(item,e.clientX);
+        setFromPointer(e.clientX);
       });
-      const end=e=>{
+      const endPointer=e=>{
         if(!active)return;
         active=false;
-        try{item.el.releasePointerCapture(e.pointerId)}catch{}
+        try{el.releasePointerCapture(e.pointerId)}catch{}
+        el.dispatchEvent(new Event("change",{bubbles:true}));
       };
-      item.el.addEventListener("pointerup",end);
-      item.el.addEventListener("pointercancel",end);
-      item.el.addEventListener("keydown",e=>{
-        const cfg=item.cfg,current=clampValue(cfg,item.el.dataset.value);
-        let next=current;
-        if(e.key==="ArrowLeft"||e.key==="ArrowDown")next=current-1;
-        else if(e.key==="ArrowRight"||e.key==="ArrowUp")next=current+1;
-        else if(e.key==="Home")next=cfg.min;
-        else if(e.key==="End")next=cfg.max;
-        else return;
-        e.preventDefault();
-        setValue(item,next);
+      el.addEventListener("pointerup",endPointer);
+      el.addEventListener("pointercancel",endPointer);
+      el.addEventListener("input",update);
+      el.addEventListener("change",update);
+      el.addEventListener("keydown",e=>{
+        if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(e.key))setTimeout(update,0);
       });
-    });
+    };
+    [bass,mid,treble,gain].forEach(bindEqSlider);
 
     preset?.addEventListener("change",()=>{
       const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;
-      controlsEls.forEach(item=>setValue(item,p[item.cfg.key]));
+      if(bass)bass.value=String(p.bass);
+      if(mid)mid.value=String(p.mid);
+      if(treble)treble.value=String(p.treble);
+      if(gain)gain.value=String(p.gain);
       update();
     });
 
-    controlsEls.forEach(item=>paint(item,item.el.dataset.value));
     update();
     $("#closeModal").onclick=()=>closeModal(true);
     $("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
   }
+
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
   function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a}
   function u64(v){const a=new Uint8Array(8),dv=new DataView(a.buffer),n=Math.max(0,Math.floor(Number(v)||0));dv.setUint32(0,n>>>0,true);dv.setUint32(4,Math.floor(n/4294967296)>>>0,true);return a}
