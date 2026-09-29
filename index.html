@@ -344,7 +344,7 @@ main,#main,.content{min-width:0;max-width:100%;overflow-x:hidden}
 .btnIcon{display:inline-flex;align-items:center;justify-content:center;gap:7px}.btnIcon .svgIcon{width:16px;height:16px}.iconOnly .svgIcon{width:18px;height:18px}
 .btnIcon .iconInline{display:inline-flex;align-items:center;justify-content:center}.btnIcon{vertical-align:middle}
 .primary .svgIcon,.secondary .svgIcon,.dangerBtn .svgIcon,.toolbar button .svgIcon,.entityActions button .svgIcon,.contextMenu button .svgIcon,.sideAction .svgIcon{display:inline-block;vertical-align:middle;margin-right:6px}.contextMenu button .svgIcon{width:16px;height:16px}
-.repeatOneBadge{position:absolute;font-size:9px;font-weight:900;line-height:1;bottom:6px;right:6px}.ctrl.iconOnly{position:relative;display:grid;place-items:center}.discordGlyph{display:inline-grid;place-items:center}.discordGlyph .svgIcon{width:17px;height:17px}
+.repeatOneBadge{position:absolute;right:2px;bottom:2px;min-width:11px;height:11px;padding:0 2px;border-radius:6px;background:currentColor;color:#0b0e12;font-size:8px;font-weight:1000;line-height:11px;text-align:center;box-sizing:border-box;pointer-events:none}.ctrl.iconOnly{position:relative;display:grid!important;place-items:center!important;padding:0!important;line-height:0}.discordGlyph{display:inline-grid;place-items:center}.discordGlyph .svgIcon{width:17px;height:17px}
 .icon .svgIcon{width:19px;height:19px}
 .icon,.discordGlyph,.discordConnectIcon{font-family:inherit}
 .phoneIcon{display:inline-grid;place-items:center}
@@ -1333,10 +1333,9 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">${uiIcon("plus")}</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div><div class="subtle albumCount" style="margin-top:4px">${state.albums.length} ${state.albums.length===1?"album":"albums"}</div></div><button class="primary" id="newAlbum">${uiIcon("plus")} Create album</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); bindAlbumCards();
   }
-
   function renderArtists(){
     $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">${uiIcon("plus")}</button></div>${state.artists.length?localifyPagedHtml(artistList(),artistCard,"artists","viewGrid"):empty("No artists","Create an artist or import music to build your artist index.")}`;
     $("#newArtist").onclick=()=>editArtist(null); $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
@@ -2512,35 +2511,74 @@ main{min-width:0;min-height:0}
   }
   function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(artistDisplayName(a))}</option>`).join("")}
   function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
-    const selected=new Set(selectedIds||[]);
+    const order=[...(selectedIds||[])].filter(Boolean);
+    const selected=new Set(order);
     if(!selected.size)selected.add("__none__");
+    const orderMap=new Map(order.map((artistId,index)=>[artistId,index+1]));
     const list=artistList();
-    const selectedNames=[...selected].map(v=>v==="__none__"?NONE_LABEL:artistDisplayName(artistById(v))).filter(Boolean);
+    const selectedNames=order.map(v=>artistDisplayName(artistById(v))).filter(Boolean);
     const summary=selectedNames.length?selectedNames.join(", "):NONE_LABEL;
     return `<div class="artistPickerWrap" id="${id}">
       <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(summary)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
       <div class="artistPickerMenu" role="listbox" aria-label="Select artists">
-        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${selected.has("__none__")?"checked":""}><span class="artistChoiceName">${NONE_LABEL}</span></label>
-        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
+        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${selected.has("__none__")?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${NONE_LABEL}</span></label>
+        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""} ${orderMap.has(a.id)?`data-pick-order="${orderMap.get(a.id)}"`:""}><span class="artistChoiceOrder">${orderMap.get(a.id)||""}</span><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
       </div>
     </div>`;
   }
-  function readArtistPicker(id){const wrap=$(`#${id}`);if(!wrap)return [];const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);return checked.includes("__none__")?[]:checked}
+  function artistPickerOrder(wrap){
+    if(!wrap)return [];
+    return [...wrap.querySelectorAll('input[type="checkbox"]:checked')].filter(x=>x.value!=="__none__").sort((a,b)=>(Number(a.dataset.pickOrder)||999999)-(Number(b.dataset.pickOrder)||999999));
+  }
+  function readArtistPicker(id){
+    const wrap=$(`#${id}`);if(!wrap)return [];
+    if(wrap.querySelector('input[value="__none__"]')?.checked)return [];
+    return artistPickerOrder(wrap).map(x=>x.value);
+  }
   function syncArtistPickerSummary(wrap){
     if(!wrap)return;
-    const checked=[...wrap.querySelectorAll("input[type='checkbox']:checked")];
-    const names=checked.map(x=>x.value==="__none__"?NONE_LABEL:x.closest(".artistChoice")?.querySelector(".artistChoiceName")?.textContent?.trim()).filter(Boolean);
+    const ordered=artistPickerOrder(wrap);
+    const names=ordered.map(x=>x.closest(".artistChoice")?.querySelector(".artistChoiceName")?.textContent?.trim()).filter(Boolean);
     const btn=wrap.querySelector(".artistSelectSummary");
     if(btn)btn.textContent=names.length?names.join(", "):NONE_LABEL;
+    ordered.forEach((input,index)=>{
+      const number=input.closest(".artistChoice")?.querySelector(".artistChoiceOrder");
+      if(number)number.textContent=String(index+1);
+    });
+    $('input[type="checkbox"]',wrap).filter(x=>x.value!=="__none__"&&!x.checked).forEach(input=>{
+      const number=input.closest(".artistChoice")?.querySelector(".artistChoiceOrder");
+      if(number)number.textContent="";
+    });
+  }
+  function setArtistPickerSelection(wrap,ids=[]){
+    if(!wrap)return;
+    const wanted=new Set(ids||[]);
+    const none=wrap.querySelector('input[value="__none__"]');
+    if(none)none.checked=!wanted.size;
+    let order=0;
+    $('input[type="checkbox"]',wrap).forEach(input=>{
+      if(input.value==="__none__")return;
+      input.checked=wanted.has(input.value);
+      if(input.checked)input.dataset.pickOrder=String(++order);
+      else delete input.dataset.pickOrder;
+    });
+    syncArtistPickerSummary(wrap);
   }
   function bindArtistPickers(){
-    $$(".artistPickerWrap").forEach(wrap=>{
+    $(".artistPickerWrap").forEach(wrap=>{
       const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");
       if(!btn||!menu)return;
-      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
-      $$('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
-        if(input.value==="__none__"&&input.checked)$$('input[type="checkbox"]',wrap).forEach(x=>{if(x!==input)x.checked=false});
-        else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false}
+      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
+      $('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
+        if(input.value==="__none__"&&input.checked){
+          $('input[type="checkbox"]',wrap).forEach(x=>{if(x!==input){x.checked=false;delete x.dataset.pickOrder}});
+        }else if(input.value!=="__none__"&&input.checked){
+          const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false;
+          if(!input.dataset.pickOrder){
+            const used=artistPickerOrder(wrap).map(x=>Number(x.dataset.pickOrder)||0);
+            input.dataset.pickOrder=String(Math.max(0,...used)+1);
+          }
+        }else if(input.value!=="__none__")delete input.dataset.pickOrder;
         if(!wrap.querySelector('input[type="checkbox"]:checked')){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=true}
         syncArtistPickerSummary(wrap);
       }));
@@ -2577,7 +2615,7 @@ main{min-width:0;min-height:0}
     $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
     $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
     $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
-    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);$$(`#songArtists input[type="checkbox"]`).forEach(x=>x.checked=ids.includes(x.value));const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection($("#songArtists"),ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
     $("#saveEdit").onclick=async()=>{
       const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
       t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
@@ -2657,16 +2695,26 @@ main{min-width:0;min-height:0}
     try{
       audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       audioSource=audioCtx.createMediaElementSource(audio);
-      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain()};
-      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=120;
-      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=1000;eqNodes.mid.Q.value=.9;
-      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5000;
-      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(audioCtx.destination);
+      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),compressor:audioCtx.createDynamicsCompressor(),output:audioCtx.createGain()};
+      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.7;
+      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=900;eqNodes.mid.Q.value=.85;
+      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.7;
+      eqNodes.compressor.threshold.value=-13;eqNodes.compressor.knee.value=18;eqNodes.compressor.ratio.value=3.2;eqNodes.compressor.attack.value=.006;eqNodes.compressor.release.value=.16;
+      eqNodes.output.gain.value=1;
+      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
       applyEQ();
     }catch(e){console.warn("EQ unavailable",e)}
   }
-  function applyEQ(){if(!eqNodes)return;const q=state.settings.eq||{bass:0,mid:0,treble:0,gain:0};eqNodes.bass.gain.value=q.bass;eqNodes.mid.gain.value=q.mid;eqNodes.treble.gain.value=q.treble;eqNodes.gain.gain.value=Math.pow(10,q.gain/20);}
-  const EQ_PRESETS={flat:{bass:0,mid:0,treble:0,gain:0},bass:{bass:9,mid:1,treble:0,gain:0},deep:{bass:12,mid:0,treble:-1,gain:-1},vocal:{bass:-3,mid:5,treble:3,gain:-1},treble:{bass:0,mid:2,treble:8,gain:-1}};
+  function applyEQ(){
+    if(!eqNodes)return;
+    const q=state.settings.eq||{bass:0,mid:0,treble:0,gain:0};
+    const bass=Number(q.bass)||0,mid=Number(q.mid)||0,treble=Number(q.treble)||0,userGain=Number(q.gain)||0;
+    eqNodes.bass.gain.value=bass;eqNodes.mid.gain.value=mid;eqNodes.treble.gain.value=treble;
+    const boost=Math.max(0,bass)+Math.max(0,mid)+Math.max(0,treble);
+    eqNodes.gain.gain.value=Math.pow(10,(userGain-Math.min(9,boost*.32))/20);
+    eqNodes.output.gain.value=1;
+  }
+  const EQ_PRESETS={flat:{bass:0,mid:0,treble:0,gain:0},bass:{bass:7,mid:1,treble:0,gain:0},deep:{bass:9,mid:0,treble:-1,gain:-1},vocal:{bass:-2,mid:4,treble:3,gain:-1},treble:{bass:0,mid:2,treble:6,gain:-1}};
   function openEQ(){
     ensureAudioGraph();try{audioCtx?.resume()}catch{}
     const q=state.settings.eq||EQ_PRESETS.flat;
