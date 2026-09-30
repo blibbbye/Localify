@@ -1333,7 +1333,7 @@ main{min-width:0;min-height:0}
     bindTrackTable();
   }
   function renderAlbums(){
-    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">${uiIcon("plus")}</button></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
+    $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><div class="sectionHeadActions"><span class="albumCount" title="Albums in your library">${state.albums.length}</span><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">${uiIcon("plus")}</button></div></div>${state.albums.length?localifyPagedHtml(albumList(),albumCard,"albums","grid"):empty("No albums yet","Create your first album, then add the songs to it.")}`;
     $("#newAlbum").onclick=()=>editAlbum(null); bindAlbumCards();
   }
 
@@ -2512,37 +2512,58 @@ main{min-width:0;min-height:0}
   }
   function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(artistDisplayName(a))}</option>`).join("")}
   function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
-    const selected=new Set(selectedIds||[]);
-    if(!selected.size)selected.add("__none__");
-    const list=artistList();
-    const selectedNames=[...selected].map(v=>v==="__none__"?NONE_LABEL:artistDisplayName(artistById(v))).filter(Boolean);
-    const summary=selectedNames.length?selectedNames.join(", "):NONE_LABEL;
-    return `<div class="artistPickerWrap" id="${id}">
-      <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(summary)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
+    const selectedOrder=[...new Set((selectedIds||[]).filter(Boolean))];
+    const selected=new Set(selectedOrder),list=artistList();
+    return `<div class="artistPickerWrap" id="${id}" data-artist-order="${esc(JSON.stringify(selectedOrder))}">
+      <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(selectedOrder.length?selectedOrder.map(v=>artistDisplayName(artistById(v))).join(", "):NONE_LABEL)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
       <div class="artistPickerMenu" role="listbox" aria-label="Select artists">
-        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${selected.has("__none__")?"checked":""}><span class="artistChoiceName">${NONE_LABEL}</span></label>
-        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
+        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${!selectedOrder.length?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${NONE_LABEL}</span></label>
+        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
       </div>
     </div>`;
   }
-  function readArtistPicker(id){const wrap=$(`#${id}`);if(!wrap)return [];const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);return checked.includes("__none__")?[]:checked}
+  function getArtistPickerOrder(wrap){
+    if(!wrap)return [];
+    let order=[];try{order=JSON.parse(wrap.dataset.artistOrder||"[]")}catch{}
+    const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value).filter(v=>v!=="__none__");
+    const set=new Set(checked);
+    order=order.filter(id=>set.has(id));
+    for(const id of checked)if(!order.includes(id))order.push(id);
+    wrap.dataset.artistOrder=JSON.stringify(order);
+    return order;
+  }
+  function readArtistPicker(id){return getArtistPickerOrder($(`#${id}`))}
   function syncArtistPickerSummary(wrap){
     if(!wrap)return;
-    const checked=[...wrap.querySelectorAll("input[type='checkbox']:checked")];
-    const names=checked.map(x=>x.value==="__none__"?NONE_LABEL:x.closest(".artistChoice")?.querySelector(".artistChoiceName")?.textContent?.trim()).filter(Boolean);
+    const order=getArtistPickerOrder(wrap);
     const btn=wrap.querySelector(".artistSelectSummary");
-    if(btn)btn.textContent=names.length?names.join(", "):NONE_LABEL;
+    if(btn)btn.textContent=order.length?order.map(id=>artistDisplayName(artistById(id))).join(", "):NONE_LABEL;
+    wrap.querySelectorAll(".artistChoice").forEach(choice=>{
+      const input=choice.querySelector('input[type="checkbox"]'),badge=choice.querySelector(".artistChoiceOrder");
+      if(!input||!badge)return;
+      if(input.value==="__none__"){badge.textContent="";choice.classList.remove("selectedArtist");return}
+      const pos=order.indexOf(input.value);
+      badge.textContent=pos>=0?String(pos+1):"";
+      choice.classList.toggle("selectedArtist",pos>=0);
+    });
+  }
+  function setArtistPickerSelection(id,ids){
+    const wrap=$(`#${id}`);if(!wrap)return;
+    const wanted=[...new Set((ids||[]).filter(Boolean))];
+    wrap.dataset.artistOrder=JSON.stringify(wanted);
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(input=>{input.checked=input.value!=="__none__"?wanted.includes(input.value):!wanted.length});
+    syncArtistPickerSummary(wrap);
   }
   function bindArtistPickers(){
     $$(".artistPickerWrap").forEach(wrap=>{
-      const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");
-      if(!btn||!menu)return;
+      const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");if(!btn||!menu)return;
       btn.onclick=e=>{e.preventDefault();e.stopPropagation();$$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
       $$('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
-        if(input.value==="__none__"&&input.checked)$$('input[type="checkbox"]',wrap).forEach(x=>{if(x!==input)x.checked=false});
-        else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false}
-        if(!wrap.querySelector('input[type="checkbox"]:checked')){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=true}
-        syncArtistPickerSummary(wrap);
+        let order=getArtistPickerOrder(wrap);
+        if(input.value==="__none__"&&input.checked){wrap.querySelectorAll('input[type="checkbox"]').forEach(x=>{if(x!==input)x.checked=false});order=[]}
+        else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false;if(!order.includes(input.value))order.push(input.value)}
+        else if(input.value!=="__none__"&&!input.checked){order=order.filter(id=>id!==input.value);if(!order.length){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=true}}
+        wrap.dataset.artistOrder=JSON.stringify(order);syncArtistPickerSummary(wrap);
       }));
       syncArtistPickerSummary(wrap);
     });
@@ -2577,7 +2598,7 @@ main{min-width:0;min-height:0}
     $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
     $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
     $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
-    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);$$(`#songArtists input[type="checkbox"]`).forEach(x=>x.checked=ids.includes(x.value));const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection("songArtists",ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
     $("#saveEdit").onclick=async()=>{
       const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
       t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
@@ -2657,27 +2678,72 @@ main{min-width:0;min-height:0}
     try{
       audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       audioSource=audioCtx.createMediaElementSource(audio);
-      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain()};
-      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=120;
-      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=1000;eqNodes.mid.Q.value=.9;
-      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5000;
-      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(audioCtx.destination);
+      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),compressor:audioCtx.createDynamicsCompressor(),output:audioCtx.createGain()};
+      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.72;
+      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=950;eqNodes.mid.Q.value=.85;
+      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.72;
+      eqNodes.compressor.threshold.value=-14;eqNodes.compressor.knee.value=18;eqNodes.compressor.ratio.value=2.6;eqNodes.compressor.attack.value=.004;eqNodes.compressor.release.value=.16;
+      eqNodes.gain.gain.value=1;eqNodes.output.gain.value=.94;
+      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
       applyEQ();
-    }catch(e){console.warn("EQ unavailable",e)}
+    }catch(e){console.warn("EQ unavailable",e);audioCtx=null;audioSource=null;eqNodes=null}
   }
-  function applyEQ(){if(!eqNodes)return;const q=state.settings.eq||{bass:0,mid:0,treble:0,gain:0};eqNodes.bass.gain.value=q.bass;eqNodes.mid.gain.value=q.mid;eqNodes.treble.gain.value=q.treble;eqNodes.gain.gain.value=Math.pow(10,q.gain/20);}
-  const EQ_PRESETS={flat:{bass:0,mid:0,treble:0,gain:0},bass:{bass:9,mid:1,treble:0,gain:0},deep:{bass:12,mid:0,treble:-1,gain:-1},vocal:{bass:-3,mid:5,treble:3,gain:-1},treble:{bass:0,mid:2,treble:8,gain:-1}};
+  function setAudioParam(param,value){
+    if(!param)return;
+    try{
+      const now=audioCtx?.currentTime||0;
+      if(typeof param.cancelScheduledValues==="function"){param.cancelScheduledValues(now);param.setTargetAtTime(value,now,.018)}
+      else param.value=value;
+    }catch{try{param.value=value}catch{}}
+  }
+  function applyEQ(){
+    if(!eqNodes)return;
+    const q={bass:0,mid:0,treble:0,gain:0,...(state.settings.eq||{})};
+    const bass=Math.max(-12,Math.min(12,Number(q.bass)||0)),mid=Math.max(-12,Math.min(12,Number(q.mid)||0)),treble=Math.max(-12,Math.min(12,Number(q.treble)||0)),userGain=Math.max(-6,Math.min(6,Number(q.gain)||0));
+    setAudioParam(eqNodes.bass.gain,bass);setAudioParam(eqNodes.mid.gain,mid);setAudioParam(eqNodes.treble.gain,treble);
+    const positiveBoost=Math.max(0,bass)+Math.max(0,mid)+Math.max(0,treble);
+    setAudioParam(eqNodes.gain.gain,Math.pow(10,(userGain-Math.min(7,positiveBoost*.20))/20));
+    setAudioParam(eqNodes.output.gain,.94);
+  }
+  const EQ_PRESETS={
+    flat:{bass:0,mid:0,treble:0,gain:0},
+    bass:{bass:7,mid:1,treble:-1,gain:-1},
+    deep:{bass:9,mid:0,treble:-2,gain:-1},
+    vocal:{bass:-2,mid:4,treble:3,gain:-1},
+    treble:{bass:-1,mid:2,treble:6,gain:-1},
+    warm:{bass:4,mid:2,treble:-1,gain:-1},
+    clear:{bass:-2,mid:2,treble:4,gain:-1},
+    punchy:{bass:5,mid:-1,treble:3,gain:-1},
+    studio:{bass:2,mid:1,treble:2,gain:-1}
+  };
   function openEQ(){
-    ensureAudioGraph();try{audioCtx?.resume()}catch{}
-    const q=state.settings.eq||EQ_PRESETS.flat;
-    setModal(`<div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="field"><label>Preset</label><select id="eqPreset">${[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"]].map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div><div class="formGrid" style="margin-top:14px"><div class="field"><label>Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1"></div><div class="field"><label>Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1"></div><div class="field"><label>Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1"></div><div class="field"><label>Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1"></div></div><div class="help" style="margin-top:10px">Filters affect playback only; Localify does not rewrite or re-encode your source files.</div><div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
+    ensureAudioGraph();try{const p=audioCtx?.resume();if(p?.catch)p.catch(()=>{})}catch{}
+    const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
+    const options=[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"],["warm","Warm"],["clear","Clear"],["punchy","Punchy"],["studio","Studio"]];
+    setModal(`
+      <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${options.map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
+      <div class="formGrid" style="margin-top:14px">
+        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1" aria-label="Bass"></div>
+        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1" aria-label="Mid"></div>
+        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1" aria-label="Treble"></div>
+        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1" aria-label="Gain"></div>
+      </div>
+      <div class="help" style="margin-top:10px">Filters affect playback only. Localify never rewrites or re-encodes your source files.</div>
+      <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
-    const update=()=>{state.settings.eq={bass:+$("#eqBass").value,mid:+$("#eqMid").value,treble:+$("#eqTreble").value,gain:+$("#eqGain").value,preset:$("#eqPreset").value};applyEQ();$("#eqBass").previousElementSibling.textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMid").previousElementSibling.textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTreble").previousElementSibling.textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGain").previousElementSibling.textContent=`Gain ${state.settings.eq.gain} dB`;autoSave()};
-    ["#eqBass","#eqMid","#eqTreble","#eqGain"].forEach(id=>$(id).addEventListener("input",update));
-    $("#eqPreset").onchange=()=>{const p=EQ_PRESETS[$("#eqPreset").value];$("#eqBass").value=p.bass;$("#eqMid").value=p.mid;$("#eqTreble").value=p.treble;$("#eqGain").value=p.gain;update()};
-    $("#closeModal").onclick=()=>closeModal();$("#eqDone").onclick=()=>closeModal(true);
+    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset");
+    const update=()=>{
+      if(!bass||!mid||!treble||!gain||!preset)return;
+      state.settings.eq={bass:Number(bass.value)||0,mid:Number(mid.value)||0,treble:Number(treble.value)||0,gain:Number(gain.value)||0,preset:preset.value||"flat"};
+      $("#eqBassLabel").textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMidLabel").textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTrebleLabel").textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGainLabel").textContent=`Gain ${state.settings.eq.gain} dB`;
+      applyEQ();autoSave();
+    };
+    [bass,mid,treble,gain].forEach(el=>{if(!el)return;el.oninput=update;el.onchange=update});
+    preset.onchange=()=>{const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;bass.value=p.bass;mid.value=p.mid;treble.value=p.treble;gain.value=p.gain;update()};
+    update();
+    $("#closeModal").onclick=()=>closeModal(true);$("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
   }
-
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
   function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a}
   function u64(v){const a=new Uint8Array(8),dv=new DataView(a.buffer),n=Math.max(0,Math.floor(Number(v)||0));dv.setUint32(0,n>>>0,true);dv.setUint32(4,Math.floor(n/4294967296)>>>0,true);return a}
