@@ -663,7 +663,7 @@ main{min-width:0;min-height:0}
   const state = {
     version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"}, discordPresence:true, nowSidebarHidden:false },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false}, discordPresence:true, nowSidebarHidden:false },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
@@ -1191,8 +1191,8 @@ main{min-width:0;min-height:0}
     await ensureStorageAccess();
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
-    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat"},discordPresence:true,nowSidebarHidden:false},state.settings||{});
-    state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat"},state.settings.eq||{});
+    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false},discordPresence:true,nowSidebarHidden:false},state.settings||{});
+    state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false},state.settings.eq||{});
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
@@ -2682,15 +2682,13 @@ main{min-width:0;min-height:0}
     try{
       audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       audioSource=audioCtx.createMediaElementSource(audio);
-      // Do not use full-band compression here: strong bass would make the whole mix duck.
-      // The EQ has its own headroom compensation instead, so bass can hit hard without
-      // pulling vocals, drums, or other frequencies down with it.
-      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),output:audioCtx.createGain()};
+      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),compressor:audioCtx.createDynamicsCompressor(),output:audioCtx.createGain()};
       eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.72;
       eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=950;eqNodes.mid.Q.value=.85;
       eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.72;
+      eqNodes.compressor.threshold.value=-11;eqNodes.compressor.knee.value=14;eqNodes.compressor.ratio.value=4.2;eqNodes.compressor.attack.value=.003;eqNodes.compressor.release.value=.13;
       eqNodes.gain.gain.value=1;eqNodes.output.gain.value=.82;
-      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.output).connect(audioCtx.destination);
+      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
       applyEQ();
     }catch(e){console.warn("EQ unavailable",e);audioCtx=null;audioSource=null;eqNodes=null}
   }
@@ -2711,26 +2709,27 @@ main{min-width:0;min-height:0}
     // energy to the signal. This reduces clipping risk without using a full-band compressor.
     const positiveBoost=(Math.max(0,bass)*.42)+(Math.max(0,mid)*.22)+(Math.max(0,treble)*.18);
     setAudioParam(eqNodes.gain.gain,Math.pow(10,(userGain-Math.min(18,positiveBoost))/20));
+    const compressorOn=q.compressor===true;
+    if(eqNodes.compressor){
+      setAudioParam(eqNodes.compressor.ratio,compressorOn?4.2:1);
+      setAudioParam(eqNodes.compressor.threshold,compressorOn?-11:0);
+    }
     setAudioParam(eqNodes.output.gain,.82);
   }
+  // === SOUND PRESETS ===
+  // Add custom presets here using the same simple format:
+  // myPreset:{bass:10,mid:0,treble:3,gain:-2},
+  // Then add ["myPreset","My Preset"] to the options below.
   const EQ_PRESETS={
     flat:{bass:0,mid:0,treble:0,gain:0},
-    bass:{bass:12,mid:2,treble:-2,gain:-2},
-    deep:{bass:18,mid:0,treble:-3,gain:-3},
-    vocal:{bass:-4,mid:7,treble:4,gain:-2},
-    treble:{bass:-3,mid:3,treble:12,gain:-2},
-    warm:{bass:8,mid:3,treble:-3,gain:-2},
-    clear:{bass:-4,mid:4,treble:8,gain:-2},
-    punchy:{bass:12,mid:-2,treble:7,gain:-3},
-    studio:{bass:4,mid:2,treble:4,gain:-2},
-    extremeBass:{bass:24,mid:3,treble:-6,gain:-5},
-    extremeTreble:{bass:-8,mid:4,treble:24,gain:-5},
-    loud:{bass:14,mid:5,treble:10,gain:-7}
+    bass:{bass:12,mid:2,treble:-2,gain:-2}
   };
   function openEQ(){
     ensureAudioGraph();try{const p=audioCtx?.resume();if(p?.catch)p.catch(()=>{})}catch{}
     const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
-    const options=[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"],["warm","Warm"],["clear","Clear"],["punchy","Punchy"],["studio","Studio"],["extremeBass","Extreme Bass"],["extremeTreble","Extreme Treble"],["loud","Loud"]];
+    if(!EQ_PRESETS[q.preset])q.preset="flat";
+    q.compressor=q.compressor===true;
+    const options=[["flat","Flat"],["bass","Bass"]];
     setModal(`
       <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${options.map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
@@ -2740,17 +2739,24 @@ main{min-width:0;min-height:0}
         <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-24" max="24" value="${q.treble}" step="1" aria-label="Treble"></div>
         <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-12" max="12" value="${q.gain}" step="1" aria-label="Gain"></div>
       </div>
+      <div class="field" style="margin-top:14px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input id="eqCompressor" type="checkbox" ${q.compressor?"checked":""}>
+          <span><strong>Compressor</strong><small style="display:block;color:#737e8b;margin-top:3px">Smooths loud peaks and keeps the mix more even.</small></span>
+        </label>
+      </div>
       <div class="help" style="margin-top:10px">Filters affect playback only. Localify never rewrites or re-encodes your source files.</div>
       <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
-    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset");
+    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset"),compressor=$("#eqCompressor");
     const update=()=>{
-      if(!bass||!mid||!treble||!gain||!preset)return;
-      state.settings.eq={bass:Number(bass.value)||0,mid:Number(mid.value)||0,treble:Number(treble.value)||0,gain:Number(gain.value)||0,preset:preset.value||"flat"};
+      if(!bass||!mid||!treble||!gain||!preset||!compressor)return;
+      state.settings.eq={bass:Number(bass.value)||0,mid:Number(mid.value)||0,treble:Number(treble.value)||0,gain:Number(gain.value)||0,preset:preset.value||"flat",compressor:compressor.checked};
       $("#eqBassLabel").textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMidLabel").textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTrebleLabel").textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGainLabel").textContent=`Gain ${state.settings.eq.gain} dB`;
       applyEQ();autoSave();
     };
     [bass,mid,treble,gain].forEach(el=>{if(!el)return;el.oninput=update;el.onchange=update});
+    compressor.onchange=update;
     preset.onchange=()=>{const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;bass.value=p.bass;mid.value=p.mid;treble.value=p.treble;gain.value=p.gain;update()};
     update();
     $("#closeModal").onclick=()=>closeModal(true);$("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
