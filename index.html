@@ -663,7 +663,7 @@ main{min-width:0;min-height:0}
   const state = {
     version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false}, discordPresence:true, nowSidebarHidden:false },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
@@ -1191,8 +1191,8 @@ main{min-width:0;min-height:0}
     await ensureStorageAccess();
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
-    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false},discordPresence:true,nowSidebarHidden:false},state.settings||{});
-    state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:false},state.settings.eq||{});
+    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false},state.settings||{});
+    state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
