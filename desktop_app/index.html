@@ -640,8 +640,7 @@ main{min-width:0;min-height:0}
       <div class="topSpacer"></div>
       <button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add songs</span></button>
       <button class="profileTopBtn" id="profileBtn" title="Profile" aria-label="Open profile"><span id="profileGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span></button>
-      <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span><span class="discordTopDot"></span></button>
-      <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
+      <div class="pill" id="libraryBadge">0 tracks</div>
       <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button>
     </div>
     <div id="content" class="content"></div>
@@ -1634,20 +1633,12 @@ main{min-width:0;min-height:0}
       return false;
     }
   }
-  function setDiscordUi(state,text){
-    const el=$("#discordStatus"),label=$("#discordStatusText"),top=$("#discordTopBtn");
-    if(el&&label){el.classList.remove("connected","disabled","searching","error");if(state)el.classList.add(state);label.textContent=text}
-    if(top){top.classList.remove("connected","disabled","searching","error");if(state)top.classList.add(state);top.title=`Discord Rich Presence — ${text}`;top.setAttribute("aria-label",`Discord Rich Presence — ${text}`)}
-  }
+  function setDiscordUi(state,text){return true}
   async function sendDesktopBridgeMessage(payload){try{return await __localifySetNativeDiscordPresence(payload)}catch{return false}}
-  async function checkDesktopPlayer(){
-    const ok=await __localifyConnectDiscordNative();
-    setDiscordUi(ok?"connected":"searching",ok?"Discord connected":"Waiting for Discord");
-    return ok;
-  }
+  async function checkDesktopPlayer(){return await __localifyConnectDiscordNative()}
   function sendDiscordMessage(){return true}
   async function connectDiscordBridge(){
-    if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord off");return false}
+    if(state.settings.discordPresence===false)return false;
     const ok=await checkDesktopPlayer();
     const t=trackById(state.currentId);
     if(ok&&t&&!audio.paused)await sendDiscordPresence(true);
@@ -1768,6 +1759,1259 @@ main{min-width:0;min-height:0}
     connectDiscordBridge();
   }
 
+  function setNowSidebar(open,remember=true){
+    if(innerWidth<=1050)open=false;
+    const app=document.querySelector(".app");if(!app)return;
+    if(remember)state.settings.nowSidebarHidden=!open;
+    app.classList.toggle("nowPanelOpen",!!open);
+    const btn=$("#nowPanelToggle");
+    if(btn){
+      btn.classList.toggle("liked",!!open);
+      btn.setAttribute("aria-pressed",String(!!open));
+      btn.title=open?"Hide Now Playing":"Show Now Playing";
+      btn.setAttribute("aria-label",open?"Hide Now Playing panel":"Show Now Playing panel");
+    }
+    renderNowSidebar();
+    if(remember)autoSave();
+  }
+  function renderNowSidebar(){
+    const panel=$("#nowSidebar");if(!panel||innerWidth<=1050)return;
+    const t=trackById(state.currentId);
+    if(!t){panel.innerHTML='<div class="nowSidebarInner"><div class="nowSidebarTitle">Now Playing</div><div class="nowSidebarEmpty">Play a song to see its details here.</div></div>';return}
+    const album=albumName(t),artists=artistName(t),lyrics=t.lyrics?.trim()||"No lyrics saved for this song yet.";
+    panel.innerHTML='<div class="nowSidebarInner">'+
+      '<div class="nowSidebarHead"><div class="nowSidebarTitle">Now Playing</div><button class="circle iconOnly" id="closeNowSidebar" title="Hide panel" aria-label="Hide Now Playing panel">'+uiIcon("close")+'</button></div>'+
+      '<div class="nowSidebarCover">'+coverHtml(t)+'</div>'+
+      '<div><div class="nowSidebarSong"><span class="nowSidebarSongTitle">'+esc(displayTrackTitle(t,true))+'</span>'+(t.explicit?'<span class="badge">E</span>':'')+'</div><div class="nowSidebarArtist">'+esc(artists)+'</div></div>'+
+      '<div class="nowSidebarMeta">'+
+        '<div class="nowSidebarMetaBox"><strong>Album</strong><span>'+esc(album)+'</span></div>'+
+        '<div class="nowSidebarMetaBox"><strong>Duration</strong><span>'+esc(fmt(t.duration||audio.duration||0))+'</span></div>'+
+        '<div class="nowSidebarMetaBox"><strong>Year</strong><span>'+esc(t.year||"None")+'</span></div>'+
+        '<div class="nowSidebarMetaBox"><strong>Genre</strong><span>'+esc(t.genre||"None")+'</span></div>'+
+        '<div class="nowSidebarMetaBox"><strong>Track</strong><span>'+esc(t.track??"None")+'</span></div>'+
+        '<div class="nowSidebarMetaBox"><strong>Disc</strong><span>'+esc(t.disc??"None")+'</span></div>'+
+      '</div>'+
+      '<div class="nowSidebarTitle">Lyrics</div><div class="nowSidebarLyrics">'+esc(lyrics)+'</div>'+
+      '<div class="nowSidebarTitle">Credits</div><div class="nowSidebarLyrics">'+esc([["Producer",creditList(t.credits,"producer")],["Writer",creditList(t.credits,"songwriter")],["Composer",creditList(t.credits,"composer")]].filter(x=>x[1]).map(x=>x[0]+": "+x[1]).join("\n")||"No credits saved.")+'</div>'+
+    '</div>';
+    $("#closeNowSidebar").onclick=()=>setNowSidebar(false);
+  }
+
+  function updatePlayerTime(){
+    const t=trackById(state.currentId);
+    if($("#curTime"))$("#curTime").textContent=fmt(audio.currentTime);
+    if($("#durTime"))$("#durTime").textContent=fmt(audio.duration||t?.duration);
+    if($("#progress"))$("#progress").value=audio.duration?Math.round(audio.currentTime/audio.duration*1000):0;
+  }
+  function renderPlayer(){
+    const t=trackById(state.currentId);
+    $("#nowTitle").textContent=t?.title||"Nothing playing";
+    $("#nowArtist").textContent=t?artistName(t):"Play a song or add one in Your Library";
+    const artKey=t?`${t.id}|${t.cover||""}`:"empty";
+    if($("#nowArt").dataset.key!==artKey){
+      $("#nowArt").dataset.key=artKey;
+      $("#nowArt").innerHTML=t?coverHtml(t):`<div class="nowFallback">${uiIcon("music")}</div>`;
+    }
+    $("#likeNow").classList.toggle("liked",!!t&&state.liked.includes(t.id));
+    $("#playPause").innerHTML=audio.paused?uiIcon("play"):uiIcon("pause");
+    const sh=$("#shuffle"); if(sh){sh.classList.toggle("liked",!!state.settings.shuffle);sh.setAttribute("aria-pressed",String(!!state.settings.shuffle));sh.title=state.settings.shuffle?"Shuffle on":"Shuffle";sh.setAttribute("aria-label",sh.title)}
+    $("#repeat").classList.toggle("liked",state.settings.repeat!=="off");
+    $("#repeat").innerHTML=uiIcon("repeat")+(state.settings.repeat==="one"?`<span class="repeatOneBadge">1</span>`:"");
+    updatePlayerTime();
+    renderNowSidebar();
+  }
+
+  function contextTracksFor(t){
+    if(state.detail?.type==="album")return sortAlbumTracks(state.tracks.filter(x=>x.albumId===state.detail.id));
+    if(state.detail?.type==="artist")return state.tracks.filter(x=>x.artistId===state.detail.id);
+    if(state.detail?.type==="playlist"){const p=playlistById(state.detail.id);return p?p.trackIds.map(trackById).filter(Boolean):[];}
+    if(state.currentView==="liked")return state.liked.map(trackById).filter(Boolean);
+    if(state.currentView==="recent")return state.recent.map(trackById).filter(Boolean);
+    if(state.currentView==="search"){const q=state.search.trim().toLowerCase();return state.tracks.filter(x=>!q||[x.title,artistName(x),albumName(x),x.genre].some(v=>String(v||"").toLowerCase().includes(q)));}
+    return librarySorted();
+  }
+  function playId(id){
+    const t=trackById(id);if(!t)return;
+    let tracks=contextTracksFor(t);if(!tracks.some(x=>x.id===id))tracks=[t,...tracks];
+    if(state.settings.shuffle){
+      const rest=shuffleArr(tracks.filter(x=>x.id!==id));
+      state.queue=[t.id,...rest.map(x=>x.id)];
+      state.queueIndex=0;
+      playCurrent();
+      return;
+    }
+    const index=Math.max(0,tracks.findIndex(x=>x.id===id));
+    playQueue(tracks,index);
+  }
+  function playQueue(tracks,index){
+    const list=[...(tracks||[])];
+    const safeIndex=Math.max(0,Math.min(index||0,Math.max(0,list.length-1)));
+    if(state.settings.shuffle){
+      const current=list[safeIndex];
+      const rest=shuffleArr(list.filter((_,i)=>i!==safeIndex));
+      state.queue=current?[current.id,...rest.map(t=>t.id)]:rest.map(t=>t.id);
+      state.queueIndex=0;
+    }else{
+      state.queue=list.map(t=>t.id);state.queueIndex=safeIndex;
+    }
+    playCurrent();
+  }
+  async function playCurrent(){
+    const token=++playToken;
+    const t=trackById(state.queue[state.queueIndex]);
+    if(!t)return;
+    state.currentId=t.id;
+    if(innerWidth>1050&&!state.settings.nowSidebarHidden)setNowSidebar(true,false);
+    renderPlayer();
+
+    const blob=await warmTrack(t.id);
+    if(token!==playToken)return;
+    if(!isBlobLike(blob)){
+      toast("This song is not saved on this device. Re-import it, then try Play again.");
+      return;
+    }
+    const url=getUrl(t);
+    if(!url){
+      toast("Could not create a playable URL for this audio file.");
+      return;
+    }
+
+    try{
+      audio.pause();
+      audio.src=url;
+      audio.preload="metadata";
+      audio.load();
+      audio.currentTime=0;
+    }catch(e){
+      console.warn("Localify audio setup failed",e);
+      toast("Could not load this audio file.");
+      return;
+    }
+
+    try{
+      await audio.play();
+    }catch(e){
+      console.warn("Localify playback failed",e);
+      if(e?.name==="NotAllowedError")toast("Playback was blocked by the browser. Press Play once more.");
+      else if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play that audio format. Try MP3, WAV, FLAC, OGG or another browser.");
+      else toast("The browser could not play this audio file.");
+      return;
+    }
+
+    pushRecent(t.id);
+    startAnalyticsSession(t.id);
+    renderPlayer();
+    if("mediaSession"in navigator){
+      try{
+        navigator.mediaSession.metadata=new MediaMetadata({
+          title:t.title,artist:artistName(t),album:albumName(t),
+          artwork:t.cover?[{src:t.cover,sizes:"512x512"}]:[]
+        });
+      }catch{}
+    }
+  }
+  function next(){
+    if(!state.queue.length)return;
+    state.queueIndex++;
+    if(state.queueIndex>=state.queue.length){
+      if(state.settings.repeat==="all"){
+        if(state.settings.shuffle){
+          const current=state.currentId;
+          const rest=shuffleArr(state.queue.filter(id=>id!==current));
+          state.queue=current?[current,...rest]:rest;
+        }
+        state.queueIndex=0;return playCurrent();
+      }
+      state.queueIndex=state.queue.length-1;audio.pause();clearDiscordPresence();renderPlayer();return;
+    }
+    playCurrent();
+  }
+  function prev(){if(audio.currentTime>3){audio.currentTime=0;return}state.queueIndex=Math.max(0,state.queueIndex-1);playCurrent()}
+  function shuffleArr(a){const out=[...(a||[])];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
+  const analyticsRuntime={lastAt:0,trackId:null,lastSaveAt:0};
+  function analyticsDayKey(ts=Date.now()){const d=new Date(ts);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")}
+  function ensureAnalytics(){state.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},state.analytics||{});if(!state.analytics.plays||typeof state.analytics.plays!=="object")state.analytics.plays={};if(!state.analytics.trackSeconds||typeof state.analytics.trackSeconds!=="object")state.analytics.trackSeconds={};if(!state.analytics.days||typeof state.analytics.days!=="object")state.analytics.days={};if(!Array.isArray(state.analytics.history))state.analytics.history=[]}
+  function recordTrackPlay(id){if(!id)return;ensureAnalytics();state.analytics.plays[id]=(Number(state.analytics.plays[id])||0)+1;state.analytics.history.push({id,at:Date.now()});if(state.analytics.history.length>20000)state.analytics.history.splice(0,state.analytics.history.length-20000)}
+  function creditListeningTime(){const now=Date.now(),id=state.currentId;if(!id||audio.paused){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id||null;return}if(!analyticsRuntime.lastAt||analyticsRuntime.trackId!==id){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id;return}const delta=Math.min(5,Math.max(0,(now-analyticsRuntime.lastAt)/1000));if(delta>0){ensureAnalytics();state.analytics.totalSeconds=(Number(state.analytics.totalSeconds)||0)+delta;state.analytics.trackSeconds[id]=(Number(state.analytics.trackSeconds[id])||0)+delta;const day=analyticsDayKey(now);state.analytics.days[day]=(Number(state.analytics.days[day])||0)+delta}analyticsRuntime.lastAt=now;if(now-analyticsRuntime.lastSaveAt>10000){analyticsRuntime.lastSaveAt=now;autoSave()}}
+  function startAnalyticsSession(id){ensureAnalytics();recordTrackPlay(id);analyticsRuntime.lastAt=Date.now();analyticsRuntime.trackId=id;autoSave()}
+  function formatHours(seconds){const h=(Number(seconds)||0)/3600;if(h<1)return Math.round(h*60)+" min";return h<10?h.toFixed(1)+" hr":Math.round(h)+" hr"}
+  function recentAnalyticsDays(days=7){const out=[],now=Date.now();for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);const key=analyticsDayKey(d.getTime());out.push([key,Number(state.analytics?.days?.[key])||0])}return out}
+  function profileTopSongs(limit=10){ensureAnalytics();return Object.entries(state.analytics.plays).map(([id,count])=>({t:trackById(id),count:Number(count)||0,seconds:Number(state.analytics.trackSeconds[id])||0})).filter(x=>x.t).sort((a,b)=>b.count-a.count||b.seconds-a.seconds).slice(0,limit)}
+  function profileWeekRange(){const now=new Date(),day=now.getDay(),daysSinceMonday=(day+6)%7;const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-daysSinceMonday);start.setHours(0,0,0,0);return {start,end:now}}
+  function profileWeekHistory(){const {start,end}=profileWeekRange();return state.analytics.history.filter(e=>e&&Number(e.at)>=start.getTime()&&Number(e.at)<=end.getTime())}
+  function profileWeeklyTopSongs(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const id=e.id;if(id)counts.set(id,(counts.get(id)||0)+1)}return [...counts.entries()].map(([id,count])=>({t:trackById(id),count})).filter(x=>x.t).sort((a,b)=>b.count-a.count||displayTrackTitle(a.t,true).localeCompare(displayTrackTitle(b.t,true),undefined,{sensitivity:"base"})).slice(0,limit)}
+  function profileWeeklyTopArtists(limit=5){const counts=new Map();for(const e of profileWeekHistory()){const t=trackById(e.id);if(!t)continue;for(const artist of artistNamesForTrack(t)){if(artist===NONE_LABEL)continue;const key=artist.toLocaleLowerCase();const prev=counts.get(key)||{name:artist,count:0};prev.count++;counts.set(key,prev)}}return [...counts.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,limit)}
+  function profileWeeklyData(){const days=recentAnalyticsDays(7),week=profileWeekRange(),weekDays=days.filter(([key])=>{const parts=key.split("-").map(Number);const d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));return d.getTime()>=Date.UTC(week.start.getFullYear(),week.start.getMonth(),week.start.getDate())}),seconds=weekDays.reduce((n,[,sec])=>n+sec,0),history=profileWeekHistory();return {days:weekDays,seconds,plays:history.length,topSongs:profileWeeklyTopSongs(),topArtists:profileWeeklyTopArtists()}}
+  function renderProfileTopButton(){
+    const b=$("#profileBtn"),g=$("#profileGlyph");
+    if(!b||!g)return;
+    const name=String(state.profile?.displayName||"").trim()||"Localify listener";
+    if(state.profile?.avatar)g.innerHTML=`<img src="${esc(state.profile.avatar)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    else g.innerHTML=`<span style="display:grid;place-items:center;width:100%;height:100%;font-weight:1000">${esc(name.slice(0,1).toUpperCase()||"L")}</span>`;
+    g.style.cssText="display:grid;place-items:center;width:100%;height:100%;overflow:hidden;border-radius:50%";
+    b.title=name+" — Profile";
+    b.setAttribute("aria-label",name+" — Profile");
+  }
+  function showProfile(){
+    ensureAnalytics();state.currentView="profile";state.detail=null;state.selected=[];
+    const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10);
+    const name=String(state.profile?.displayName||"").trim()||"Localify listener";
+    const initials=esc(name.slice(0,1).toUpperCase()||"L");
+    $( "#content").innerHTML=`
+    <div class="profilePage">
+      <div class="profileHeader"><div class="profileAvatar">${state.profile?.avatar?`<img src="${esc(state.profile.avatar)}" alt="">`:initials}</div><div><div class="profileName">${esc(name)}</div><div class="profileSub">${state.analytics.history.length.toLocaleString()} listening sessions recorded on this device</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button></div></div></div>
+      <div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">${formatHours(total)}</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">${Object.values(state.analytics.plays).reduce((n,v)=>n+(Number(v)||0),0).toLocaleString()}</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">${Math.floor(weekly.seconds/60).toLocaleString()} min</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">${Object.keys(state.analytics.plays).filter(id=>trackById(id)).length.toLocaleString()}</div></div></div>
+      <div class="profileGrid">
+        <div class="profilePanel"><h3>Weekly recap</h3>
+          <div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened this week</div><div class="profileRecapMinutes">${Math.floor(weekly.seconds/60).toLocaleString()}</div></div><div><div class="profileStatLabel">Plays this week</div><div class="profileRecapMinutes">${weekly.plays.toLocaleString()}</div></div></div>
+          <div class="profileRecapColumns">
+            <div><div class="profileRecapTitle">Top songs</div><div class="profileList">${weekly.topSongs.length?weekly.topSongs.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+            <div><div class="profileRecapTitle">Top artists</div><div class="profileList">${weekly.topArtists.length?weekly.topArtists.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(x.name)}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play music this week to build your recap.</div>`}</div></div>
+          </div>
+        </div>
+        <div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">${top.length?top.map((x,i)=>`<div class="profileListRow"><div class="profileRank">${i+1}</div><div><div class="profileTrackTitle">${esc(displayTrackTitle(x.t,true))}</div><div class="profileTrackSub">${esc(artistName(x.t))}</div></div><div class="profileCount">${x.count} plays</div></div>`).join(""):`<div class="profileEmpty">Play some music to build your all-time stats.</div>`}</div></div>
+      </div>
+    </div>`;
+    renderProfileTopButton();
+    $("#profileEdit").onclick=()=>editLocalProfile();
+  }
+  function editLocalProfile(){
+    const name=String(state.profile?.displayName||"").trim(),avatar=state.profile?.avatar||null;
+    setModal(`<div class="modalHead"><h2>Edit profile</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="coverEdit"><div id="profileEditAvatar" class="profileAvatar" style="width:92px;height:92px;font-size:30px">${avatar?`<img src="${esc(avatar)}" alt="">`:esc(name.slice(0,1).toUpperCase()||"L")}</div><div><button class="secondary" id="profileAvatarBtn">Choose profile picture</button><div class="help" style="margin-top:6px">The picture is saved locally with your Localify profile.</div></div></div>
+      <div class="field"><label>Display name</label><input id="profileNameInput" maxlength="60" value="${esc(name)}" placeholder="Your name"></div>
+      <div class="modalFoot"><button class="secondary" id="profileCancel">Cancel</button><button class="primary" id="profileSave">Save</button></div>`);
+    $("#closeModal").onclick=()=>closeModal(true);$("#profileCancel").onclick=()=>closeModal(true);
+    $("#profileAvatarBtn").onclick=()=>imagePicker(avatar,d=>{state._pendingProfileAvatar=d;const el=$("#profileEditAvatar");if(d)el.innerHTML=`<img src="${esc(d)}" alt="">`;else el.textContent="L";markDirty()});
+    $("#profileSave").onclick=async()=>{state.profile.displayName=$("#profileNameInput").value.trim();if(Object.prototype.hasOwnProperty.call(state,"_pendingProfileAvatar")){state.profile.avatar=state._pendingProfileAvatar;delete state._pendingProfileAvatar}await save();closeModal(true);renderProfileTopButton();showProfile()};
+  }
+
+  function openSettingsPanel(){setModal(`<div class="modalHead"><h2>Settings</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">Playback, library and analytics are stored locally. Google account syncing requires Google OAuth credentials for the app.</div><div class="modalFoot"><button class="primary" id="settingsDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#settingsDone").onclick=()=>closeModal(true)}
+  function openGoogleLoginInfo(){setModal(`<div class="modalHead"><h2>Google account sync</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">The profile and listening stats are ready locally. Real Google login and cross-device sync still need a Google OAuth client ID. Google supports web-app OAuth clients and the Drive appDataFolder can store per-app data for the signed-in user.</div><div class="modalFoot"><button class="primary" id="googleInfoDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#googleInfoDone").onclick=()=>closeModal(true)}
+  function pushRecent(id){state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,50)}
+
+  function toggleLike(id){
+    if(state.liked.includes(id))state.liked=state.liked.filter(x=>x!==id);else state.liked.unshift(id);
+    autoSave();renderCurrentViewWithoutScroll();
+  }
+  function removeTracks(ids){
+    const set=new Set(ids);
+    state.tracks=state.tracks.filter(t=>!set.has(t.id));
+    state.liked=state.liked.filter(id=>!set.has(id));state.recent=state.recent.filter(id=>!set.has(id));state.queue=state.queue.filter(id=>!set.has(id));
+    state.playlists.forEach(p=>p.trackIds=p.trackIds.filter(id=>!set.has(id)));
+    for(const id of set){
+      queueBlobDelete(id);
+      if(objectUrls.has(id)){URL.revokeObjectURL(objectUrls.get(id));objectUrls.delete(id)}
+    }
+    if(set.has(state.currentId)){playToken++;audio.pause();audio.removeAttribute("src");state.currentId=null}
+  }
+
+  async function pickFiles(context={}){
+    importContext=context||{};
+    const input=$("#filePicker");
+    input.value="";
+    input.onchange=async e=>{
+      const files=[...e.target.files];
+      try{await addFiles(files,importContext)}finally{input.value=""}
+    };
+    try{
+      input.click();
+    }catch(e){
+      console.warn("Localify file picker failed",e);
+      if(window.showOpenFilePicker){
+        try{
+          const handles=await window.showOpenFilePicker({multiple:true,types:[{description:"Audio",accept:{"audio/*":[".mp3",".m4a",".aac",".flac",".wav",".ogg",".opus",".webm",".aiff",".alac"]}}]});
+          await addFiles(await Promise.all(handles.map(h=>h.getFile())),importContext);
+        }catch(err){if(err?.name!=="AbortError")toast("Could not open the audio file picker.")}
+      }
+    }
+  }
+  async function pickFolder(){
+    importContext={};
+
+    // Prefer the modern File System Access API on phones/browsers that expose it.
+    // This gives an actual folder picker instead of the browser falling back to a file picker.
+    if(window.showDirectoryPicker){
+      try{
+        const root=await window.showDirectoryPicker({mode:"read"});
+        const files=[];
+        const images=[];
+        const walk=async(dir,parts=[])=>{
+          for await(const [name,handle] of dir.entries()){
+            if(handle.kind==="file") {
+              const file=await handle.getFile();
+              const rel=[...parts,name].join("/");
+              try{Object.defineProperty(file,"webkitRelativePath",{value:rel,configurable:true})}catch{}
+              if(isAudioFile(file))files.push(file);
+              else if((file.type||"").startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/i.test(name))images.push(file);
+            } else if(handle.kind==="directory") {
+              await walk(handle,[...parts,name]);
+            }
+          }
+        };
+        await walk(root,[]);
+        if(!files.length){toast("No audio files found in that folder.");return}
+        const byDir=new Map();
+        for(const img of images){
+          const rel=img.webkitRelativePath||img.name;
+          const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+          if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
+        }
+        await addFiles(files,{folderImageMap:byDir,folderImport:true});
+        return;
+      }catch(e){
+        if(e?.name==="AbortError")return;
+        console.warn("Modern folder picker failed, falling back:",e);
+      }
+    }
+
+    const input=$("#directoryPicker");
+    if(!input){toast("Folder import is not supported in this browser.");return}
+    input.value="";
+    input.onchange=async e=>{
+      const files=[...e.target.files];
+      const imageFiles=files.filter(f=>(f.type||"").startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/i.test(f.name));
+      const byDir=new Map();
+      for(const img of imageFiles){
+        const rel=img.webkitRelativePath||img.name;
+        const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+        if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
+      }
+      await addFiles(files.filter(isAudioFile),{folderImageMap:byDir,folderImport:true});
+      input.value="";
+    };
+    input.click();
+  }
+  async function addFiles(files,context={}){
+    const arr=files.filter(isAudioFile);
+    if(!arr.length){toast("No audio files found.");return}
+    const album=context.albumId?albumById(context.albumId):null;
+    const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
+    const playlist=context.playlistId?playlistById(context.playlistId):null;
+    const folderAlbums=new Map();
+    const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
+    const added=[];
+    for(const f of arr){
+      const sig=`${f.name}|${f.size}|${f.lastModified}`;
+      if(existing.has(sig))continue;
+      const folderMode=!!context.folderImport;
+      const unassignedAlbum=!!album&&!artistIdsForAlbum(album).length;
+      const artist=(folderMode||unassignedAlbum)?null:(forcedArtist||null);
+      let folderCover=null, folderKey="", folderTitle="Unknown Album";
+      if(context.folderImageMap||folderMode){
+        const rel=f.webkitRelativePath||f.name||"";
+        folderKey=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
+        folderTitle=folderKey?folderKey.split("/").filter(Boolean).pop()||"Unknown Album":"Unknown Album";
+        folderCover=context.folderImageMap?.get(folderKey)||null;
+      }
+      let al;
+      if(folderMode){
+        if(!folderAlbums.has(folderKey))folderAlbums.set(folderKey,getOrCreateFolderAlbum(folderTitle,folderCover));
+        al=folderAlbums.get(folderKey);
+      }else{
+        al=album||null;
+      }
+      if(folderCover&&al&&!al.cover)al.cover=folderCover;
+      const albumArtistIds=al?artistIdsForAlbum(al):[];
+      const fallbackArtistIds=artist?[artist.id]:[];
+      const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||NONE_LABEL;
+      const t={
+        id:uid(),title:f.name.replace(/\.[^.]+$/,"") ,
+        artist:fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
+        album:al?.title||NONE_LABEL,albumId:al?.id||null,
+        albumArtist:namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
+        genre:al?.genre||"",year:al?.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
+        explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
+        blob:f,_blobDirty:true,cover:al?.cover||artist?.image||folderCover||null,
+        lyrics:"",credits:normalizeCredits(al?.credits||{}),addedAt:Date.now()
+      };
+      state.tracks.push(t);
+      added.push(t);
+      existing.add(sig);
+      queueBlob(t.id);
+      if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
+    }
+    importContext={};
+    if(!added.length){toast("Nothing new was imported.");return}
+
+    save(false,added.map(t=>t.id));
+    toast(context.folderImport?`Added ${added.length} ${added.length===1?"song":"songs"} from ${new Set(added.map(t=>t.albumId)).size} folder ${new Set(added.map(t=>t.albumId)).size===1?"album":"albums"}.`:`Added ${added.length} ${added.length===1?"song":"songs"}.`);
+    if(context.albumId)showAlbum(context.albumId);
+    else if(context.artistId)showArtist(context.artistId);
+    else if(context.playlistId)showPlaylist(context.playlistId);
+    else render();
+
+    window.addEventListener("unhandledrejection",e=>{console.warn("Localify unhandled promise rejection",e.reason);e.preventDefault()});
+  window.addEventListener("error",e=>{console.warn("Localify runtime error",e.error||e.message)});
+
+  (async()=>{
+      let cursor=0;
+      const workers=Array.from({length:Math.min(4,added.length)},async()=>{
+        while(cursor<added.length){
+          const t=added[cursor++];
+          await readDuration(t);
+        }
+      });
+      await Promise.all(workers);
+      autoSave();
+      if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search"||state.currentView==="albums"||state.currentView==="playlists"||state.currentView==="home")renderCurrentViewWithoutScroll();
+    })().catch(e=>console.warn("Localify duration scan failed",e));
+  }
+  function inferTrackNumberFromFilename(name){const m=String(name||"").match(/^(?:Track\s*)?0*(\d+)(?:[.\-_)\s])/i);return m?parseInt(m[1],10):null}
+  function setupDrop(z){if(!z)return;["dragenter","dragover"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.add("drag")}));["dragleave","drop"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.remove("drag")}));z.addEventListener("drop",e=>addFiles([...e.dataTransfer.files],{}))}
+
+  function resetLibraryState(){
+    for(const url of objectUrls.values()){try{URL.revokeObjectURL(url)}catch{}}
+    objectUrls.clear();
+    audio.pause();
+    audio.removeAttribute("src");
+    try{audio.load()}catch{}
+    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.liked=[];state.recent=[];
+    state.queue=[];state.queueIndex=-1;state.currentId=null;state.selected=[];state.detail=null;
+    state.currentView="home";state.search="";state.searchFilter="all";
+    state.librarySort="added";state.librarySortDir="desc";
+  }
+  function openDeleteLibraryWarning(){
+    const count=state.tracks.length;
+    setModal(`
+      <div class="modalHead"><h2>Delete entire library?</h2><button class="circle iconOnly" id="closeDeleteLibrary" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="deleteWarning">
+        <div class="deleteWarningBox"><strong>This will permanently remove this Localify library from this device.</strong><br>It will delete ${count} saved song${count===1?"":"s"}, artists, albums, playlists, liked/recent data, and stored audio files from this browser.</div>
+        <div class="help">This does not delete files from your computer or phone. It only removes Localify's saved library data. A previously exported <code>.localify</code> backup can be imported again.</div>
+        <div class="modalFoot">
+          <button class="secondary" id="cancelDeleteLibrary">Cancel</button>
+          <button class="deleteLibraryBtn btnIcon" id="confirmDeleteLibrary">${uiIcon("trash")} Delete everything</button>
+        </div>
+      </div>`);
+    $("#closeDeleteLibrary").onclick=()=>closeModal(true);
+    $("#cancelDeleteLibrary").onclick=()=>closeModal(true);
+    $("#confirmDeleteLibrary").onclick=async()=>{
+      const btn=$("#confirmDeleteLibrary");
+      btn.disabled=true;btn.textContent="Deleting…";
+      await clearLibraryStorage();
+      resetLibraryState();
+      closeModal(true);
+      render();
+      renderPlayer();
+      toast("Your Localify library was deleted from this device.");
+    };
+  }
+
+  function setModal(html,opts={}){
+    const shade=$("#modalShade"),modal=$("#modal");
+    modal.className=`modal ${opts.large?"large":""}`;modal.innerHTML=html;shade.classList.add("show");modalDirty=false;return modal;
+  }
+  function closeModal(force=false){
+    if(!force && modalDirty && !confirm("You have unsaved changes. Close anyway?"))return;
+    $("#modalShade").classList.remove("show");modalDirty=false;
+  }
+  function markDirty(){modalDirty=true}
+  function bindModalDirty(){
+    $$("#modal input,#modal textarea,#modal select").forEach(el=>el.addEventListener("input",markDirty));
+    bindArtistPickers();
+  }
+  function imagePicker(current, onDone){
+    $("#coverPicker").value="";
+    $("#coverPicker").onchange=async e=>{const f=e.target.files[0];if(f){const data=await readFileImage(f);onDone(data)}};
+    $("#coverPicker").click();
+  }
+  function artistOptions(selected=""){return artistList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(artistDisplayName(a))}</option>`).join("")}
+  function artistPickerHtml(id,selectedIds=[],emptyText="No artists yet"){
+    const selectedOrder=[...new Set((selectedIds||[]).filter(Boolean))];
+    const selected=new Set(selectedOrder),list=artistList();
+    return `<div class="artistPickerWrap" id="${id}" data-artist-order="${esc(JSON.stringify(selectedOrder))}">
+      <button type="button" class="artistSelectButton" aria-haspopup="listbox" aria-expanded="false"><span class="artistSelectSummary">${esc(selectedOrder.length?selectedOrder.map(v=>artistDisplayName(artistById(v))).join(", "):NONE_LABEL)}</span><span class="artistSelectChevron">${uiIcon("chevron")}</span></button>
+      <div class="artistPickerMenu" role="listbox" aria-label="Select artists">
+        <label class="artistChoice noneChoice"><input type="checkbox" value="__none__" ${!selectedOrder.length?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${NONE_LABEL}</span></label>
+        ${list.length?list.map(a=>`<label class="artistChoice"><input type="checkbox" value="${a.id}" ${selected.has(a.id)?"checked":""}><span class="artistChoiceOrder"></span><span class="artistChoiceName">${esc(artistDisplayName(a))}</span></label>`).join(""):`<div class="artistPickerEmpty">${esc(emptyText)}</div>`}
+      </div>
+    </div>`;
+  }
+  function getArtistPickerOrder(wrap){
+    if(!wrap)return [];
+    let order=[];try{order=JSON.parse(wrap.dataset.artistOrder||"[]")}catch{}
+    const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value).filter(v=>v!=="__none__");
+    const set=new Set(checked);
+    order=order.filter(id=>set.has(id));
+    for(const id of checked)if(!order.includes(id))order.push(id);
+    wrap.dataset.artistOrder=JSON.stringify(order);
+    return order;
+  }
+  function readArtistPicker(id){return getArtistPickerOrder($(`#${id}`))}
+  function syncArtistPickerSummary(wrap){
+    if(!wrap)return;
+    const order=getArtistPickerOrder(wrap);
+    const btn=wrap.querySelector(".artistSelectSummary");
+    if(btn)btn.textContent=order.length?order.map(id=>artistDisplayName(artistById(id))).join(", "):NONE_LABEL;
+    wrap.querySelectorAll(".artistChoice").forEach(choice=>{
+      const input=choice.querySelector('input[type="checkbox"]'),badge=choice.querySelector(".artistChoiceOrder");
+      if(!input||!badge)return;
+      if(input.value==="__none__"){badge.textContent="";choice.classList.remove("selectedArtist");return}
+      const pos=order.indexOf(input.value);
+      badge.textContent=pos>=0?String(pos+1):"";
+      choice.classList.toggle("selectedArtist",pos>=0);
+    });
+  }
+  function setArtistPickerSelection(id,ids){
+    const wrap=$(`#${id}`);if(!wrap)return;
+    const wanted=[...new Set((ids||[]).filter(Boolean))];
+    wrap.dataset.artistOrder=JSON.stringify(wanted);
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(input=>{input.checked=input.value!=="__none__"?wanted.includes(input.value):!wanted.length});
+    syncArtistPickerSummary(wrap);
+  }
+  function bindArtistPickers(){
+    $$(".artistPickerWrap").forEach(wrap=>{
+      const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");if(!btn||!menu)return;
+      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
+      $$('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
+        let order=getArtistPickerOrder(wrap);
+        if(input.value==="__none__"&&input.checked){wrap.querySelectorAll('input[type="checkbox"]').forEach(x=>{if(x!==input)x.checked=false});order=[]}
+        else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false;if(!order.includes(input.value))order.push(input.value)}
+        else if(input.value!=="__none__"&&!input.checked){order=order.filter(id=>id!==input.value);if(!order.length){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=true}}
+        wrap.dataset.artistOrder=JSON.stringify(order);syncArtistPickerSummary(wrap);
+      }));
+      syncArtistPickerSummary(wrap);
+    });
+  }
+  function syncArtistText(obj,ids){const names=namesOfIds(ids);obj.artist=names.join(", ")||NONE_LABEL;obj.artistId=ids[0]||null;obj.artistIds=[...ids];}
+  function albumOptions(selected=""){return albumList().map(a=>`<option value="${a.id}" ${a.id===selected?"selected":""}>${esc(a.title)} — ${esc(artistNamesForAlbum(a).join(", ")||NONE_LABEL)}</option>`).join("")}
+  function yesNoOptions(value){return `<option value="keep" ${value==="keep"?"selected":""}>Keep existing</option><option value="yes" ${value==="yes"?"selected":""}>Yes</option><option value="no" ${value==="no"?"selected":""}>No</option>`}
+
+  function editTrack(id){
+    const t=trackById(id);if(!t)return; const m=setModal(trackFormHtml(t),{large:true});
+    bindModalDirty();bindTrackEditorEvents(m,t.id);
+  }
+  function trackFormHtml(t){
+    const currentAlbum=albumById(t.albumId);const currentArtist=artistById(firstArtistId(t));const cover=t.cover||currentAlbum?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
+    return `<div class="modalHead"><h2>Edit song</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="coverEdit">${cover?`<img id="editCover" src="${cover}" alt="">`:`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("music")}</div>`}<div><button class="secondary" id="songCoverBtn">Choose artwork</button><div class="help" style="margin-top:6px">Artwork can differ from the album artwork.</div></div></div>
+      <div class="formGrid" style="margin-top:16px">
+        ${field("Title","songTitle",t.title)}
+        <div class="field full"><label>Artists</label><div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">${artistPickerHtml("songArtists",artistIdsForTrack(t))}</div><button class="secondary small" id="newArtistInline" title="Create artist">${uiIcon("plus")}</button></div><div class="help" style="margin-top:6px">Select multiple artists. Example: Ye, Ty Dolla $ign.</div></div>
+        <div class="field"><label>Album</label><div style="display:flex;gap:6px"><select id="songAlbum"><option value="">None</option>${albumOptions(t.albumId)}</select><button class="secondary small" id="newAlbumInline">${uiIcon("plus")}</button></div></div>
+
+        ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
+        <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
+        <div class="field full"><label>Lyrics</label><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Line breaks are preserved when pasting. Credits and the song artist list can contain multiple names.</div></div>
+        <div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","credProducer",creditList(t.credits,"producer"))}${field("Songwriter(s)","credSongwriter",creditList(t.credits,"songwriter"))}${field("Composer(s)","credComposer",creditList(t.credits,"composer"))}${field("Publisher(s)","credPublisher",creditList(t.credits,"publisher"))}</div></div>
+      </div><div class="modalFoot"><button class="secondary" id="cancelEdit">Cancel</button><button class="primary" id="saveEdit">Save changes</button></div>`;
+  }
+  function bindTrackEditorEvents(m,id){
+    const t=trackById(id);let newCover=t.cover||albumById(t.albumId)?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
+    $("#closeModal").onclick=()=>closeModal();$("#cancelEdit").onclick=()=>closeModal();
+    $("#songCoverBtn").onclick=()=>imagePicker(newCover,d=>{newCover=d;const el=$("#editCover");if(d)el.outerHTML=`<img id="editCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`;markDirty()});
+    $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
+    $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
+    $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection("songArtists",ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#saveEdit").onclick=async()=>{
+      const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
+      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
+      if(album){if(!album.cover&&newCover)album.cover=newCover;}
+      await save();closeModal(true);renderCurrentViewWithoutScroll();toast("Song updated.");
+    };
+  }
+
+  function field(label,id,value){return `<div class="field"><label>${esc(label)}</label><input id="${id}" value="${esc(value)}"></div>`}
+
+  async function bulkEdit(tracks){
+    if(!tracks.length)return;
+    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label class="bulkFieldToggle"><input id="applyArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set artists</span></label>${artistPickerHtml("bulkArtists",[])} </div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbum" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album</span></label><select id="bulkAlbum"><option value="">None</option>${albumOptions()}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbumArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album artists</span></label>${artistPickerHtml("bulkAlbumArtists",[])}</div><div class="field"><label class="bulkFieldToggle"><input id="applyGenre" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set genre</span></label><input id="bulkGenre"></div><div class="field"><label class="bulkFieldToggle"><input id="applyYear" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set year</span></label><input id="bulkYear"></div><div class="field"><label class="bulkFieldToggle"><input id="applyExplicit" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Explicit</span></label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyCover" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Apply same artwork</span></label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
+    bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
+    $("#bulkSave").onclick=async()=>{
+      const bulkArtistIds=$("#applyArtist").checked?readArtistPicker("bulkArtists"):null;const bulkAlbumArtistIds=$("#applyAlbumArtist").checked?readArtistPicker("bulkAlbumArtists"):null;
+      for(const t of tracks){const applyAlbum=$("#applyAlbum").checked;const album=applyAlbum?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(applyAlbum){t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;if(album&&!t.cover&&album.cover)t.cover=album.cover;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
+      await save();state.selected=[];closeModal(true);renderCurrentViewWithoutScroll();toast("Bulk changes applied.");
+    };
+  }
+  function bulkPlay(tracks){playQueue(tracks.filter(t=>state.selected.includes(t.id)),0)}
+  function bulkAddPlaylist(ids){
+    const tracks=ids.map(trackById).filter(Boolean);if(!tracks.length)return;
+    if(!state.playlists.length){editPlaylist(null, {prefillTracks:ids});return}
+    setModal(`<div class="modalHead"><h2>Add ${tracks.length} songs to a playlist</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>${state.playlists.map(p=>`<button class="secondary" data-plid="${p.id}" style="width:100%;text-align:left;margin:5px 0">${esc(p.name)}<span style="float:right">${tracks.filter(t=>p.trackIds.includes(t.id)).length}/${tracks.length}</span></button>`).join("")}<div class="modalFoot"><button class="secondary" id="cancelBulkPl">Cancel</button></div>`);
+    $("#closeModal").onclick=()=>closeModal();$("#cancelBulkPl").onclick=()=>closeModal();$$("#modal [data-plid]").forEach(b=>b.onclick=async()=>{const p=playlistById(b.dataset.plid);for(const t of tracks)if(!p.trackIds.includes(t.id))p.trackIds.push(t.id);await save();closeModal(true);toast(`Added ${tracks.length} songs to ${p.name}`);renderCurrentViewWithoutScroll()});
+  }
+
+  function albumModalHtml(a,opts={}){
+    const selectedArtists=artistIdsForAlbum(a).length?artistIdsForAlbum(a):(opts.artistIds||((opts.artistId)?[opts.artistId]:[])); const cover=a?.cover;
+    return `<div class="modalHead"><h2>${a?"Edit album":"Create album"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="modalSection"><div class="coverEdit">${cover?`<img id="entityCover" src="${cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button><div class="help">New songs inherit this album's artwork. Changing the album artists updates every song in this album.</div></div></div></div><div class="formGrid"><div class="field full"><label>Album title</label><input id="entityTitle" value="${esc(a?.title||"")}" placeholder="Album name"></div><div class="field full"><label>Artists</label><div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">${artistPickerHtml("entityArtists",selectedArtists)}</div><button class="secondary small" id="entityNewArtist" title="Create artist">${uiIcon("plus")}</button></div><div class="help" style="margin-top:6px">Select multiple artists. Example: YS, Kanye West, Ty Dolla $ign.</div></div>${field("Year","entityYear",a?.year||"")}${field("Genre","entityGenre",a?.genre||"")}${field("Label","entityLabel",a?.label||"")}<div class="field full"><label>Description</label><textarea id="entityDescription">${esc(a?.description||"")}</textarea></div><div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","entityProducer",creditList(a?.credits,"producer"))}${field("Songwriter(s)","entitySongwriter",creditList(a?.credits,"songwriter"))}${field("Composer(s)","entityComposer",creditList(a?.credits,"composer"))}${field("Publisher(s)","entityPublisher",creditList(a?.credits,"publisher"))}${field("Copyright","entityCopyright",creditList(a?.credits,"copyright"))}</div></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteAlbum">Delete album</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create album"}</button></div>`;
+  }
+  function editAlbum(id,opts={}){
+    const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
+    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);target.cover=cover;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(cover)t.cover=cover;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);toast(a?"Album updated.":"Album created.")};
+    if(a)$("#deleteAlbum").onclick=async()=>{if(!confirm(`Delete album "${a.title}"? Songs are kept in your library.`))return;state.albums=state.albums.filter(x=>x.id!==a.id);for(const t of state.tracks){if(t.albumId===a.id){t.albumId=null;t.album=NONE_LABEL;t.albumArtistId=null;t.albumArtist=NONE_LABEL}}await save(true);closeModal(true);state.detail=null;setView("albums");toast("Album deleted.")}
+  }
+
+  function artistModalHtml(a){return `<div class="modalHead"><h2>${a?"Edit artist":"Create artist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${a?.image?`<img id="entityCover" src="${a.image}" alt="" style="border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose profile picture</button></div></div><div class="formGrid" style="margin-top:16px">${field("Artist name","entityTitle",a?.name||"")}${field("Label","entityLabel",a?.label||"")}${field("Founded / active year","entityYear",a?.year||"")}${field("Website","entityWebsite",a?.website||"")}<div class="field full"><label>Genres</label><input id="entityGenres" value="${esc((a?.genres||[]).join(", "))}" placeholder="Pop, Hip-Hop"></div><div class="field full"><label>Bio</label><textarea id="entityBio">${esc(a?.bio||"")}</textarea></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteArtist">Delete artist</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create artist"}</button></div>`}
+  function editArtist(id,opts={}){
+    const a=id?artistById(id):null;let img=a?.image||null;setModal(artistModalHtml(a));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(img,d=>{img=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`;markDirty()});
+    $("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim();if(!name){toast("Give the artist a name.");return}let target=a;if(!target){target={id:uid(),name:"",image:null,bio:"",genres:[],website:"",label:"",year:""};state.artists.push(target)}target.name=name;target.image=img;target.label=$("#entityLabel").value;target.year=$("#entityYear").value;target.website=$("#entityWebsite").value;target.genres=$("#entityGenres").value.split(",").map(x=>x.trim()).filter(Boolean);target.bio=$("#entityBio").value;for(const t of state.tracks){if(t.artistId===target.id)t.artist=target.name;if(t.albumArtistId===target.id)t.albumArtist=target.name}await save();closeModal(true);if(opts.returnTo?.type==="track")editTrack(opts.returnTo.id);else if(opts.returnTo?.type==="album")editAlbum(opts.returnTo.id,{artistIds:[target.id]});else showArtist(target.id);toast(a?"Artist updated.":`Artist ${name} created.`)};
+    if(a)$("#deleteArtist").onclick=async()=>{if(confirm(`Delete artist "${a.name}"? Songs stay in your library.`)){state.artists=state.artists.filter(x=>x.id!==a.id);await save();closeModal(true);setView("artists")}}
+  }
+
+  function playlistModalHtml(p){return `<div class="modalHead"><h2>${p?"Edit playlist":"New playlist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${p?.cover?`<img id="entityCover" src="${p.cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button></div></div><div class="formGrid" style="margin-top:16px">${field("Name","entityTitle",p?.name||"")}<div class="field"><label>Style / mood</label><input id="entityLabel" value="${esc(p?.label||"")}" placeholder="Workout, favorites..."></div><div class="field full"><label>Description</label><textarea id="entityDescription">${esc(p?.description||"")}</textarea></div></div><div class="modalFoot"><button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${p?"Save changes":"Create playlist"}</button></div>`}
+  function editPlaylist(id,opts={}){
+    const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
+
+  function openContext(x,y,id,kind="song"){
+    const m=$("#contextMenu");
+    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
+    m.classList.add("show");
+    const rect=m.getBoundingClientRect(),pad=8;
+    m.style.left=Math.max(pad,Math.min(x,innerWidth-rect.width-pad))+"px";
+    m.style.top=Math.max(pad,Math.min(y,innerHeight-rect.height-pad))+"px";
+    $$("\#contextMenu button").forEach(b=>b.onclick=async()=>{
+      const a=b.dataset.a;
+      m.classList.remove("show");
+      if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}
+      if(a==="like")toggleLike(id);
+      if(a==="playlist")bulkAddPlaylist([id]);
+      if(a==="lyrics")showLyrics(id);
+      if(a==="edit")editTrack(id);
+      if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}
+      if(a==="savePreset")exportPreset("songs",[id]);
+      if(a==="download")downloadTrack(id);
+    })
+  }
+  document.addEventListener("click",e=>{if(!e.target.closest("#contextMenu")&&!e.target.closest(".more-row"))$("#contextMenu").classList.remove("show")});
+
+  function showLyrics(id){const t=trackById(id);if(!t)return;$("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverHtml(t)}</div><div><h2 class="viewTitle">${esc(t.title)}</h2><div class="subtle">${esc(artistName(t))} • ${esc(albumName(t))}</div><div class="entityActions"><button class="primary" id="playLyrics">${uiIcon("play")} Play</button><button class="secondary" id="editLyrics">${uiIcon("edit")} Edit song</button></div></div></div><div class="lyricsPanel">${esc(t.lyrics||"No lyrics saved for this song yet.")}</div>`;$("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id)}
+
+
+  function ensureAudioGraph(){
+    if(audioCtx)return;
+    try{
+      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      audioSource=audioCtx.createMediaElementSource(audio);
+      eqNodes={bass:audioCtx.createBiquadFilter(),mid:audioCtx.createBiquadFilter(),treble:audioCtx.createBiquadFilter(),gain:audioCtx.createGain(),compressor:audioCtx.createDynamicsCompressor(),output:audioCtx.createGain()};
+      eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.72;
+      eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=950;eqNodes.mid.Q.value=.85;
+      eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.72;
+      eqNodes.compressor.threshold.value=-11;eqNodes.compressor.knee.value=14;eqNodes.compressor.ratio.value=4.2;eqNodes.compressor.attack.value=.003;eqNodes.compressor.release.value=.13;
+      eqNodes.gain.gain.value=1;eqNodes.output.gain.value=.82;
+      audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
+      applyEQ();
+    }catch(e){console.warn("EQ unavailable",e);audioCtx=null;audioSource=null;eqNodes=null}
+  }
+  function setAudioParam(param,value){
+    if(!param)return;
+    try{
+      const now=audioCtx?.currentTime||0;
+      if(typeof param.cancelScheduledValues==="function"){param.cancelScheduledValues(now);param.setTargetAtTime(value,now,.018)}
+      else param.value=value;
+    }catch{try{param.value=value}catch{}}
+  }
+  function applyEQ(){
+    if(!eqNodes)return;
+    const q={bass:0,mid:0,treble:0,gain:0,...(state.settings.eq||{})};
+    const bass=Math.max(-24,Math.min(24,Number(q.bass)||0)),mid=Math.max(-24,Math.min(24,Number(q.mid)||0)),treble=Math.max(-24,Math.min(24,Number(q.treble)||0)),userGain=Math.max(-12,Math.min(12,Number(q.gain)||0));
+    setAudioParam(eqNodes.bass.gain,bass);setAudioParam(eqNodes.mid.gain,mid);setAudioParam(eqNodes.treble.gain,treble);
+    // Weight bass compensation more heavily because the lowshelf can add substantial
+    // energy to the signal. This reduces clipping risk without using a full-band compressor.
+    const positiveBoost=(Math.max(0,bass)*.42)+(Math.max(0,mid)*.22)+(Math.max(0,treble)*.18);
+    setAudioParam(eqNodes.gain.gain,Math.pow(10,(userGain-Math.min(18,positiveBoost))/20));
+    const compressorOn=q.compressor===true;
+    if(eqNodes.compressor){
+      setAudioParam(eqNodes.compressor.ratio,compressorOn?4.2:1);
+      setAudioParam(eqNodes.compressor.threshold,compressorOn?-11:0);
+    }
+    setAudioParam(eqNodes.output.gain,.82);
+  }
+  // ============================================================
+  // SOUND PRESETS — edit this section to add/remove presets
+  // ============================================================
+  // Format:
+  //   presetId:{bass:X,mid:X,treble:X,gain:X},
+  //
+  // Example:
+  //   myPreset:{bass:8,mid:-2,treble:5,gain:-2},
+  //
+  // After adding it here, also add ["myPreset","My Preset"] to
+  // the options array inside openEQ() below.
+  const EQ_PRESETS={
+    flat:{bass:0,mid:0,treble:0,gain:0},
+    bass:{bass:24,mid:-2,treble:2,gain:1}
+  };
+  function openEQ(){
+    ensureAudioGraph();try{const p=audioCtx?.resume();if(p?.catch)p.catch(()=>{})}catch{}
+    const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
+    if(!EQ_PRESETS[q.preset])q.preset="flat";
+    q.compressor=q.compressor===true;
+    // Add matching entries here when you create new presets above.
+    const options=[["flat","Flat"],["bass","Bass"]];
+    setModal(`
+      <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${options.map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
+      <div class="formGrid" style="margin-top:14px">
+        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-24" max="24" value="${q.bass}" step="1" aria-label="Bass"></div>
+        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-24" max="24" value="${q.mid}" step="1" aria-label="Mid"></div>
+        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-24" max="24" value="${q.treble}" step="1" aria-label="Treble"></div>
+        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-12" max="12" value="${q.gain}" step="1" aria-label="Gain"></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;cursor:pointer">
+          <span style="flex:1;min-width:0"><strong>Compressor</strong><small style="display:block;color:#737e8b;margin-top:3px">RECOMMENDED</small></span>
+          <input id="eqCompressor" type="checkbox" ${q.compressor?"checked":""} style="flex:none;margin:0">
+        </label>
+      </div>
+      <div class="help" style="margin-top:10px; color: red;">⚠️WARNING, BE CAREFUL WITH HIGH BASS HIGH VOLUME AND NO COMPRESSOR, THIS CAN DESTROY UR AUDIO DEVICES AND I HIGHLY RECCOMEND USING THE COMPRESSOR, I AM NOT RESPONSIBLE FOR UR DEVICES⚠️</div>
+      <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
+    bindModalDirty();
+    const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset"),compressor=$("#eqCompressor");
+    const update=()=>{
+      if(!bass||!mid||!treble||!gain||!preset||!compressor)return;
+      state.settings.eq={bass:Number(bass.value)||0,mid:Number(mid.value)||0,treble:Number(treble.value)||0,gain:Number(gain.value)||0,preset:preset.value||"flat",compressor:compressor.checked};
+      $("#eqBassLabel").textContent=`Bass ${state.settings.eq.bass} dB`;$("#eqMidLabel").textContent=`Mid ${state.settings.eq.mid} dB`;$("#eqTrebleLabel").textContent=`Treble ${state.settings.eq.treble} dB`;$("#eqGainLabel").textContent=`Gain ${state.settings.eq.gain} dB`;
+      applyEQ();autoSave();
+    };
+    [bass,mid,treble,gain].forEach(el=>{if(!el)return;el.oninput=update;el.onchange=update});
+    compressor.onchange=update;
+    preset.onchange=()=>{const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;bass.value=p.bass;mid.value=p.mid;treble.value=p.treble;gain.value=p.gain;update()};
+    update();
+    $("#closeModal").onclick=()=>closeModal(true);$("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
+  }
+  function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
+  function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a}
+  function u64(v){const a=new Uint8Array(8),dv=new DataView(a.buffer),n=Math.max(0,Math.floor(Number(v)||0));dv.setUint32(0,n>>>0,true);dv.setUint32(4,Math.floor(n/4294967296)>>>0,true);return a}
+  const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0);t[n]=c>>>0}return t})();
+  function crc32(bytes){let c=0xffffffff;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&255]^(c>>>8);return (c^0xffffffff)>>>0}
+  function crc32Update(crc,bytes){let c=crc>>>0;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&255]^(c>>>8);return c>>>0}
+  async function crc32Blob(blob){let c=0xffffffff;for await(const chunk of blob.stream())c=crc32Update(c,chunk);return (c^0xffffffff)>>>0}
+  function guessMime(name){const e=(String(name||'').match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase();return ({mp3:'audio/mpeg',m4a:'audio/mp4',mp4:'audio/mp4',aac:'audio/aac',flac:'audio/flac',wav:'audio/wav',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',webm:'audio/webm',aiff:'audio/aiff',aif:'audio/aiff',alac:'audio/mp4',caf:'audio/x-caf'})[e]||'application/octet-stream'}
+  async function blobToBytes(blob){return new Uint8Array(await blob.arrayBuffer())}
+
+  // ZIP64 headers are used for all new exports. This removes Localify's old
+  // 65,535-entry and 4 GiB ZIP32 limits. Streaming is used when the browser
+  // provides showSaveFilePicker, so large libraries are not built in RAM.
+  function zip64Extra(values){const extra=new Uint8Array(4+8*values.length),dv=new DataView(extra.buffer);dv.setUint16(0,1,true);dv.setUint16(2,8*values.length,true);let o=4;for(const v of values){extra.set(u64(v),o);o+=8}return extra}
+  function zipLocalHeader(nameBytes,crc,size){const extra=zip64Extra([size,size]),a=new Uint8Array(30+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x04034b50,true);dv.setUint16(4,45,true);dv.setUint16(6,0x800,true);dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint32(14,crc>>>0,true);dv.setUint32(18,0xffffffff,true);dv.setUint32(22,0xffffffff,true);dv.setUint16(26,nameBytes.length,true);dv.setUint16(28,extra.length,true);a.set(nameBytes,30);a.set(extra,30+nameBytes.length);return a}
+  function zipCentralHeader(nameBytes,crc,size,offset){const extra=zip64Extra([size,size,offset]),a=new Uint8Array(46+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x02014b50,true);dv.setUint16(4,45,true);dv.setUint16(6,45,true);dv.setUint16(8,0x800,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint16(14,0,true);dv.setUint32(16,crc>>>0,true);dv.setUint32(20,0xffffffff,true);dv.setUint32(24,0xffffffff,true);dv.setUint16(28,nameBytes.length,true);dv.setUint16(30,extra.length,true);dv.setUint16(32,0,true);dv.setUint16(34,0,true);dv.setUint16(36,0,true);dv.setUint16(38,0,true);dv.setUint32(42,0xffffffff,true);a.set(nameBytes,46);a.set(extra,46+nameBytes.length);return a}
+  function zipEnd(count,cdSize,cdOffset){const eocd64Offset=cdOffset+cdSize,body=new Uint8Array(56),dv=new DataView(body.buffer);dv.setUint32(0,0x06064b50,true);dv.setUint32(4,44,true);dv.setUint16(8,45,true);dv.setUint16(10,45,true);dv.setUint32(12,0,true);dv.setUint32(16,0,true);body.set(u64(count),24);body.set(u64(count),32);body.set(u64(cdSize),40);body.set(u64(cdOffset),48);const locator=new Uint8Array(20),ldv=new DataView(locator.buffer);ldv.setUint32(0,0x07064b50,true);ldv.setUint32(4,0,true);locator.set(u64(eocd64Offset),8);ldv.setUint32(16,1,true);const classic=new Uint8Array(22),ev=new DataView(classic.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,0xffff,true);ev.setUint16(10,0xffff,true);ev.setUint32(12,0xffffffff,true);ev.setUint32(16,0xffffffff,true);ev.setUint16(20,0,true);return new Uint8Array([...body,...locator,...classic])}
+  function downloadBlob(blob,name){
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=name||"Localify.localify";a.style.display="none";
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
+  function id3SyncSafe(n){
+    const x=Math.max(0,Number(n)||0);
+    return new Uint8Array([(x>>21)&127,(x>>14)&127,(x>>7)&127,x&127]);
+  }
+  function id3U32(n){
+    const x=Math.max(0,Number(n)||0);
+    return new Uint8Array([(x>>>24)&255,(x>>>16)&255,(x>>>8)&255,x&255]);
+  }
+  function id3Frame(id,body){
+    const enc=new TextEncoder(),name=enc.encode(id),b=body instanceof Uint8Array?body:new Uint8Array(body);
+    const out=new Uint8Array(10+b.length);
+    out.set(name.slice(0,4),0);out.set(id3SyncSafe(b.length),4);out.set([0,0],8);out.set(b,10);
+    return out;
+  }
+  function id3TextFrame(id,value){
+    const text=String(value??"").trim();if(!text)return null;
+    const bytes=new TextEncoder().encode(text),body=new Uint8Array(1+bytes.length);
+    body[0]=3;body.set(bytes,1);return id3Frame(id,body);
+  }
+  function id3Txxx(description,value){
+    const d=String(description||"").trim(),v=String(value||"").trim();if(!v)return null;
+    const enc=new TextEncoder(),db=enc.encode(d),vb=enc.encode(v),body=new Uint8Array(1+db.length+1+vb.length);
+    body[0]=3;body.set(db,1);body[1+db.length]=0;body.set(vb,2+db.length);return id3Frame("TXXX",body);
+  }
+  async function id3Apic(imageBlob){
+    const bytes=new Uint8Array(await imageBlob.arrayBuffer()),mime=imageBlob.type||"image/jpeg",enc=new TextEncoder(),mb=enc.encode(mime);
+    const body=new Uint8Array(1+mb.length+1+1+1+bytes.length);
+    body[0]=3;body.set(mb,1);body[1+mb.length]=0;body[2+mb.length]=3;body[3+mb.length]=0;body.set(bytes,4+mb.length);
+    return id3Frame("APIC",body);
+  }
+  async function coverBlobForTrack(t){
+    let url=knownCoverUrlForTrack(t)||t?.cover||albumById(t?.albumId)?.cover||"";
+    if(!url){try{url=await resolveGithubAlbumCover(t)}catch{}}
+    if(!url)return null;
+    try{
+      if(/^data:image\\//i.test(url)){
+        const mime=url.match(/^data:([^;,]+)[;,]/i)?.[1]||"image/jpeg",raw=url.split(",")[1]||"",bin=atob(raw),bytes=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+        return new Blob([bytes],{type:mime});
+      }
+      const r=await fetch(url,{cache:"no-store",mode:"cors",credentials:"omit"});
+      if(!r.ok)return null;
+      return await r.blob();
+    }catch{return null}
+  }
+  async function mp3WithLocalifyTags(blob,t){
+    const frames=[],lyrics=String(t?.lyrics||"").trim(),album=albumById(t?.albumId),enc=new TextEncoder();
+    const artists=artistNamesForTrack(t).filter(x=>x&&x!==NONE_LABEL).join(", ");
+    const albumArtist=albumArtistName(t),title=displayTrackTitle(t,true);
+    const year=String(t?.year||album?.year||"").trim(),genre=String(t?.genre||album?.genre||"").trim();
+    const tn=trackNo(t),dn=discNo(t),credits=t?.credits||album?.credits||{};
+    for(const [id,value] of [
+      ["TIT2",title],["TPE1",artists],["TPE2",albumArtist],["TALB",album?.title||"N/A"],
+      ["TDRC",year],["TCON",genre],["TRCK",tn!=null?String(tn):""],["TPOS",dn>1?String(dn):""],
+      ["TCOM",Array.isArray(credits.composer)?credits.composer.join(", "):""],
+      ["TPUB",Array.isArray(credits.publisher)?credits.publisher.join(", "):""],
+      ["TCOP",Array.isArray(credits.copyright)?credits.copyright.join(", "):""]
+    ]){const frame=id3TextFrame(id,value);if(frame)frames.push(frame)}
+    for(const [d,v] of [
+      ["PRODUCER",Array.isArray(credits.producer)?credits.producer.join(", "):""],
+      ["SONGWRITER",Array.isArray(credits.songwriter)?credits.songwriter.join(", "):""],
+      ["LABEL",Array.isArray(credits.label)?credits.label.join(", "):""]
+    ]){const frame=id3Txxx(d,v);if(frame)frames.push(frame)}
+    if(lyrics){
+      const lb=enc.encode(lyrics),lang=enc.encode("eng"),body=new Uint8Array(1+3+1+lb.length);
+      body[0]=3;body.set(lang,1);body[4]=0;body.set(lb,5);frames.push(id3Frame("USLT",body));
+    }
+    const cover=await coverBlobForTrack(t);if(cover)frames.push(await id3Apic(cover));
+    const total=frames.reduce((n,x)=>n+x.length,0),header=new Uint8Array(10);
+    header.set([73,68,51,4,0,0],0);header.set(id3SyncSafe(total),6);
+    return new Blob([header,...frames,blob],{type:"audio/mpeg"});
+  }
+  function safeDownloadName(t){
+    const artist=artistNamesForTrack(t).filter(x=>x&&x!==NONE_LABEL).join(", "),title=displayTrackTitle(t,true)||"Unknown song";
+    return (artist?artist+" - "+title:title).replace(/[\\/:*?"<>|]+/g,"-").replace(/\\s+/g," ").trim().slice(0,180)||"Localify song";
+  }
+  async function downloadTrack(id){
+    const t=trackById(id);if(!t)return;
+    const blob=await ensureTrackBlob(t);
+    if(!isBlobLike(blob)){toast("This song's audio is not saved on this device.");return}
+    try{
+      const ext=(t.fileName?.match(/\\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase()||"mp3";
+      let out=blob,name=safeDownloadName(t);
+      if(ext==="mp3"){
+        await flushSave(false);
+        out=await mp3WithLocalifyTags(blob,t);name+=".mp3";
+        downloadBlob(out,name);toast("MP3 downloaded with metadata and cover art.");
+      }else{
+        name+="."+ext;downloadBlob(out,name);
+        toast("Downloaded the original audio. Full MP3 tags are applied when the source is MP3.");
+      }
+    }catch(e){console.error("Localify song download failed",e);toast("Could not download this song.");}
+  }
+
+  async function makeZip(entries){const chunks=[],central=[];let offset=0;const enc=new TextEncoder();for(const entry of entries){const nb=enc.encode(entry.name),data=entry.bytes instanceof Uint8Array?entry.bytes:new Uint8Array(entry.bytes),crc=crc32(data),size=data.length,h=zipLocalHeader(nb,crc,size);chunks.push(h,data);central.push(zipCentralHeader(nb,crc,size,offset));offset+=h.length+size}const cdOffset=offset;let cdSize=0;for(const c of central){chunks.push(c);cdSize+=c.length}chunks.push(zipEnd(central.length,cdSize,cdOffset));return new Blob(chunks,{type:'application/zip'})}
+  function zip64Value(extra,which){let pos=0;while(pos+4<=extra.length){const id=extra[pos]|(extra[pos+1]<<8),len=extra[pos+2]|(extra[pos+3]<<8),start=pos+4,end=start+len;if(end>extra.length)break;if(id===1){let q=start;for(const key of ['usize','csize','offset']){if(q+8>end)break;const dv=new DataView(extra.buffer,extra.byteOffset+q,8),v=dv.getUint32(0,true)+dv.getUint32(4,true)*4294967296;if(key===which)return v;q+=8}}pos=end}return null}
+  async function parseZip(file){
+    // Read only the ZIP footer + central directory first. Audio data stays as
+    // lazy File slices instead of loading the entire preset into RAM.
+    if(!file||typeof file.size!=='number')throw Error('Invalid preset file.');
+    const tailSize=Math.min(file.size,65557);
+    const tailStart=file.size-tailSize;
+    const tail=new Uint8Array(await file.slice(tailStart).arrayBuffer());
+    let eocd=-1;
+    for(let i=tail.length-22;i>=0;i--){if(tail[i]===0x50&&tail[i+1]===0x4b&&tail[i+2]===0x05&&tail[i+3]===0x06){eocd=i;break}}
+    if(eocd<0)throw Error('Not a Localify ZIP');
+    const eocdView=new DataView(tail.buffer,tail.byteOffset+eocd,22);
+    let count=eocdView.getUint16(10,true),cdSize=eocdView.getUint32(12,true),cdOffset=eocdView.getUint32(16,true);
+    if(count===0xffff||cdOffset===0xffffffff||cdSize===0xffffffff){
+      const locAbs=tailStart+eocd-20;
+      if(locAbs<0)throw Error('Invalid ZIP64 archive');
+      const locBuf=new Uint8Array(await file.slice(locAbs,locAbs+20).arrayBuffer());
+      if(locBuf.length<20||new DataView(locBuf.buffer,locBuf.byteOffset,20).getUint32(0,true)!==0x07064b50)throw Error('Invalid ZIP64 archive');
+      const ldv=new DataView(locBuf.buffer,locBuf.byteOffset,20),zip64Offset=ldv.getUint32(8,true)+ldv.getUint32(12,true)*4294967296;
+      const zBuf=new Uint8Array(await file.slice(zip64Offset,zip64Offset+56).arrayBuffer());
+      if(zBuf.length<56||new DataView(zBuf.buffer,zBuf.byteOffset,56).getUint32(0,true)!==0x06064b50)throw Error('Invalid ZIP64 archive');
+      const zdv=new DataView(zBuf.buffer,zBuf.byteOffset,56);
+      count=zdv.getUint32(32,true)+zdv.getUint32(36,true)*4294967296;
+      cdSize=zdv.getUint32(40,true)+zdv.getUint32(44,true)*4294967296;
+      cdOffset=zdv.getUint32(48,true)+zdv.getUint32(52,true)*4294967296;
+    }
+    if(count<0||cdSize<0||cdOffset<0||cdOffset+cdSize>file.size)throw Error('Invalid ZIP directory.');
+    const central=new Uint8Array(await file.slice(cdOffset,cdOffset+cdSize).arrayBuffer()),dv=new DataView(central.buffer,central.byteOffset,central.byteLength),dec=new TextDecoder();
+    const files=new Map();let pos=0;
+    for(let i=0;i<count;i++){
+      if(pos+46>central.length||dv.getUint32(pos,true)!==0x02014b50)throw Error('Invalid Localify entry');
+      const method=dv.getUint16(pos+10,true),crc=dv.getUint32(pos+16,true),c32=dv.getUint32(pos+20,true),u32v=dv.getUint32(pos+24,true),nameLen=dv.getUint16(pos+28,true),extraLen=dv.getUint16(pos+30,true),commentLen=dv.getUint16(pos+32,true),off32=dv.getUint32(pos+42,true);
+      const recordEnd=pos+46+nameLen+extraLen+commentLen;if(recordEnd>central.length)throw Error('Invalid Localify entry');
+      const name=dec.decode(central.slice(pos+46,pos+46+nameLen)),extra=central.slice(pos+46+nameLen,pos+46+nameLen+extraLen);
+      const usize=u32v===0xffffffff?zip64Value(extra,'usize'):u32v,csize=c32===0xffffffff?zip64Value(extra,'csize'):c32,localOffset=off32===0xffffffff?zip64Value(extra,'offset'):off32;
+      if(usize==null||csize==null||localOffset==null)throw Error('Invalid ZIP64 entry');
+      const lh=new Uint8Array(await file.slice(localOffset,localOffset+30).arrayBuffer());
+      if(lh.length<30||new DataView(lh.buffer,lh.byteOffset,30).getUint32(0,true)!==0x04034b50)throw Error('Invalid Localify entry');
+      const lhdv=new DataView(lh.buffer,lh.byteOffset,30),ln=lhdv.getUint16(26,true),le=lhdv.getUint16(28,true),dataStart=localOffset+30+ln+le;
+      if(dataStart<0||dataStart+csize>file.size)throw Error('Corrupt Localify entry: '+name);
+      if(files.has(name))throw Error('Corrupt Localify archive: duplicate entry '+name);
+      files.set(name,{blob:file.slice(dataStart,dataStart+csize),method,size:usize,crc:crc>>>0});
+      pos=recordEnd;
+    }
+    return files;
+  }
+  async function zipEntryBytes(entry){
+    if(!entry)throw Error('Missing Localify archive entry.');
+    let data;
+    if(entry.method===0){data=new Uint8Array(await entry.blob.arrayBuffer());}
+    else if(entry.method===8&&'DecompressionStream' in window){const stream=entry.blob.stream().pipeThrough(new DecompressionStream('deflate-raw'));data=new Uint8Array(await new Response(stream).arrayBuffer());}
+    else throw Error('Unsupported ZIP compression method.');
+    if(data.length!==entry.size)throw Error('Corrupt Localify archive: size mismatch.');
+    if(crc32(data)!==entry.crc)throw Error('Corrupt Localify archive: checksum mismatch.');
+    return data;
+  }
+  async function zipEntryBlob(entry){
+    if(!entry)throw Error('Missing Localify archive entry.');
+    if(entry.method===0){if(entry.blob.size!==entry.size)throw Error('Corrupt Localify archive: size mismatch.');return entry.blob;}
+    return new Blob([await zipEntryBytes(entry)]);
+  }
+
+  function presetLabel(k){return ({full:'Everything',artists:'Artists',albums:'Albums',songs:'Songs',playlists:'Playlists',liked:'Liked Songs',recent:'Recently Played',settings:'Settings'})[k]||'Preset'}
+  function presetKey(v){return String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+  function nonPlaceholderText(value){
+    const s=String(value??"").trim();
+    return s&&!/^(?:unknown|unknown artist|unknown album|none|null|undefined)$/i.test(s)?s:"";
+  }
+  function findArtistIdByName(name){
+    const wanted=nonPlaceholderText(name);
+    if(!wanted)return null;
+    const p=presetKey(wanted);
+    return state.artists.find(a=>presetKey(artistDisplayName(a))===p)?.id||null;
+  }
+  function ensureArtistIdByName(name){
+    const wanted=nonPlaceholderText(name);
+    if(!wanted)return null;
+    return findArtistIdByName(wanted)||getOrCreateArtist(wanted).id;
+  }
+  function repairAllLibraryMetadata(){
+    let changed=false;
+    for(const a of state.artists){
+      const before=a.name;
+      if(!nonPlaceholderText(a.name)){a.name="Unknown Artist";if(before!==a.name)changed=true;}
+      if(!Array.isArray(a.genres))a.genres=[]; 
+    }
+    for(const a of state.albums){
+      const oldIds=artistIdsForAlbum(a);
+      let ids=oldIds.filter(id=>artistById(id));
+      if(!ids.length)ids=importedNameList(a?.artists||a?.artistNames||a?.artist||a?.albumArtist).map(ensureArtistIdByName).filter(Boolean);
+      if(JSON.stringify(ids)!==JSON.stringify(oldIds)){applyArtistIds(a,ids);changed=true;}
+    }
+    for(const t of state.tracks){
+      const oldTitle=t.title;
+      if(!nonPlaceholderText(t.title)){
+        const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
+        if(fallback){t.title=fallback;changed=true;}
+      }
+      const oldArtistIds=artistIdsForTrack(t);
+      let ids=oldArtistIds.filter(id=>artistById(id));
+      if(!ids.length){
+        const names=importedNameList(t?.artists||t?.artistNames||t?.artist);
+        for(const name of names){const id=ensureArtistIdByName(name);if(id)ids.push(id);}
+        if(!ids.length){
+          for(const name of importedNameList(t?.albumArtist)) {const id=ensureArtistIdByName(name);if(id)ids.push(id);}
+        }
+      }
+      ids=[...new Set(ids)];
+      if(JSON.stringify(ids)!==JSON.stringify(oldArtistIds)){applyArtistIds(t,ids);changed=true;}
+      const oldAlbumId=t.albumId;
+      let album=t.albumId?albumById(t.albumId):null;
+      const albumTitle=nonPlaceholderText(t.album);
+      if(!album&&albumTitle){
+        album=state.albums.find(a=>presetKey(a.title)===presetKey(albumTitle))||null;
+        if(album){t.albumId=album.id;changed=true;}
+      }
+      if(album){
+        if(t.album!==album.title){t.album=album.title;changed=true;}
+        const aaOld=idsOf(t,"albumArtistIds","albumArtistId");
+        const aa=aaOld.filter(id=>artistById(id));
+        if(!aa.length)aa.push(...artistIdsForAlbum(album).filter(id=>artistById(id)));
+        if(JSON.stringify(aa)!==JSON.stringify(aaOld)){applyAlbumArtistIds(t,aa);changed=true;}
+      }else if(albumTitle){
+        const albumArtists=idsOf(t,"albumArtistIds","albumArtistId").filter(id=>artistById(id));
+        const albumArtistNames=importedNameList(t?.albumArtist);
+        const fallbackIds=albumArtists.length?albumArtists:albumArtistNames.map(ensureArtistIdByName).filter(Boolean);
+        const albumObj={id:uid(),title:albumTitle,artistIds:[...new Set(fallbackIds)],artistId:fallbackIds[0]||null,cover:t.cover||null,year:t.year||"",genre:t.genre||"",label:t.label||"",description:"",credits:normalizeCredits(t.credits||{})};
+        state.albums.push(albumObj);t.albumId=albumObj.id;changed=true;
+      }
+      const validArtistText=artistNamesForTrack(t).join(", ");
+      if(nonPlaceholderText(validArtistText)&&t.artist!==validArtistText){t.artist=validArtistText;changed=true;}
+      if(t.albumId){
+        const a=albumById(t.albumId);
+        if(a){
+          const albumArtistText=albumArtistName(t);
+          if(nonPlaceholderText(albumArtistText)&&t.albumArtist!==albumArtistText){t.albumArtist=albumArtistText;changed=true;}
+        }
+      }
+    }
+    return changed;
+  }
+
+  function cloneEntity(o){const x=JSON.parse(JSON.stringify(o||{}));delete x.blob;delete x._blobDirty;return x}
+  function importedNameList(value){
+    if(Array.isArray(value))return value.flatMap(v=>typeof v==="string"?v.split(","):[]).map(v=>v.trim()).filter(Boolean);
+    if(typeof value==="string")return value.split(",").map(v=>v.trim()).filter(Boolean);
+    return [];
+  }
+  function findArtistByName(name){
+    const key=String(name||"").trim().toLocaleLowerCase();
+    if(!key)return null;
+    return state.artists.find(a=>artistDisplayName(a).toLocaleLowerCase()===key)||null;
+  }
+  function resolveImportedArtistIds(src,artistMap){
+    const ids=artistIdsForTrack(src).map(id=>artistMap.get(id)||id).filter(id=>artistById(id));
+    if(ids.length)return [...new Set(ids)];
+    const names=importedNameList(src?.artists||src?.artistNames||src?.artist);
+    const out=[];
+    for(const name of names){
+      const existing=findArtistByName(name);
+      if(existing)out.push(existing.id);
+      else{
+        const a=getOrCreateArtist(name);
+        out.push(a.id);
+      }
+    }
+    return [...new Set(out)];
+  }
+  function repairImportedTrackMetadata(t){
+    if(!t)return t;
+    if(!String(t.title||"").trim()){
+      const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
+      if(fallback)t.title=fallback;
+    }
+    if(!Array.isArray(t.artistIds)||!t.artistIds.length){
+      const ids=resolveImportedArtistIds(t,new Map());
+      if(ids.length)applyArtistIds(t,ids);
+    }else{
+      applyArtistIds(t,t.artistIds.filter(id=>artistById(id)));
+    }
+    const names=artistNamesForTrack(t);
+    t.artist=names.join(", ")||String(t.artist||"").trim();
+    if(!t.albumId&&String(t.album||"").trim()){
+      const key=presetKey(t.album);
+      const candidate=state.albums.find(a=>presetKey(a.title)===key);
+      if(candidate)t.albumId=candidate.id;
+    }
+    if(t.albumId){
+      const a=albumById(t.albumId);
+      if(a){
+        t.album=a.title;
+        const aa=idsOf(t,"albumArtistIds","albumArtistId");
+        if(aa.length)applyAlbumArtistIds(t,aa.filter(id=>artistById(id)));
+        else if(artistIdsForAlbum(a).length)applyAlbumArtistIds(t,artistIdsForAlbum(a));
+        t.albumArtist=albumArtistName(t);
+      }
+    }
+    return t;
+  }
+  function buildPresetScope(kind,ids=[]){const set=new Set(ids||[]);let artists=[],albums=[],tracks=[],playlists=[],liked=[],recent=[],settings=null;if(kind==='full'){artists=[...state.artists];albums=[...state.albums];tracks=[...state.tracks];playlists=[...state.playlists];liked=[...state.liked];recent=[...state.recent];settings=state.settings}else if(kind==='artists'){artists=state.artists.filter(a=>set.has(a.id))}else if(kind==='albums'){albums=state.albums.filter(a=>set.has(a.id));tracks=state.tracks.filter(t=>set.has(t.albumId))}else if(kind==='songs'){tracks=state.tracks.filter(t=>set.has(t.id));albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='playlists'){playlists=state.playlists.filter(p=>set.has(p.id));const tid=new Set(playlists.flatMap(p=>Array.isArray(p.trackIds)?p.trackIds:[]));tracks=state.tracks.filter(t=>tid.has(t.id));albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='liked'){liked=state.liked.filter(id=>trackById(id));tracks=liked.map(trackById).filter(Boolean);albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='recent'){recent=state.recent.filter(id=>trackById(id));tracks=recent.map(trackById).filter(Boolean);albums=state.albums.filter(a=>tracks.some(t=>t.albumId===a.id))}else if(kind==='settings')settings=state.settings;const aid=new Set(artists.map(a=>a.id));for(const a of albums)for(const id of artistIdsForAlbum(a))aid.add(id);for(const t of tracks){for(const id of artistIdsForTrack(t))aid.add(id);for(const id of (Array.isArray(t.albumArtistIds)?t.albumArtistIds:[]))aid.add(id)}if(kind!=='artists')artists=state.artists.filter(a=>aid.has(a.id));return {artists,albums,tracks,playlists,liked,recent,settings}}
+  async function collectPresetMeta(kind,ids){
+    const scope=buildPresetScope(kind,ids),tracks=[],missing=[];
+    for(const src of scope.tracks){
+      const t=cloneEntity(src);
+      t.hasAudio=false;t.audioFile=null;t.audioSize=0;
+      const blob=await ensureTrackBlob(src);
+      if(isBlobLike(blob)){
+        const ext=(src.fileName?.match(/\.[^.]+$/)||['.bin'])[0];
+        t.hasAudio=true;
+        t.audioFile='audio/'+src.id+ext;
+        t.audioSize=blob.size;
+      }else{
+        missing.push(src.title||src.fileName||src.id||'Unknown song');
+      }
+      tracks.push(t);
+    }
+    if(missing.length){
+      const shown=missing.slice(0,5).map(x=>'“'+String(x).slice(0,80)+'”').join(', ');
+      const more=missing.length>5?' and '+(missing.length-5)+' more':'';
+      throw new Error('Cannot export this preset because '+missing.length+' song'+(missing.length===1?' is':'s are')+' missing its audio on this device: '+shown+more+'. Re-import the missing audio first.');
+    }
+    return {version:14,schema:'localify-preset-v2',presetKind:kind,presetName:presetLabel(kind),exportedAt:new Date().toISOString(),portableAudio:true,trackCount:tracks.length,audioTrackCount:tracks.filter(t=>t.hasAudio).length,artists:scope.artists.map(cloneEntity),albums:scope.albums.map(cloneEntity),tracks,playlists:scope.playlists.map(cloneEntity),liked:[...scope.liked],recent:[...scope.recent],settings:scope.settings?JSON.parse(JSON.stringify(scope.settings)):null};
+  }
+  async function writePresetStreaming(handle,manifest){
+    const writable=await handle.createWritable();
+    const enc=new TextEncoder(),mb=enc.encode(JSON.stringify(manifest)),mn=enc.encode("library.json"),mc=crc32(mb),mh=zipLocalHeader(mn,mc,mb.length);
+    let offset=0,central=[];
+    const joinParts=parts=>{
+      const total=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(total);
+      let at=0;
+      for(const p of parts){out.set(p,at);at+=p.length}
+      return out;
+    };
+    try{
+      await writable.write(mh);
+      await writable.write(mb);
+      central.push(zipCentralHeader(mn,mc,mb.length,offset));
+      offset+=mh.length+mb.length;
+      let done=0;
+      for(const t of manifest.tracks){
+        const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
+        if(!isBlobLike(blob))continue;
+        const nb=enc.encode(t.audioFile),size=blob.size,crc=await crc32Blob(blob),h=zipLocalHeader(nb,crc,size);
+        await writable.write(h);
+        for await(const chunk of blob.stream())await writable.write(chunk);
+        central.push(zipCentralHeader(nb,crc,size,offset));
+        offset+=h.length+size;
+        done++;
+        if(done%2===0||done===manifest.tracks.length)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs`);
+      }
+      toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
+      const cdOffset=offset;
+      const centralData=joinParts(central);
+      await writable.write(centralData);
+      await writable.write(zipEnd(central.length,centralData.length,cdOffset));
+      toast(`Exporting ${manifest.presetName}… saving file`);
+      await writable.close();
+      toast(`${manifest.presetName} exported.`);
+      return true;
+    }catch(e){
+      try{await writable.abort()}catch{}
+      throw e;
+    }
+  }
+  async function exportPreset(kind,ids=[]){let handle=null;try{if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:`Localify-${kind}.localify`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});await flushSave(false);const manifest=await collectPresetMeta(kind,ids);if(handle){await writePresetStreaming(handle,manifest);return true}const entries=[{name:'library.json',bytes:new TextEncoder().encode(JSON.stringify(manifest))}];for(const t of manifest.tracks){const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;if(isBlobLike(blob))entries.push({name:t.audioFile,bytes:await blobToBytes(blob)})}downloadBlob(await makeZip(entries),`Localify-${kind}.localify`);toast(`${manifest.presetName} exported.`);return true}catch(e){if(e?.name==='AbortError')return false;console.error(e);toast(e?.message||'Could not export this preset.');return false}}
+  function openPresetExportSelection(kind){const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists},items=lists[kind]||[];setModal(`<div class="modalHead"><h2>Export ${presetLabel(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Choose what to export. Album presets include their connected artists, artist profile pictures/info, and songs. Song and playlist presets include their connected artists and albums.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">${items.length} selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">${items.map(x=>kind==='artists'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName">${esc(x.name)}</span></label>`:kind==='albums'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')}</span></span></label>`:kind==='songs'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistName(x))}</span></span></label>`:`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.name)}</strong> <span class="muted">— ${(x.trackIds||[]).length} songs</span></span></label>`).join('')}</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export preset</button></div>`,{large:true});const refresh=()=>{$('#presetSelectedCount').textContent=`${$$('.presetCheck:checked').length} selected`};$$('.presetCheck').forEach(x=>x.addEventListener('change',refresh));$('#presetSelectAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=true);refresh()};$('#presetClearAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=false);refresh()};$('#closeModal').onclick=()=>closeModal(true);$('#presetCancel').onclick=()=>closeModal(true);$('#presetExport').onclick=async()=>{const ids=$$('.presetCheck:checked').map(x=>x.value);if(!ids.length){toast('Choose at least one item.');return}closeModal(true);await exportPreset(kind,ids)}}
+  function openPresetExportChooser(){const kinds=['full','artists','albums','songs','playlists','liked','recent','settings'];setModal(`<div class="modalHead"><h2>Export preset</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Export one part of your Localify library or everything. Nothing is removed. Artist info and profile pictures travel with albums/songs that use those artists.</div><div style="display:grid;gap:8px;margin-top:16px">${kinds.map(k=>`<button class="secondary btnIcon" data-export-kind="${k}" style="justify-content:flex-start;text-align:left"><span style="min-width:28px">${uiIcon(k==='artists'?'artist':k==='albums'?'album':k==='songs'?'music':k==='playlists'?'playlist':k==='liked'?'heart':k==='recent'?'clock':k==='settings'?'save':'download')}</span><span><strong>${presetLabel(k)}</strong><br><span class="help">${({full:'Everything',artists:'Selected artist profiles, info and pictures',albums:'Selected albums + artists + songs',songs:'Selected songs + artists + albums',playlists:'Selected playlists + songs',liked:'Liked songs list + songs',recent:'Recently played list + songs',settings:'Playback and Localify settings'})[k]}</span></span></button>`).join('')}</div>`,{large:true});$('#closeModal').onclick=()=>closeModal(true);$$('[data-export-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.exportKind;closeModal(true);if(['artists','albums','songs','playlists'].includes(k))openPresetExportSelection(k);else exportPreset(k,[])})}
+  let pendingPresetImport=null;
+  let pendingExpectedPresetKind='';
+  function pickPresetFile(expectedKind=''){const input=$('#bundlePicker');if(!input){toast('Preset import is unavailable.');return}pendingExpectedPresetKind=expectedKind||'';input.value='';input.click()}
+  async function readPresetFile(file){
+    if(!file)throw new Error('No preset file was selected.');
+    if(!file.size)throw new Error('The preset file is empty.');
+    let p,files=null;
+    try{
+      const head=new Uint8Array(await file.slice(0,4).arrayBuffer());
+      if(head[0]===0x50&&head[1]===0x4b&&head[2]===0x03&&head[3]===0x04){
+        files=await parseZip(file);
+        const mf=files.get('library.json');
+        if(!mf)throw new Error('This Localify file is missing library.json.');
+        p=JSON.parse(new TextDecoder().decode(await zipEntryBytes(mf)));
+      }else{
+        let raw;try{raw=await file.arrayBuffer()}catch(e){throw new Error('The preset could not be read. The file may be unavailable or too large for this browser.')}
+        p=JSON.parse(new TextDecoder().decode(raw));
+      }
+    }catch(e){
+      if(e instanceof SyntaxError)throw new Error('The Localify file is damaged or is not valid JSON.');
+      throw e;
+    }
+    if(!p||typeof p!=='object')throw new Error('Invalid Localify preset.');
+    if(!Array.isArray(p.tracks)&&!Array.isArray(p.artists)&&!Array.isArray(p.albums)&&!Array.isArray(p.playlists)&&!p.settings)throw new Error('Invalid Localify preset: no supported library data was found.');
+    p.presetKind=p.presetKind||'full';
+    if(!['full','artists','albums','songs','playlists','liked','recent','settings'].includes(p.presetKind))throw new Error('Unsupported Localify preset type: '+String(p.presetKind)+'.');
+    const missing=[],badPaths=[];
+    if(Array.isArray(p.tracks)){
+      for(const t of p.tracks){
+        if(!t||!t.audioFile)continue;
+        const name=String(t.audioFile);
+        if(name.startsWith('/')||name.includes('..'))badPaths.push(name);
+        else if(!files||!files.has(name))missing.push(String(t.title||t.fileName||t.id||'Unknown song'));
+        else if(Number.isFinite(Number(t.audioSize))&&Number(t.audioSize)>0&&files.get(name).size!==Number(t.audioSize))throw new Error('Audio data for “'+String(t.title||'Unknown song').slice(0,100)+'” is incomplete.');
+      }
+    }
+    if(badPaths.length)throw new Error('This preset contains an invalid audio path.');
+    if(missing.length){
+      const shown=missing.slice(0,5).map(x=>'“'+String(x).slice(0,80)+'”').join(', ');
+      const more=missing.length>5?' and '+(missing.length-5)+' more':'';
+      throw new Error('This preset is incomplete: '+missing.length+' song'+(missing.length===1?' is':'s are')+' missing its audio data: '+shown+more+'.');
+    }
+    return {p,files};
+  }
+  function openPresetImportMode(p,files){pendingPresetImport={p,files};const kind=presetLabel(p.presetKind),setText=({full:'Replace your entire Localify library.',artists:'Delete every artist and replace the artist list with this file.',albums:'Delete every album and replace the album list with this file.',songs:'Delete every song and replace the song list with this file.',playlists:'Delete every playlist and replace the playlist list with this file.',liked:'Replace your liked songs list with this file.',recent:'Replace your recently played list with this file.',settings:'Replace your Localify settings with this file.'})[p.presetKind]||'Replace the data represented by this file.',summary=[['artists',p.artists?.length||0],['albums',p.albums?.length||0],['songs',p.tracks?.length||0],['playlists',p.playlists?.length||0]].filter(x=>x[1]).map(x=>`${x[1]} ${x[0]}`).join(' • ')||'Settings preset';setModal(`<div class="modalHead"><h2>Import ${esc(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="creditsBox" style="margin-top:0"><strong>${esc(p.presetName||kind)}</strong><div class="subtle">${esc(summary)}</div></div><div class="help" style="margin-top:12px">Choose how to import this Localify file.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px"><button class="primary" id="presetAdd">Add file</button><button class="dangerBtn" id="presetSet">Set file</button></div>`);$('#closeModal').onclick=()=>{pendingPresetImport=null;closeModal(true)};$('#presetAdd').onclick=async()=>{const x=pendingPresetImport;pendingPresetImport=null;closeModal(true);await importPresetData(x.p,x.files,'add')};$('#presetSet').onclick=async()=>{const x=pendingPresetImport;pendingPresetImport=null;closeModal(true);if(confirm(`Set ${kind}? This will replace the existing ${kind.toLowerCase()} data in Localify.`))await importPresetData(x.p,x.files,'set')}}
+  async function importPresetFile(file,expectedKind=''){try{const x=await readPresetFile(file);if(expectedKind&&x.p.presetKind!==expectedKind)throw Error(`This file is not an ${presetLabel(expectedKind)} preset.`);openPresetImportMode(x.p,x.files)}catch(e){console.error(e);toast(e?.message||'Could not read that Localify preset.')}finally{pendingExpectedPresetKind='';$('#bundlePicker').value=''}}
+  function findArtistImport(a){return state.artists.find(x=>presetKey(x.name)===presetKey(a.name))||null}
+  function findAlbumImport(a,m){const ids=artistIdsForAlbum(a).map(id=>m.get(id)||id).filter(Boolean);return state.albums.find(x=>presetKey(x.title)===presetKey(a.title)&&artistIdsForAlbum(x).length===ids.length&&artistIdsForAlbum(x).every(id=>ids.includes(id)))||null}
+  function findTrackImport(t,am,atm){const aid=t.albumId?am.get(t.albumId)||null:null,arts=artistIdsForTrack(t).map(id=>atm.get(id)||id).filter(Boolean);return state.tracks.find(x=>presetKey(x.title)===presetKey(t.title)&&(aid?x.albumId===aid:!x.albumId)&&artistIdsForTrack(x).length===arts.length&&artistIdsForTrack(x).every(id=>arts.includes(id)))||null}
+  async function importPresetData(p,files,mode){try{const kind=p.presetKind||'full',artists=Array.isArray(p.artists)?p.artists:[],albums=Array.isArray(p.albums)?p.albums:[],tracks=Array.isArray(p.tracks)?p.tracks:[],playlists=Array.isArray(p.playlists)?p.playlists:[];if(kind==='settings'){state.settings=mode==='set'?JSON.parse(JSON.stringify(p.settings||state.settings)):{...state.settings,...(p.settings||{})};applyEQ();await save(true);render();toast('Settings imported.');return}if(kind==='full'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.artists=[];state.albums=[];state.playlists=[];state.liked=[];state.recent=[];state.tracks=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='artists'&&mode==='set')state.artists=[];if(kind==='albums'&&mode==='set'){state.albums=[];for(const t of state.tracks){if(t.albumId&&!albums.some(a=>a.id===t.albumId)){t.albumId=null;t.album='Unknown Album'}}}if(kind==='songs'&&mode==='set'){for(const id of state.tracks.map(t=>t.id))queueBlobDelete(id);state.tracks=[];state.liked=[];state.recent=[];state.queue=[];state.queueIndex=-1;state.currentId=null}if(kind==='playlists'&&mode==='set')state.playlists=[];if(kind==='liked'&&mode==='set')state.liked=[];if(kind==='recent'&&mode==='set')state.recent=[];
+    const artistMap=new Map();
+    for(const a0 of artists){
+      const a=cloneEntity(a0);
+      const existing=mode==='add'?findArtistImport(a):null;
+      if(existing)artistMap.set(a0.id,existing.id);
+      else{
+        a.id=uid();
+        const name=artistDisplayName(a);
+        if(name&&name!=="Unknown Artist")state.artists.push(a);
+        else continue;
+        artistMap.set(a0.id,a.id);
+      }
+    }
+    const albumMap=new Map();
+    for(const a0 of albums){
+      const a=cloneEntity(a0);
+      const mappedIds=artistIdsForAlbum(a0).map(id=>artistMap.get(id)||id).filter(id=>artistById(id));
+      if(mappedIds.length)applyArtistIds(a,mappedIds);
+      else{
+        const fallbackNames=importedNameList(a0?.artists||a0?.artistNames||a0?.artist||a0?.albumArtist);
+        const fallbackIds=fallbackNames.map(name=>findArtistByName(name)?.id||getOrCreateArtist(name).id).filter(Boolean);
+        applyArtistIds(a,fallbackIds);
+      }
+      const existing=mode==='add'?findAlbumImport(a,artistMap):null;
+      if(existing)albumMap.set(a0.id,existing.id);
+      else{a.id=uid();state.albums.push(a);albumMap.set(a0.id,a.id)}
+    }
+    const trackMap=new Map(),dirty=[];
+    const persistImportBatch=async(force=false)=>{
+      if(!dirty.length)return true;
+      const ids=dirty.splice(0,dirty.length);
+      await save(false,ids);
+      const persisted=await flushSave(false);
+      if(persisted){for(const id of ids){const saved=trackById(id);if(saved)saved.blob=null;saved&& (saved._blobDirty=false)}}
+      if(!persisted&&!force)throw new Error('Some audio files could not be saved yet. Keep Localify open and try the import again if the browser blocks storage.');
+      return persisted;
+    };
+    for(const t0 of tracks){
+      const t=cloneEntity(t0);
+      const importedArtistIds=resolveImportedArtistIds(t0,artistMap);
+      applyArtistIds(t,importedArtistIds);
+      t.artist=artistNamesForTrack(t).join(", ")||String(t0.artist||"").trim();
+      t.albumId=t0.albumId?(albumMap.get(t0.albumId)||null):null;
+      if(!t.albumId&&String(t0.album||"").trim()){
+        const localAlbum=state.albums.find(a=>presetKey(a.title)===presetKey(t0.album));
+        if(localAlbum)t.albumId=localAlbum.id;
+      }
+      t.album=t.albumId?(albumById(t.albumId)?.title||t.album||'Unknown Album'):(String(t.album||t0.album||"").trim()||'Unknown Album');
+      if(Array.isArray(t0.albumArtistIds))applyAlbumArtistIds(t,t0.albumArtistIds.map(id=>artistMap.get(id)||id).filter(id=>artistById(id)));
+      if(!artistIdsForTrack(t).length&&artistIdsForAlbum(t.albumId?albumById(t.albumId):null).length)applyArtistIds(t,artistIdsForAlbum(albumById(t.albumId)));
+      if(!Array.isArray(t.albumArtistIds)||!t.albumArtistIds.length){
+        const a=t.albumId?albumById(t.albumId):null;
+        if(a&&artistIdsForAlbum(a).length)applyAlbumArtistIds(t,artistIdsForAlbum(a));
+      }
+      const existing=mode==='add'?findTrackImport(t,albumMap,artistMap):null;const target=existing||t;
+      if(existing){
+        trackMap.set(t0.id,target.id);
+        if(!String(target.title||"").trim())target.title=t.title;
+        if(!artistIdsForTrack(target).length&&artistIdsForTrack(t).length)applyArtistIds(target,artistIdsForTrack(t));
+        target.artist=artistNamesForTrack(target).join(", ")||String(t.artist||"").trim();
+        if(!target.albumId&&t.albumId)target.albumId=t.albumId;
+        if(target.albumId)target.album=albumById(target.albumId)?.title||target.album;
+      }else{
+        t.id=uid();t.blob=null;t._blobDirty=false;state.tracks.push(t);trackMap.set(t0.id,t.id);
+      }
+      repairImportedTrackMetadata(target);
+      const entry=t0.audioFile&&files?.get(t0.audioFile);
+      if(entry){target.blob=await zipEntryBlob(entry);target._blobDirty=true;dirty.push(target.id);if(dirty.length>=2)await persistImportBatch();}
+    }
+    await persistImportBatch(true);
+    for(const p0 of playlists){const pl=cloneEntity(p0);pl.trackIds=(Array.isArray(p0.trackIds)?p0.trackIds:[]).map(id=>trackMap.get(id)||id).filter(id=>trackById(id));const existing=mode==='add'?state.playlists.find(x=>presetKey(x.name)===presetKey(pl.name)):null;if(existing){if(kind!=='playlists')existing.trackIds=[...new Set([...(existing.trackIds||[]),...pl.trackIds])]}else{pl.id=uid();state.playlists.push(pl)}}
+    const mapped=arr=>[...new Set((arr||[]).map(id=>trackMap.get(id)||id).filter(id=>trackById(id)))];if(kind==='full'){const l=mapped(p.liked),r=mapped(p.recent);if(mode==='set'){state.liked=l;state.recent=r}else{state.liked=[...new Set([...state.liked,...l])];state.recent=[...new Set([...state.recent,...r])]}}if(kind==='liked'){const l=mapped(p.liked);state.liked=mode==='set'?l:[...new Set([...state.liked,...l])]}if(kind==='recent'){const r=mapped(p.recent);state.recent=mode==='set'?r:[...new Set([...state.recent,...r])]}
+    if(kind==='artists'&&mode==='set'){const valid=new Set(state.artists.map(a=>a.id));for(const a of state.albums)applyArtistIds(a,artistIdsForAlbum(a).filter(id=>valid.has(id)));for(const t of state.tracks){applyArtistIds(t,artistIdsForTrack(t).filter(id=>valid.has(id)));if(Array.isArray(t.albumArtistIds))applyAlbumArtistIds(t,t.albumArtistIds.filter(id=>valid.has(id)))}}
+    if(kind==='albums'&&mode==='set'){const valid=new Set(state.albums.map(a=>a.id));for(const t of state.tracks)if(t.albumId&&!valid.has(t.albumId)){t.albumId=null;t.album='Unknown Album'}}
+    if(kind==='songs'&&mode==='set'){const valid=new Set(state.tracks.map(t=>t.id));state.playlists.forEach(pl=>pl.trackIds=(pl.trackIds||[]).filter(id=>valid.has(id)));state.liked=state.liked.filter(id=>valid.has(id));state.recent=state.recent.filter(id=>valid.has(id))}
+    state.selected=[];
+    const persisted=true;
+    render();renderPlayer();
+    toast(presetLabel(kind)+' preset '+(mode==='set'?'set':'added')+'.')
+  }catch(e){console.error('Localify preset import failed',e);toast(e?.message||'Could not import this Localify preset.')}}
+  function openPresetsMenu(){
+    const html =
+      "<div class=\"modalHead\"><h2>Presets</h2><button class=\"circle iconOnly\" id=\"closeModal\" title=\"Close\" aria-label=\"Close\">"+uiIcon("close")+"</button></div>"+
+      "<div class=\"presetHome\">"+
+        "<div class=\"presetHero\"><div class=\"presetHeroTop\"><div><h3>Portable Localify presets</h3><p>Save and share your Localify library as <code>.localify</code> files. Audio is included in the package, and large exports use ZIP64 and streaming when your browser supports it.</p></div><div class=\"presetHeroIcon\">"+uiIcon("save")+"</div></div></div>"+
+        "<div class=\"presetActionGrid\">"+
+          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export preset</strong><span>Back up or share your library</span></span></button>"+
+          "<button class=\"presetAction\" id=\"presetImportBtn\"><span class=\"presetActionIcon\">"+uiIcon("upload")+"</span><span><strong>Import preset</strong><span>Load a Localify file onto this device</span></span></button>"+
+        "</div>"+
+        "<div class=\"presetQuickTitle\">Quick tools</div>"+
+        "<div class=\"presetQuickGrid\">"+
+          "<button class=\"presetQuick\" id=\"presetExportArtistsBtn\"><strong>Export artists</strong><span>Profiles, info and pictures</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetImportArtistsBtn\"><strong>Import artists</strong><span>Add an artist preset</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetExportAlbumsBtn\"><strong>Export albums</strong><span>Albums, artists and songs</span></button>"+
+          "<button class=\"presetQuick\" id=\"presetImportAlbumsBtn\"><strong>Import albums</strong><span>Add an album preset</span></button>"+
+        "</div>"+
+      "</div>";
+    setModal(html,{large:true});
+    $("#closeModal").onclick=()=>closeModal(true);
+    $("#presetExportBtn").onclick=()=>{closeModal(true);openPresetExportChooser()};
+    $("#presetImportBtn").onclick=()=>{closeModal(true);pickPresetFile()};
+    $("#presetExportArtistsBtn").onclick=()=>{closeModal(true);openPresetExportSelection("artists")};
+    $("#presetImportArtistsBtn").onclick=()=>{closeModal(true);pickPresetFile("artists")};
+    $("#presetExportAlbumsBtn").onclick=()=>{closeModal(true);openPresetExportSelection("albums")};
+    $("#presetImportAlbumsBtn").onclick=()=>{closeModal(true);pickPresetFile("albums")};
+  }
   function openMobileTools(){openPresetsMenu()}
 
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
@@ -1795,7 +3039,7 @@ main{min-width:0;min-height:0}
       else if(state.currentView==="search"){state.currentView="home";render()}
     },90);
   });
-  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=showProfile;if($("#discordTopBtn"))$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
+  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=showProfile;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#nowPanelToggle").onclick=()=>setNowSidebar(!document.querySelector(".app")?.classList.contains("nowPanelOpen"));
@@ -1803,9 +3047,7 @@ main{min-width:0;min-height:0}
   setInterval(checkDesktopPlayer,5000);
   function updateDesktopMediaSessionMetadata(t,cover=""){
     if(!LOCALIFY_DESKTOP_MODE||!("mediaSession"in navigator)||!t)return;
-    try{
-      navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistNamesForTrack(t).join(", ")||"Unknown Artist",album:albumName(t)||"Localify",artwork:cover?[{src:cover,sizes:"512x512",type:"image/*"}]:[]});
-    }catch{}
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistNamesForTrack(t).join(", ")||"Unknown Artist",album:albumName(t)||"Localify",artwork:cover?[{src:cover,sizes:"512x512",type:"image/*"}]:[]})}catch{}
   }
   function updateDesktopMediaSessionPosition(){
     if(!LOCALIFY_DESKTOP_MODE||!("mediaSession"in navigator))return;
