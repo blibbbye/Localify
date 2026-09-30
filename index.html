@@ -370,6 +370,9 @@ main{min-width:0;min-height:0}
 }
 
 @media (max-width:780px){
+  .sectionHeadActions{gap:7px}
+  .sectionHeadActions .albumCount{min-width:32px;height:32px}
+
   :root{--player-h:92px}
   body{overflow:auto}
   .app{display:block;min-height:100dvh;padding-top:0}
@@ -2682,7 +2685,7 @@ main{min-width:0;min-height:0}
       eqNodes.bass.type="lowshelf";eqNodes.bass.frequency.value=105;eqNodes.bass.Q.value=.72;
       eqNodes.mid.type="peaking";eqNodes.mid.frequency.value=950;eqNodes.mid.Q.value=.85;
       eqNodes.treble.type="highshelf";eqNodes.treble.frequency.value=5600;eqNodes.treble.Q.value=.72;
-      eqNodes.compressor.threshold.value=-14;eqNodes.compressor.knee.value=18;eqNodes.compressor.ratio.value=2.6;eqNodes.compressor.attack.value=.004;eqNodes.compressor.release.value=.16;
+      eqNodes.compressor.threshold.value=-11;eqNodes.compressor.knee.value=14;eqNodes.compressor.ratio.value=4.2;eqNodes.compressor.attack.value=.003;eqNodes.compressor.release.value=.13;
       eqNodes.gain.gain.value=1;eqNodes.output.gain.value=.94;
       audioSource.connect(eqNodes.bass).connect(eqNodes.mid).connect(eqNodes.treble).connect(eqNodes.gain).connect(eqNodes.compressor).connect(eqNodes.output).connect(audioCtx.destination);
       applyEQ();
@@ -2699,35 +2702,38 @@ main{min-width:0;min-height:0}
   function applyEQ(){
     if(!eqNodes)return;
     const q={bass:0,mid:0,treble:0,gain:0,...(state.settings.eq||{})};
-    const bass=Math.max(-12,Math.min(12,Number(q.bass)||0)),mid=Math.max(-12,Math.min(12,Number(q.mid)||0)),treble=Math.max(-12,Math.min(12,Number(q.treble)||0)),userGain=Math.max(-6,Math.min(6,Number(q.gain)||0));
+    const bass=Math.max(-24,Math.min(24,Number(q.bass)||0)),mid=Math.max(-24,Math.min(24,Number(q.mid)||0)),treble=Math.max(-24,Math.min(24,Number(q.treble)||0)),userGain=Math.max(-12,Math.min(12,Number(q.gain)||0));
     setAudioParam(eqNodes.bass.gain,bass);setAudioParam(eqNodes.mid.gain,mid);setAudioParam(eqNodes.treble.gain,treble);
     const positiveBoost=Math.max(0,bass)+Math.max(0,mid)+Math.max(0,treble);
-    setAudioParam(eqNodes.gain.gain,Math.pow(10,(userGain-Math.min(7,positiveBoost*.20))/20));
+    setAudioParam(eqNodes.gain.gain,Math.pow(10,(userGain-Math.min(12,positiveBoost*.27))/20));
     setAudioParam(eqNodes.output.gain,.94);
   }
   const EQ_PRESETS={
     flat:{bass:0,mid:0,treble:0,gain:0},
-    bass:{bass:7,mid:1,treble:-1,gain:-1},
-    deep:{bass:9,mid:0,treble:-2,gain:-1},
-    vocal:{bass:-2,mid:4,treble:3,gain:-1},
-    treble:{bass:-1,mid:2,treble:6,gain:-1},
-    warm:{bass:4,mid:2,treble:-1,gain:-1},
-    clear:{bass:-2,mid:2,treble:4,gain:-1},
-    punchy:{bass:5,mid:-1,treble:3,gain:-1},
-    studio:{bass:2,mid:1,treble:2,gain:-1}
+    bass:{bass:12,mid:2,treble:-2,gain:-2},
+    deep:{bass:18,mid:0,treble:-3,gain:-3},
+    vocal:{bass:-4,mid:7,treble:4,gain:-2},
+    treble:{bass:-3,mid:3,treble:12,gain:-2},
+    warm:{bass:8,mid:3,treble:-3,gain:-2},
+    clear:{bass:-4,mid:4,treble:8,gain:-2},
+    punchy:{bass:12,mid:-2,treble:7,gain:-3},
+    studio:{bass:4,mid:2,treble:4,gain:-2},
+    extremeBass:{bass:24,mid:3,treble:-6,gain:-5},
+    extremeTreble:{bass:-8,mid:4,treble:24,gain:-5},
+    loud:{bass:14,mid:5,treble:10,gain:-7}
   };
   function openEQ(){
     ensureAudioGraph();try{const p=audioCtx?.resume();if(p?.catch)p.catch(()=>{})}catch{}
     const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
-    const options=[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"],["warm","Warm"],["clear","Clear"],["punchy","Punchy"],["studio","Studio"]];
+    const options=[["flat","Flat"],["bass","Bass Boost"],["deep","Deep Bass"],["vocal","Vocal"],["treble","Treble"],["warm","Warm"],["clear","Clear"],["punchy","Punchy"],["studio","Studio"],["extremeBass","Extreme Bass"],["extremeTreble","Extreme Treble"],["loud","Loud"]];
     setModal(`
       <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${options.map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
       <div class="formGrid" style="margin-top:14px">
-        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-12" max="12" value="${q.bass}" step="1" aria-label="Bass"></div>
-        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-12" max="12" value="${q.mid}" step="1" aria-label="Mid"></div>
-        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-12" max="12" value="${q.treble}" step="1" aria-label="Treble"></div>
-        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-6" max="6" value="${q.gain}" step="1" aria-label="Gain"></div>
+        <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-24" max="24" value="${q.bass}" step="1" aria-label="Bass"></div>
+        <div class="field"><label for="eqMid" id="eqMidLabel">Mid ${q.mid} dB</label><input class="eqSlider" id="eqMid" type="range" min="-24" max="24" value="${q.mid}" step="1" aria-label="Mid"></div>
+        <div class="field"><label for="eqTreble" id="eqTrebleLabel">Treble ${q.treble} dB</label><input class="eqSlider" id="eqTreble" type="range" min="-24" max="24" value="${q.treble}" step="1" aria-label="Treble"></div>
+        <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-12" max="12" value="${q.gain}" step="1" aria-label="Gain"></div>
       </div>
       <div class="help" style="margin-top:10px">Filters affect playback only. Localify never rewrites or re-encodes your source files.</div>
       <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
