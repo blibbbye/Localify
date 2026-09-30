@@ -7,6 +7,7 @@
   <meta name="localify-build" content="2026-09-28-recovery-1" />
   <meta name="application-name" content="Localify Desktop">
   <meta name="localify-platform" content="desktop">
+  <meta name="localify-version" content="3.0">
   <title>Localify Desktop — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <style>
@@ -564,7 +565,7 @@ main{min-width:0;min-height:0}
 }
 
 
-    /* ================= Localify Desktop ================= */
+    /* ====================== Localify Desktop ====================== */
     body[data-localify-desktop]{background:#07090c;user-select:none}
     body[data-localify-desktop] input,body[data-localify-desktop] textarea,body[data-localify-desktop] select{user-select:text}
     body[data-localify-desktop] .app{grid-template-columns:280px minmax(0,1fr);grid-template-rows:1fr 96px}
@@ -582,6 +583,7 @@ main{min-width:0;min-height:0}
     body[data-localify-desktop] .grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:16px}
     body[data-localify-desktop] .card{padding:13px}
     body[data-localify-desktop] .player{height:96px}
+    body[data-localify-desktop] .nowTitle{max-width:32ch}
     body[data-localify-desktop] .discordTopBtn,body[data-localify-desktop] .discordStatus{display:none!important}
     body[data-localify-desktop] .mobileTools,body[data-localify-desktop] .mobileImportBtn{display:none!important}
     body[data-localify-desktop] .tableWrap{contain:layout paint}
@@ -1602,7 +1604,9 @@ main{min-width:0;min-height:0}
       try{__localifyDiscordNet=__localifyDiscordNet||req("net")}catch{return false}
       for(let i=0;i<10;i++){
         const names=[`\\\\?\\pipe\\discord-ipc-${i}`,`\\\\.\\pipe\\discord-ipc-${i}`];
-        for(const name of names){try{await __localifyConnectPipe(name,__localifyDiscordNet,700);if(__localifyDiscordSocket)return true}catch{}}
+        for(const name of names){
+          try{await __localifyConnectPipe(name,__localifyDiscordNet,700);if(__localifyDiscordSocket)return true}catch{}
+        }
       }
       return false;
     })().finally(()=>{__localifyDiscordConnecting=null});
@@ -1636,7 +1640,11 @@ main{min-width:0;min-height:0}
     if(top){top.classList.remove("connected","disabled","searching","error");if(state)top.classList.add(state);top.title=`Discord Rich Presence — ${text}`;top.setAttribute("aria-label",`Discord Rich Presence — ${text}`)}
   }
   async function sendDesktopBridgeMessage(payload){try{return await __localifySetNativeDiscordPresence(payload)}catch{return false}}
-  async function checkDesktopPlayer(){const ok=await __localifyConnectDiscordNative();setDiscordUi(ok?"connected":"searching",ok?"Discord connected":"Waiting for Discord");return ok}
+  async function checkDesktopPlayer(){
+    const ok=await __localifyConnectDiscordNative();
+    setDiscordUi(ok?"connected":"searching",ok?"Discord connected":"Waiting for Discord");
+    return ok;
+  }
   function sendDiscordMessage(){return true}
   async function connectDiscordBridge(){
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord off");return false}
