@@ -2753,7 +2753,7 @@ main{min-width:0;min-height:0}
           <input id="eqCompressor" type="checkbox" ${q.compressor?"checked":""} style="flex:none;margin:0">
         </label>
       </div>
-      <div class="help" style="margin-top:10px">Filters affect playback only. Localify never rewrites or re-encodes your source files.</div>
+      <div class="help" style="margin-top:10px; color: red;">⚠️WARNING, BE CAREFUL WITH HIGH BASS HIGH VOLUME AND NO COMPRESSOR, THIS CAN DESTROY UR AUDIO DEVICES AND I HIGHLY RECCOMEND USING THE COMPRESSOR, I AM NOT RESPONSIBLE FOR UR DEVICES⚠️</div>
       <div class="modalFoot"><button class="primary" id="eqDone">Done</button></div>`,{large:true});
     bindModalDirty();
     const bass=$("#eqBass"),mid=$("#eqMid"),treble=$("#eqTreble"),gain=$("#eqGain"),preset=$("#eqPreset"),compressor=$("#eqCompressor");
