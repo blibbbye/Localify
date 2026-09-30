@@ -2716,10 +2716,17 @@ main{min-width:0;min-height:0}
     }
     setAudioParam(eqNodes.output.gain,.82);
   }
-  // === SOUND PRESETS ===
-  // Add custom presets here using the same simple format:
-  // myPreset:{bass:10,mid:0,treble:3,gain:-2},
-  // Then add ["myPreset","My Preset"] to the options below.
+  // ============================================================
+  // SOUND PRESETS — edit this section to add/remove presets
+  // ============================================================
+  // Format:
+  //   presetId:{bass:X,mid:X,treble:X,gain:X},
+  //
+  // Example:
+  //   myPreset:{bass:8,mid:-2,treble:5,gain:-2},
+  //
+  // After adding it here, also add ["myPreset","My Preset"] to
+  // the options array inside openEQ() below.
   const EQ_PRESETS={
     flat:{bass:0,mid:0,treble:0,gain:0},
     bass:{bass:12,mid:2,treble:-2,gain:-2}
@@ -2729,6 +2736,7 @@ main{min-width:0;min-height:0}
     const q={...EQ_PRESETS.flat,...(state.settings.eq||{})};
     if(!EQ_PRESETS[q.preset])q.preset="flat";
     q.compressor=q.compressor===true;
+    // Add matching entries here when you create new presets above.
     const options=[["flat","Flat"],["bass","Bass"]];
     setModal(`
       <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
@@ -2740,9 +2748,9 @@ main{min-width:0;min-height:0}
         <div class="field"><label for="eqGain" id="eqGainLabel">Gain ${q.gain} dB</label><input class="eqSlider" id="eqGain" type="range" min="-12" max="12" value="${q.gain}" step="1" aria-label="Gain"></div>
       </div>
       <div class="field" style="margin-top:14px">
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-          <input id="eqCompressor" type="checkbox" ${q.compressor?"checked":""}>
-          <span><strong>Compressor</strong><small style="display:block;color:#737e8b;margin-top:3px">Makes the audio smooth and not like meme bass boosted and stuff, I recommend</small></span>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;cursor:pointer">
+          <span style="flex:1;min-width:0"><strong>Compressor</strong><small style="display:block;color:#737e8b;margin-top:3px">Makes the audio smooth and not like meme bass boosted and stuff, I recommend</small></span>
+          <input id="eqCompressor" type="checkbox" ${q.compressor?"checked":""} style="flex:none;margin:0">
         </label>
       </div>
       <div class="help" style="margin-top:10px">Filters affect playback only. Localify never rewrites or re-encodes your source files.</div>
