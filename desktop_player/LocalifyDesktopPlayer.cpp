@@ -29,7 +29,7 @@ using namespace Gdiplus;
 
 static const int PORT=4219;
 static const char* CLIENT_ID="1550620411740561568";
-struct Presence{bool playing=false;std::string song,artist,cover;double pos=0,dur=0;uint64_t version=0;};
+struct Presence{bool playing=false;std::string song,artist,album,cover;double pos=0,dur=0;uint64_t version=0;};
 struct Cmd{uint64_t seq=0;std::string action;double value=0;};
 static HWND H=nullptr;static ULONG_PTR GP=0;static std::mutex M;
 static Presence P;static Cmd C;static std::unique_ptr<Bitmap> Cover;static std::string CoverUrl;
@@ -41,6 +41,38 @@ static std::string js(const std::string&j,const char*k){
  std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return"";p=j.find(':',p+q.size());if(p==std::string::npos)return"";++p;while(p<j.size()&&isspace((unsigned char)j[p]))++p;if(p>=j.size()||j[p]!='"')return"";++p;
  std::string r;bool e=false;while(p<j.size()){char c=j[p++];if(e){e=false;if(c=='n')r+='\n';else r+=c;}else if(c=='\\')e=true;else if(c=='"')break;else r+=c;}return r;}
 static double jn(const std::string&j,const char*k){std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return 0;p=j.find(':',p+q.size());if(p==std::string::npos)return 0;return atof(j.c_str()+p+1);}
+
+static std::string encPath(const std::string&s){
+ const char* h="0123456789ABCDEF";std::string r;
+ for(unsigned char c:s){if((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='-'||c=='_'||c=='.'||c=='~')r.push_back((char)c);else{r.push_back('%');r.push_back(h[c>>4]);r.push_back(h[c&15]);}}
+ return r;
+}
+static std::string httpText(const std::string&url){
+ HINTERNET se=WinHttpOpen(L"LocalifyDiscordCover/1",WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,0,0,0);if(!se)return"";
+ URL_COMPONENTS u{};u.dwStructSize=sizeof(u);wchar_t host[256]{},path[8192]{};u.lpszHostName=host;u.dwHostNameLength=256;u.lpszUrlPath=path;u.dwUrlPathLength=8192;
+ std::wstring wu=W(url);HINTERNET co=nullptr,re=nullptr;std::string out;
+ if(WinHttpCrackUrl(wu.c_str(),0,0,&u)){co=WinHttpConnect(se,host,u.nPort,0);if(co)re=WinHttpOpenRequest(co,L"GET",path,0,0,0,(u.nScheme==INTERNET_SCHEME_HTTPS)?WINHTTP_FLAG_SECURE:0);}
+ if(re&&WinHttpSendRequest(re,0,0,0,0,0,0)&&WinHttpReceiveResponse(re,0)){
+  std::vector<char>b;
+  for(;;){DWORD n=0;if(!WinHttpQueryDataAvailable(re,&n)||!n)break;if(out.size()+n>2*1024*1024)break;b.resize(n);DWORD got=0;if(!WinHttpReadData(re,b.data(),n,&got)||!got)break;out.append(b.data(),got);}
+ }
+ if(re)WinHttpCloseHandle(re);if(co)WinHttpCloseHandle(co);WinHttpCloseHandle(se);return out;
+}
+static std::string jsonStringForKey(const std::string&j,const std::string&key){
+ std::string q="\\\""+esc(key)+"\\\"";size_t p=j.find(q);if(p==std::string::npos)return"";
+ p=j.find(':',p+q.size());if(p==std::string::npos)return"";++p;while(p<j.size()&&isspace((unsigned char)j[p]))++p;if(p>=j.size()||j[p]!='\\\"')return"";++p;
+ std::string r;bool e=false;while(p<j.size()){char c=j[p++];if(e){e=false;if(c=='n')r+='\\n';else if(c=='r')r+='\\r';else if(c=='t')r+='\\t';else r+=c;}else if(c=='\\\\')e=true;else if(c=='\\\"')break;else r+=c;}return r;
+}
+static std::string registryCoverUrl(const std::string&album){
+ static std::mutex lock;static std::string registry;static bool loaded=false;
+ std::lock_guard<std::mutex>g(lock);
+ if(!loaded){registry=httpText("https://raw.githubusercontent.com/blibbbye/Localify/main/covers.json");loaded=true;}
+ if(registry.empty()||album.empty())return"";
+ std::string file=jsonStringForKey(registry,album);if(file.empty())return"";
+ if(file.rfind("http://",0)==0||file.rfind("https://",0)==0)return file;
+ while(!file.empty()&&(file[0]=='.'||file[0]=='/'))file.erase(file.begin());
+ return "https://raw.githubusercontent.com/blibbbye/Localify/main/covers/"+encPath(file);
+}
 static bool jb(const std::string&j,const char*k,bool d){std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return d;p=j.find(':',p+q.size());if(p==std::string::npos)return d;return j.compare(p+1,4,"true")==0;}
 
 static void reply(SOCKET s,const char*st,const char*ct,const std::string&b){
@@ -99,7 +131,7 @@ static void http(SOCKET s){
  if(m=="OPTIONS"){reply(s,"204 No Content","text/plain","");closesocket(s);return;}
  if(m=="GET"&&t.rfind("/health",0)==0){reply(s,"200 OK","application/json","{\"ok\":true,\"desktopPlayer\":true,\"discordConnected\":true,\"port\":4219,\"version\":\"3.0\"}");closesocket(s);return;}
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
- if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.song=js(body,"song");n.artist=js(body,"artist");n.cover=js(body,"coverUrl");n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));
+ if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));
   bool nc=false;uint64_t tok=0;{std::lock_guard<std::mutex>l(M);n.version=P.version+1;P=n;if(CoverUrl!=n.cover){CoverUrl=n.cover;++CoverToken;tok=CoverToken;nc=true;}}
   if(nc){std::lock_guard<std::mutex>l(M);Cover.reset();InvalidateRect(H,nullptr,FALSE);if(!n.cover.empty())coverLoad(n.cover,tok);}
   else InvalidateRect(H,nullptr,FALSE);
@@ -118,6 +150,7 @@ static bool connectDiscord(){
 static void disconnectDiscord(){if(Pipe!=INVALID_HANDLE_VALUE){CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;}}
 static void activity(const Presence&p){
  if(!connectDiscord())return;
+ std::string discordCover=p.cover.empty()?registryCoverUrl(p.album):p.cover;
  long long start=(long long)time(nullptr)-(long long)std::max(0.0,p.pos),end=p.dur>0?start+(long long)p.dur:0;
  std::string q="{\"type\":2,\"name\":\"Localify\",\"details\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
  if(!p.cover.empty()&&p.cover.size()<=300)q+=",\"assets\":{\"large_image\":\""+esc(p.cover)+"\"}";
