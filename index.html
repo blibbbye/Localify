@@ -1968,7 +1968,7 @@ main{min-width:0;min-height:0}
     const start=Math.round(Date.now()-currentTime*1000);
     const end=duration>0?Math.round(start+duration*1000):0;
 
-    return {kind:"presence",playing:!!playing,song,artist,coverUrl,currentTime,duration,start,end};
+    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,currentTime,duration,start,end};
   }
 
   async function sendDiscordPresence(force=false){
