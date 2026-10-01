@@ -24,7 +24,7 @@
     .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:clamp(170px,16vw,220px) minmax(0,1fr) minmax(260px,320px)}
     aside{grid-row:1/2;background:#0c0f13;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;min-width:0}
     .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px;font-weight:900;font-size:23px;letter-spacing:-.8px}
-    .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px var(--theme-shadow)}
+    .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}
     .logo img{width:100%;height:100%;display:block;object-fit:cover}
     .nav{display:grid;gap:5px}
     .nav button,.sideAction{background:transparent;padding:11px 12px;border-radius:11px;text-align:left;color:#c5cad2;font-weight:700;display:flex;align-items:center;gap:11px}
@@ -2296,6 +2296,12 @@ body.theme-solid .track-row.isPlaying,body.theme-gradient .track-row.isPlaying{b
     $("#profileMenuSettings").onclick=e=>{stop(e);closeProfileMenu();showAccountSettings()};
   }
   function toggleProfileMenu(){const m=$("#profileMenu");if(!m)return;m.classList.contains("open")?closeProfileMenu():openProfileMenu()}
+  function profileMenuSettingsCapture(e){
+    const item=e.target.closest?.("#profileMenuSettings");
+    if(!item)return;
+    e.preventDefault();e.stopPropagation();
+    closeProfileMenu();showAccountSettings();
+  }
 
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
@@ -3462,6 +3468,7 @@ $("#globalSearch").addEventListener("input",e=>{
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
+document.addEventListener("click",profileMenuSettingsCapture,true);
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
   document.addEventListener("click",e=>{
