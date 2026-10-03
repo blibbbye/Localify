@@ -567,7 +567,51 @@ main{min-width:0;min-height:0}
 
 .statsPageHero{display:flex;align-items:center;gap:18px;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318);min-width:0}.statsPageHeroText{min-width:0}.statsPageHero .profileName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.statsHeroIcon{width:76px;height:76px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));color:#fff;font-size:28px;font-weight:1000;box-shadow:0 14px 32px var(--theme-glow-a);border:1px solid rgba(255,255,255,.12);flex:0 0 76px}.settingsPage{padding-bottom:40px}@media(max-width:780px){.statsPageHero{gap:12px;padding:14px}.statsHeroIcon{width:60px;height:60px;flex-basis:60px;font-size:22px;border-radius:17px}}
 
-body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}body.theme-gradient .logo,body.theme-solid .logo{box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}</style>
+body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}body.theme-gradient .logo,body.theme-solid .logo{box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}
+.folderNavHead{display:flex;align-items:center;justify-content:space-between;padding-right:7px}.folderNavAdd{width:26px;height:26px;border-radius:8px;background:#151a20;border:1px solid #29313b;color:#aeb7c2;font-size:18px;line-height:1}.folderNavAdd:hover{background:#202731;color:#fff}.folderNavBtn{background:transparent;color:#aeb6c1;padding:8px 10px;border-radius:10px;text-align:left;display:flex;gap:9px;align-items:center;min-width:0;font-size:12px;font-weight:800;width:100%}.folderNavBtn:hover{background:#171b21;color:#fff}.folderNavBtn.active{background:#171b21;color:var(--accent)}.folderNavBtn span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderCollage{aspect-ratio:1/1;border-radius:13px;overflow:hidden;background:#161b21;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}.folderTile{min-width:0;min-height:0;background:#20242b;display:grid;place-items:center;overflow:hidden;color:#697482}.folderTile img{width:100%;height:100%;object-fit:cover;display:block}.folderTile .svgIcon{width:32%;height:32%}.folderDetailCollage{width:175px;height:175px;flex:0 0 175px;border-radius:22px}.folderPickerGrid{display:grid;gap:7px;max-height:52vh;overflow:auto}.folderPickerItem{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid #252d36;border-radius:11px;background:#11161c}.folderPickerItem:hover{background:#171d24;border-color:#35404d}.folderPickerItem input{width:17px;height:17px;accent-color:var(--accent)}.folderPickerCopy{min-width:0}.folderPickerCopy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderPickerCopy span{display:block;margin-top:2px;font-size:10px;color:#727d89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderTypeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.folderTypeButton{padding:13px 9px;border:1px solid #29313b;background:#11161b;border-radius:12px;text-align:center;font-weight:850;font-size:11px}.folderTypeButton:hover{background:#1a2027;border-color:#3b4653}.folderTypeButton strong{display:block;margin-top:4px}.statsPageHero{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #252d36;border-radius:18px;background:#11161c;min-width:0}.statsPageHeroText{min-width:0}.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}.mobileNav{display:none}
+@media(max-width:780px){
+  .folderNavHead,#folderNav{display:none!important}
+  html.localify-mobile,html.localify-mobile body{overflow:hidden}
+  html.localify-mobile .app{display:block;height:100dvh}
+  html.localify-mobile .app>aside:first-child,html.localify-mobile .nowSidebar{display:none!important}
+  html.localify-mobile main{height:100dvh;width:100%;overflow:auto;padding-bottom:84px}
+  html.localify-mobile .topbar{position:sticky;top:0;z-index:30;padding:10px;background:rgba(9,11,14,.94);gap:7px}
+  html.localify-mobile .topbar .search{max-width:none}
+  html.localify-mobile .topbar .search input{height:42px;padding-top:10px;padding-bottom:10px;border-radius:12px}
+  html.localify-mobile .topbar #quickAdd{display:grid!important;width:42px;height:42px;padding:0;place-items:center;border-radius:12px}
+  html.localify-mobile .topbar #quickAdd span:last-child{display:none}
+  html.localify-mobile .topbar .profileTopBtn{display:grid!important;width:42px;height:42px;padding:0;place-items:center;border-radius:50%}
+  html.localify-mobile .topbar .discordTopBtn,html.localify-mobile .topbar .discordStatus,html.localify-mobile .topbar .pill,html.localify-mobile .topbar .mobileTools{display:none!important}
+  html.localify-mobile .content{padding:16px 12px 150px}
+  html.localify-mobile .hero{display:block;margin-bottom:18px}
+  html.localify-mobile .heroCard,html.localify-mobile .quickCard{min-height:0;margin-bottom:12px}
+  html.localify-mobile .heroCard{padding:20px}
+  html.localify-mobile .heroCard h1{font-size:38px;letter-spacing:-1.7px}
+  html.localify-mobile .grid,html.localify-mobile .viewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  html.localify-mobile .card{padding:9px;border-radius:13px}
+  html.localify-mobile .playOverlay{opacity:1;transform:none;right:6px;height:38px;width:38px}
+  html.localify-mobile .profileHero{grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center}
+  html.localify-mobile .profileArt,html.localify-mobile .collectionArt{width:80px;height:80px;border-radius:15px;font-size:30px}
+  html.localify-mobile .folderDetailCollage{width:80px;height:80px;border-radius:15px;flex-basis:80px}
+  html.localify-mobile .profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  html.localify-mobile .profileGrid{grid-template-columns:1fr;gap:10px}
+  html.localify-mobile .profileRecapColumns{grid-template-columns:1fr}
+  html.localify-mobile .tableWrap{border-radius:13px}
+  html.localify-mobile table{table-layout:fixed;width:100%}
+  html.localify-mobile thead th:nth-child(3),html.localify-mobile tbody td:nth-child(3),html.localify-mobile thead th:nth-child(5),html.localify-mobile tbody td:nth-child(5){display:none}
+  html.localify-mobile .player{left:0;right:0;bottom:66px;width:100%;max-width:100%;padding:8px 10px}
+  html.localify-mobile .now{min-width:0}
+  html.localify-mobile .nowTitle{max-width:160px}
+  html.localify-mobile .mobileNav{position:fixed;display:grid!important;grid-template-columns:repeat(5,1fr);left:8px;right:8px;bottom:8px;height:58px;z-index:100;padding:4px;background:rgba(14,18,23,.97);border:1px solid #252d36;border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.42);backdrop-filter:blur(16px)}
+  html.localify-mobile .mobileNav button{background:transparent;border-radius:12px;color:#818b97;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:850}
+  html.localify-mobile .mobileNav button.active{color:var(--accent);background:#171d24}
+  html.localify-mobile .mobileNav .svgIcon{width:18px;height:18px}
+  html.localify-mobile .settingsGrid{gap:10px}
+  html.localify-mobile .settingsSection{padding:13px}
+  html.localify-mobile .folderTypeGrid{grid-template-columns:repeat(2,1fr)}
+  html.localify-mobile .statsPageHero{padding:13px}
+}
+</style>
 </head>
 <body>
 <div class="app">
@@ -582,7 +626,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       <button data-view="playlists"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h10"/></svg></span><span>Playlists</span></button>
       <button data-view="liked"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/></svg></span><span>Liked Songs</span></button>
       <button data-view="recent"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Recently Played</span></button>
-    </nav>
+    <div class="folderNavHead"><div class="sectionTitle">Folders</div><button class="folderNavAdd" id="newFolderBtn" type="button" title="New folder" aria-label="New folder">+</button></div>
+    <div id="folderNav"></div></nav>
     <div class="sectionTitle">Library tools</div>
     <div class="sideBottom">
       <button class="sideAction btnIcon" id="importBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add music</span></button>
@@ -611,7 +656,13 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button>
     </div>
     <div id="content" class="content"></div>
-  </main>
+  </main><div class="mobileNav" id="mobileNav" aria-label="Mobile navigation">
+  <button type="button" data-mobile-view="home"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><small>Home</small></button>
+  <button type="button" data-mobile-view="library"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M5 4v16"/><path d="M8 5h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8z"/></svg></span><small>Library</small></button>
+  <button type="button" data-mobile-view="albums"><span><svg class="svgIcon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg></span><small>Albums</small></button>
+  <button type="button" data-mobile-view="playlists"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h10"/></svg></span><small>Playlists</small></button>
+  <button type="button" data-mobile-view="profile"><span><svg class="svgIcon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span><small>Profile</small></button>
+</div>
 
   <aside class="nowSidebar" id="nowSidebar" aria-label="Now Playing panel"></aside>
 
