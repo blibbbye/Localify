@@ -2481,33 +2481,7 @@ function editLocalProfile(){
 
   function showAccountSettingsPresets(){openPresetsMenu()}
   
-  function openSettingsPanel(){
-    showAccountSettings();return;
-    closeProfileMenu();
-    const t=state.settings.theme||{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"};
-    const themeButtons=Object.entries(DEFAULT_LOCALIFY_THEMES||{}).map(([id,x])=>'<button type="button" class="themeChoice '+(t.preset===id?'active':'')+'" data-theme-preset="'+id+'"><div class="themeSwatch" style="background:'+(x.mode==="gradient"?'linear-gradient(135deg,'+x.color1+','+x.color2+')':x.color1)+'"></div><strong>'+esc(x.name)+'</strong></button>').join("");
-    setModal('<div class="modalHead"><h2>Account settings</h2><button class="circle iconOnly" id="closeSettings" type="button" aria-label="Close">'+uiIcon("close")+'</button></div>'+
-      '<div class="settingsGrid">'+
-      '<section class="settingsSection"><div class="settingsSectionTitle">Themes</div><div class="settingsSectionSub">Choose an existing Localify theme.</div><div class="themeGrid" style="margin-top:12px">'+themeButtons+'</div></section>'+
-      '<section class="settingsSection"><div class="settingsSectionTitle">Playback</div><div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue.</span></div><input type="checkbox" id="settingsShuffle" '+(state.settings.shuffle?'checked':'')+'></div><div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Discord Rich Presence</strong><span>Show the current song and artist on Discord.</span></div><input type="checkbox" id="settingsDiscord" '+(state.settings.discordPresence!==false?'checked':'')+'></div><div style="padding-top:12px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="settingsVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div></section>'+
-      '<section class="settingsSection"><div class="settingsSectionTitle">Library</div><div class="settingsSectionSub">Manage your presets and music library.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px"><button class="secondary" type="button" id="settingsPresets">Open presets</button></div></section>'+
-      '</div><div class="modalFoot"><button class="primary" type="button" id="settingsDone">Done</button></div>',{large:true});
-    $("#closeSettings").onclick=()=>closeModal(true);
-    $("#settingsDone").onclick=()=>closeModal(true);
-    $$("[data-theme-preset]").forEach(b=>b.onclick=()=>{
-      const x=DEFAULT_LOCALIFY_THEMES[b.dataset.themePreset];
-      if(!x)return;
-      state.settings.theme={preset:b.dataset.themePreset,mode:x.mode,color1:x.color1,color2:x.color2};
-      try{applyTheme()}catch{}
-      autoSave();
-      openSettingsPanel();
-    });
-    $("#settingsShuffle").onchange=async e=>{state.settings.shuffle=e.target.checked;await save();renderPlayer()};
-    $("#settingsDiscord").onchange=async e=>{state.settings.discordPresence=e.target.checked;await save();if(e.target.checked)connectDiscordBridge();else clearDiscordPresence()};
-    $("#settingsVolume").oninput=e=>{state.settings.volume=+e.target.value;audio.volume=state.settings.volume;autoSave();renderPlayer()};
-    $("#settingsPresets").onclick=()=>{closeModal(true);openPresetsMenu()};
-  }
-
+  function openSettingsPanel(){showAccountSettings()}
   function openGoogleLoginInfo(){setModal(`<div class="modalHead"><h2>Google account sync</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">The profile and listening stats are ready locally. Real Google login and cross-device sync still need a Google OAuth client ID. Google supports web-app OAuth clients and the Drive appDataFolder can store per-app data for the signed-in user.</div><div class="modalFoot"><button class="primary" id="googleInfoDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#googleInfoDone").onclick=()=>closeModal(true)}
   function pushRecent(id){state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,50)}
 
@@ -3682,7 +3656,7 @@ $("#globalSearch").addEventListener("input",e=>{
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next);set("seekbackward",()=>audio.currentTime=Math.max(0,audio.currentTime-10));set("seekforward",()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+10));set("stop",()=>audio.pause())}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
-  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js?v=20261004-2").catch(()=>{});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
