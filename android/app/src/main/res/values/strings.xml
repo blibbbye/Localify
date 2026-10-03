@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Localify</string>
+    <color name="localify_black">#090B0E</color>
+    <color name="localify_dark">#0C0F13</color>
+</resources>
