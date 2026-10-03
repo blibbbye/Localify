@@ -153,11 +153,6 @@ if (!activity.includes("attachLocalifyPlaybackBridge")) {
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        stopService(new Intent(this, LocalifyPlaybackService.class));
-        super.onDestroy();
-    }
 `;
   activity = activity.slice(0, classOpen + 1) + bridgeMethod + activity.slice(classOpen + 1);
 }
