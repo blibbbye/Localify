@@ -2399,13 +2399,6 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     $("#profileMenuSettings").onclick=e=>{stop(e);closeProfileMenu();showAccountSettings()};
   }
   function toggleProfileMenu(){const m=$("#profileMenu");if(!m)return;m.classList.contains("open")?closeProfileMenu():openProfileMenu()}
-  function profileMenuSettingsCapture(e){
-    const item=e.target.closest?.("#profileMenuSettings");
-    if(!item)return;
-    e.preventDefault();e.stopPropagation();
-    closeProfileMenu();showAccountSettings();
-  }
-
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
     if(!b||!g)return;
@@ -2454,39 +2447,26 @@ function editLocalProfile(){
   function showAccountSettings(){
     closeProfileMenu();
     state.currentView="accountSettings";state.detail=null;state.selected=[];localifyClearPages();renderNav();
-    const t=normalizeTheme(state.settings.theme);
-    const presets=Object.entries(DEFAULT_LOCALIFY_THEMES).map(([id,x])=>'<button type="button" class="themeChoice '+(t.preset===id?'active':'')+'" data-theme-preset="'+id+'"><div class="themeSwatch" style="background:'+(x.mode==="gradient"?'linear-gradient(135deg,'+x.color1+','+x.color2+')':x.color1)+'"></div><strong>'+esc(x.name)+'</strong><span>'+(x.mode==="gradient"?"2-color blend":"solid color")+'</span></button>').join("");
-    $("#content").innerHTML=
-      '<div class="section" style="margin-top:0"><div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Manage your Localify preferences and themes.</span></div><div class="sectionHeadActions"><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div></div>'+
+    $("#content").innerHTML='<div class="section settingsPage" style="margin-top:0"><div class="sectionHead"><div><h2 class="viewTitle" style="font-size:30px">Account settings</h2><div class="subtle">Localify settings saved on this device.</div></div><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div>'+
       '<div class="settingsGrid">'+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Themes</div><div class="settingsSectionSub">Choose a preset or make your own solid color or two-color blend.</div></div></div>'+
-          '<div class="themeGrid">'+presets+'</div>'+
-          '<div style="margin-top:14px;border-top:1px solid #252d36;padding-top:14px">'+
-            '<div class="settingsSectionTitle" style="font-size:13px;margin-bottom:9px">Custom theme</div>'+
-            '<div class="themeModeRow"><button type="button" class="themeModeBtn '+(t.mode==="solid"?"active":"")+'" id="accountThemeSolid">Solid color</button><button type="button" class="themeModeBtn '+(t.mode==="gradient"?"active":"")+'" id="accountThemeGradient">Blend two colors</button></div>'+
-            '<div class="customThemeControls"><div class="themeColorField"><label>Color 1</label><div class="themeColorRow"><input id="accountColor1" type="color" value="'+esc(t.color1)+'"><span class="themeColorValue" id="accountColor1Value">'+esc(t.color1.toUpperCase())+'</span></div></div><div class="themeColorField"><label>Color 2</label><div class="themeColorRow"><input id="accountColor2" type="color" value="'+esc(t.color2)+'"><span class="themeColorValue" id="accountColor2Value">'+esc(t.color2.toUpperCase())+'</span></div></div></div>'+
-          '</div>'+
-        '</section>'+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback & app</div><div class="settingsSectionSub">Changes are saved locally.</div></div></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?"checked":"")+'></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Discord Rich Presence</strong><span>Show your current song and artist on Discord.</span></div><input type="checkbox" id="accountDiscord" '+(state.settings.discordPresence!==false?"checked":"")+'></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
-          '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div>'+
-        '</section>'+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Library & data</div><div class="settingsSectionSub">Manage portable Localify presets.</div></div></div><button class="secondary" id="accountPresets" type="button">Open presets</button></section>'+
+      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback</div><div class="settingsSectionSub">Control how Localify plays your music.</div></div></div>'+
+      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?"checked":"")+'></div>'+
+      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
+      '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div></section>'+
+      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">The normal web version can connect to the desktop connector.</div></div></div>'+
+      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show my current song</strong><span>Enable Discord Rich Presence.</span></div><input type="checkbox" id="accountDiscord" '+(state.settings.discordPresence!==false?"checked":"")+'></div></section>'+
+      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Library & data</div><div class="settingsSectionSub">Manage portable Localify data and folders.</div></div></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="accountPresets" type="button">Open presets</button><button class="secondary" id="accountNewFolder" type="button">New folder</button></div></section>'+
       '</div></div>';
     $("#accountSettingsBack").onclick=()=>showProfile();
-    $$("[data-theme-preset]").forEach(b=>b.onclick=async()=>{const p=DEFAULT_LOCALIFY_THEMES[b.dataset.themePreset];if(!p)return;state.settings.theme={preset:b.dataset.themePreset,mode:p.mode,color1:p.color1,color2:p.color2};applyTheme();await save();showAccountSettings()});
-    $("#accountThemeSolid").onclick=async()=>{const n=normalizeTheme(state.settings.theme);state.settings.theme={preset:"custom",mode:"solid",color1:n.color1,color2:n.color2};applyTheme();await save();showAccountSettings()};
-    $("#accountThemeGradient").onclick=async()=>{const n=normalizeTheme(state.settings.theme);state.settings.theme={preset:"custom",mode:"gradient",color1:n.color1,color2:n.color2};applyTheme();await save();showAccountSettings()};
-    const updateTheme=()=>{const c1=$("#accountColor1"),c2=$("#accountColor2");if(!c1||!c2)return;state.settings.theme={preset:"custom",mode:state.settings.theme?.mode==="gradient"?"gradient":"solid",color1:c1.value,color2:c2.value};applyTheme();$("#accountColor1Value").textContent=c1.value.toUpperCase();$("#accountColor2Value").textContent=c2.value.toUpperCase();autoSave()};
-    $("#accountColor1").oninput=updateTheme;$("#accountColor2").oninput=updateTheme;
     $("#accountShuffle").onchange=async e=>{state.settings.shuffle=e.target.checked;await save();renderPlayer()};
     $("#accountDiscord").onchange=async e=>{state.settings.discordPresence=e.target.checked;await save();e.target.checked?connectDiscordBridge():clearDiscordPresence()};
     $("#accountNowPanel").onchange=()=>setNowSidebar($("#accountNowPanel").checked);
     $("#accountVolume").oninput=e=>{const v=+e.target.value;state.settings.volume=v;audio.volume=v;autoSave();renderPlayer()};
-    $("#accountPresets").onclick=()=>{showAccountSettingsPresets()};
+    $("#accountPresets").onclick=()=>openPresetsMenu();
+    $("#accountNewFolder").onclick=()=>editFolder(null);
   }
+
 
   function showAccountSettingsPresets(){openPresetsMenu()}
   
@@ -3615,6 +3595,7 @@ function editLocalProfile(){
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
 
   // Static controls
+  $("[data-mobile-view]").forEach(b=>b.onclick=e=>{e.preventDefault();setView(b.dataset.mobileView)});
   $("#newFolderBtn").onclick=()=>editFolder(null);
   document.addEventListener("pointerdown",e=>{
     const cardPlay=e.target.closest?.(".play-track");
@@ -3661,12 +3642,12 @@ $("#globalSearch").addEventListener("input",e=>{
     }else next();
   });
   window.addEventListener("keydown",e=>{if(e.code==="Space"&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();$("#playPause").click()}if(e.key==="ArrowRight"&&e.shiftKey)next();if(e.key==="ArrowLeft"&&e.shiftKey)prev()});
-  if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next)}
+  if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next);set("seekbackward",()=>audio.currentTime=Math.max(0,audio.currentTime-10));set("seekforward",()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+10));set("stop",()=>audio.pause())}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
+  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js").catch(()=>{});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
-document.addEventListener("click",profileMenuSettingsCapture,true);
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
   document.addEventListener("click",e=>{
