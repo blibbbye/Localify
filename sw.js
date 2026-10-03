@@ -1,5 +1,5 @@
-const CACHE="localify-shell-v2";
-const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./mobile/index.html"];
+const CACHE="localify-shell-v3-20261004";
+const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./mobile/index.html","./sw.js"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });
