@@ -2457,7 +2457,7 @@ function editLocalProfile(){
 
   function showAccountSettings(){
     closeProfileMenu();
-    state.currentView="accountSettings";state.detail=null;state.selected=[];localifyClearPages();renderNav();
+    state.currentView="accountSettings";state.detail=null;state.selected=[];
     $("#content").innerHTML='<div class="section settingsPage" style="margin-top:0"><div class="sectionHead"><div><h2 class="viewTitle" style="font-size:30px">Account settings</h2><div class="subtle">Localify settings saved on this device.</div></div><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div>'+
       '<div class="settingsGrid">'+
       '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback</div><div class="settingsSectionSub">Control how Localify plays your music.</div></div></div>'+
@@ -2482,6 +2482,7 @@ function editLocalProfile(){
   function showAccountSettingsPresets(){openPresetsMenu()}
   
   function openSettingsPanel(){
+    showAccountSettings();return;
     closeProfileMenu();
     const t=state.settings.theme||{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"};
     const themeButtons=Object.entries(DEFAULT_LOCALIFY_THEMES||{}).map(([id,x])=>'<button type="button" class="themeChoice '+(t.preset===id?'active':'')+'" data-theme-preset="'+id+'"><div class="themeSwatch" style="background:'+(x.mode==="gradient"?'linear-gradient(135deg,'+x.color1+','+x.color2+')':x.color1)+'"></div><strong>'+esc(x.name)+'</strong></button>').join("");
