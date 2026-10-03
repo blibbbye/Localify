@@ -2868,6 +2868,83 @@ function editLocalProfile(){
   function editPlaylist(id,opts={}){
     const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
 
+  function folderCollageHtml(f,large=false){
+    const albums=folderAlbumIds(f).slice(0,4);
+    let html='<div class="folderCollage'+(large?' folderDetailCollage':'')+'">';
+    for(let i=0;i<4;i++){
+      const a=albums[i],cover=a?coverForAlbum(a,a.cover):null;
+      html+=cover?'<div class="folderTile"><img src="'+cover+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>':'<div class="folderTile">'+uiIcon("album")+'</div>';
+    }
+    return html+'</div>';
+  }
+  function folderCard(f){
+    const albums=folderAlbumIds(f),tracks=folderTrackIds(f),artists=folderArtistIds(f),playlists=folderPlaylistIds(f);
+    return '<div class="card folderCard folder-open" data-id="'+esc(f.id)+'" style="cursor:pointer">'+folderCollageHtml(f)+'<div class="cardTitle">'+esc(f.name)+'</div><div class="cardSub">'+albums.length+' albums • '+tracks.length+' songs • '+artists.length+' artists • '+playlists.length+' playlists</div></div>';
+  }
+  function renderFolderNav(){
+    const box=$("#folderNav");if(!box)return;
+    box.innerHTML=state.folders.map(f=>'<button type="button" class="folderNavBtn '+(state.detail?.type==="folder"&&state.detail.id===f.id?"active":"")+'" data-folder-nav="'+esc(f.id)+'"><span>'+uiIcon("folder")+'</span><span>'+esc(f.name)+'</span></button>').join("");
+    $("[data-folder-nav]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();showFolder(b.dataset.folderNav)});
+  }
+  function renderFolders(){
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Folders</h2><div class="subtle">Organize albums, songs, artists and playlists into your own folders.</div></div><button class="primary" id="newFolderPage" type="button">'+uiIcon("plus")+' New folder</button></div>'+
+      (state.folders.length?'<div class="grid">'+state.folders.map(folderCard).join("")+'</div>':empty("No folders yet","Create a folder to organize your Localify library."));
+    $("#newFolderPage").onclick=()=>editFolder(null);
+    $(".folder-open").forEach(e=>e.onclick=()=>showFolder(e.dataset.id));
+  }
+  function showFolder(id){
+    const f=folderById(id);if(!f)return;
+    ensureFolderArrays(f);state.currentView="folder";state.detail={type:"folder",id};renderNav();
+    const albums=folderAlbumIds(f),tracks=folderTrackIds(f),artists=folderArtistIds(f),playlists=folderPlaylistIds(f);
+    $("#content").innerHTML='<div class="profileHero"><div>'+folderCollageHtml(f,true)+'</div><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+albums.length+' albums • '+tracks.length+' songs • '+artists.length+' artists • '+playlists.length+' playlists</div><div class="entityActions"><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Rename</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete</button></div></div></div>'+
+      (albums.length?'<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(albumCard).join("")+'</div></div>':'')+
+      (tracks.length?'<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+tracks.length+'</span></div><div class="tableWrap">'+trackTable(tracks)+'</div></div>':'')+
+      (artists.length?'<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(artistCard).join("")+'</div></div>':'')+
+      (playlists.length?'<div class="section"><div class="sectionHead"><h2>Playlists</h2><span>'+playlists.length+'</span></div><div class="viewGrid">'+playlists.map(playlistCard).join("")+'</div></div>':'')+
+      ((!albums.length&&!tracks.length&&!artists.length&&!playlists.length)?'<div class="empty"><h3>Folder is empty</h3><div>Use Add items to put albums, songs, artists or playlists here.</div></div>':'');
+    $("#folderAddItems").onclick=()=>openFolderAddMenu(f.id);
+    $("#folderEdit").onclick=()=>editFolder(f.id);
+    $("#folderDelete").onclick=async()=>{if(!confirm("Delete this folder? The music in your library will stay untouched."))return;state.folders=state.folders.filter(x=>x.id!==f.id);await save();state.detail=null;state.currentView="home";render()};
+    bindAlbumCards();bindTrackTable();
+    $(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
+    $(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+  }
+  function editFolder(id){
+    const f=id?folderById(id):null;
+    setModal('<div class="modalHead"><h2>'+(f?'Rename folder':'New folder')+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="field"><label>Folder name</label><input id="folderNameInput" maxlength="80" value="'+esc(f?.name||"")+'" placeholder="My music"></div><div class="help">Folders are collections inside Localify. They do not move or delete files from your computer.</div><div class="modalFoot"><button class="secondary" id="folderCancel">Cancel</button><button class="primary" id="folderSave">'+(f?'Save':'Create')+'</button></div>');
+    $("#closeModal").onclick=()=>closeModal(true);$("#folderCancel").onclick=()=>closeModal(true);
+    $("#folderSave").onclick=async()=>{const n=$("#folderNameInput").value.trim();if(!n){toast("Give the folder a name.");return}const target=f||createFolderEntity(n);target.name=n;await save();closeModal(true);showFolder(target.id)};
+  }
+  function openFolderAddMenu(folderId){
+    const f=folderById(folderId);if(!f)return;
+    setModal('<div class="modalHead"><h2>Add items to '+esc(f.name)+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="help">Choose a library category.</div><div class="folderTypeGrid" style="margin-top:15px"><button class="folderTypeButton" data-folder-kind="albums">'+uiIcon("album")+'<strong>Albums</strong></button><button class="folderTypeButton" data-folder-kind="tracks">'+uiIcon("music")+'<strong>Songs</strong></button><button class="folderTypeButton" data-folder-kind="artists">'+uiIcon("artist")+'<strong>Artists</strong></button><button class="folderTypeButton" data-folder-kind="playlists">'+uiIcon("playlist")+'<strong>Playlists</strong></button></div>');
+    $("#closeModal").onclick=()=>closeModal(true);
+    $("[data-folder-kind]").forEach(b=>b.onclick=()=>openFolderCollectionPicker(folderId,b.dataset.folderKind));
+  }
+  function openFolderCollectionPicker(folderId,kind){
+    const f=folderById(folderId);if(!f)return;
+    const lists={albums:state.albums,tracks:state.tracks,artists:state.artists,playlists:state.playlists},items=lists[kind]||[];
+    const label=kind==="albums"?"Albums":kind==="tracks"?"Songs":kind==="artists"?"Artists":"Playlists";
+    const itemHtml=x=>{
+      const title=kind==="artists"?artistDisplayName(x):kind==="albums"?x.title:kind==="playlists"?x.name:displayTrackTitle(x,true);
+      const sub=kind==="artists"?(x.genres||[]).join(", "):kind==="albums"?artistNamesForAlbum(x).join(", "):kind==="playlists"?(x.trackIds||[]).length+" songs":artistName(x)+" • "+albumName(x);
+      return '<label class="folderPickerItem"><input class="folderItemCheck" type="checkbox" data-id="'+esc(x.id)+'" '+(folderHasItem(f,kind,x.id)?"checked":"")+'><span class="folderPickerCopy"><strong>'+esc(title)+'</strong><span>'+esc(sub||"")+'</span></span></label>';
+    };
+    const visible=items.slice(0,300);
+    setModal('<div class="modalHead"><h2>Add '+label+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="folderPickerToolbar"><button class="secondary small" id="folderSelectAll" type="button">Select all shown</button><button class="secondary small" id="folderClearAll" type="button">Clear shown</button><span class="subtle">'+items.length+' available'+(items.length>visible.length?' • showing first '+visible.length:'')+'</span></div><div class="folderPickerGrid">'+visible.map(itemHtml).join("")+'</div><div class="modalFoot"><button class="secondary" id="folderBack" type="button">Back</button><button class="primary" id="folderSaveItems" type="button">Save</button></div>');
+    $("#closeModal").onclick=()=>closeModal(true);$("#folderBack").onclick=()=>openFolderAddMenu(folderId);
+    $("#folderSelectAll").onclick=()=>{$(".folderItemCheck").forEach(x=>x.checked=true)};
+    $("#folderClearAll").onclick=()=>{$(".folderItemCheck").forEach(x=>x.checked=false)};
+    $("#folderSaveItems").onclick=async()=>{const selected=new Set($(".folderItemCheck:checked").map(x=>x.dataset.id));for(const item of items)folderToggleItem(f,kind,item.id,selected.has(item.id));await save();closeModal(true);showFolder(folderId)};
+  }
+  function openFolderChooser(kind,id){
+    if(!state.folders.length){editFolder(null);return}
+    const title=kind==="albums"?"album":kind==="tracks"?"song":kind==="artists"?"artist":"playlist";
+    setModal('<div class="modalHead"><h2>Add '+title+' to folders</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="folderPickerGrid">'+state.folders.map(f=>'<label class="folderPickerItem"><input class="folderItemCheck" type="checkbox" data-id="'+esc(f.id)+'" '+(folderHasItem(f,kind,id)?"checked":"")+'><span class="folderPickerCopy"><strong>'+esc(f.name)+'</strong><span>'+folderAlbumIds(f).length+' albums • '+folderTrackIds(f).length+' songs</span></span></label>').join("")+'</div><div class="modalFoot"><button class="secondary" id="folderCancelChooser" type="button">Cancel</button><button class="primary" id="folderChooserSave" type="button">Save</button></div>');
+    $("#closeModal").onclick=()=>closeModal(true);$("#folderCancelChooser").onclick=()=>closeModal(true);
+    $("#folderChooserSave").onclick=async()=>{for(const f of state.folders){const box=$(".folderItemCheck[data-id='"+f.id+"']");folderToggleItem(f,kind,id,!!box?.checked)}await save();closeModal(true);toast("Folder membership updated.");if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id)};
+  }
+
   function openContext(x,y,id,kind="song"){
     const m=$("#contextMenu");
     m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
