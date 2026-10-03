@@ -668,7 +668,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   const audio = $("#audio");
 
   const state = {
-    version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
+    version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"} },
     profile: { displayName:"", avatar:null },
@@ -1044,6 +1044,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     state.albums=Array.isArray(state.albums)?state.albums:[];
     state.artists=Array.isArray(state.artists)?state.artists:[];
     state.playlists=Array.isArray(state.playlists)?state.playlists:[];
+    state.folders=Array.isArray(state.folders)?state.folders:[];
     state.liked=Array.isArray(state.liked)?state.liked:[];
     state.recent=Array.isArray(state.recent)?state.recent:[];
     state.queue=Array.isArray(state.queue)?state.queue:[];
@@ -1070,7 +1071,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       t.blob=null;
       t._blobDirty=false;
     }
-    state.version=11;
+    state.version=12;
     state._restoredFromFallback=restoredFromFallback;
     return true;
   }
@@ -1102,10 +1103,21 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(cover&&!a.cover)a.cover=cover;
     return a;
   }
+  function folderById(id){return state.folders.find(f=>f.id===id)||null}
+  function ensureFolderArrays(f){if(!f)return f;f.albumIds=Array.isArray(f.albumIds)?f.albumIds:[];f.trackIds=Array.isArray(f.trackIds)?f.trackIds:[];f.artistIds=Array.isArray(f.artistIds)?f.artistIds:[];f.playlistIds=Array.isArray(f.playlistIds)?f.playlistIds:[];return f}
+  function folderAlbumIds(f){ensureFolderArrays(f);const ids=[...f.albumIds];for(const id of f.trackIds){const t=trackById(id);if(t?.albumId)ids.push(t.albumId)}return [...new Set(ids)].filter(id=>albumById(id))}
+  function folderTrackIds(f){ensureFolderArrays(f);return [...new Set(f.trackIds)].filter(id=>trackById(id))}
+  function folderArtistIds(f){ensureFolderArrays(f);const ids=[...f.artistIds];for(const id of f.trackIds){const t=trackById(id);for(const aid of artistIdsForTrack(t))ids.push(aid)}for(const id of f.albumIds){const a=albumById(id);for(const aid of artistIdsForAlbum(a))ids.push(aid)}return [...new Set(ids)].filter(id=>artistById(id))}
+  function folderPlaylistIds(f){ensureFolderArrays(f);return [...new Set(f.playlistIds)].filter(id=>playlistById(id))}
+  function createFolderEntity(name="New folder"){const f={id:uid(),name:String(name||"New folder").trim()||"New folder",albumIds:[],trackIds:[],artistIds:[],playlistIds:[],createdAt:Date.now()};state.folders.push(f);return f}
+  function folderItemKey(kind){return kind==="albums"?"albumIds":kind==="tracks"?"trackIds":kind==="artists"?"artistIds":"playlistIds"}
+  function folderHasItem(f,kind,id){ensureFolderArrays(f);return f[folderItemKey(kind)].includes(id)}
+  function folderToggleItem(f,kind,id,on){ensureFolderArrays(f);const key=folderItemKey(kind);if(on){if(!f[key].includes(id))f[key].push(id)}else f[key]=f[key].filter(x=>x!==id)}
+
   function migrate(raw){
     if(!raw)return;
     const incoming=raw;
-    for(const k of ["tracks","albums","artists","playlists","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
+    for(const k of ["tracks","albums","artists","playlists","folders","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
     incoming.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},incoming.analytics||{});
     incoming.profile=Object.assign({displayName:"",avatar:null},incoming.profile||{});
     Object.assign(state,incoming);
@@ -2535,7 +2547,7 @@ function editLocalProfile(){
     audio.pause();
     audio.removeAttribute("src");
     try{audio.load()}catch{}
-    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.liked=[];state.recent=[];
+    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.folders=[];state.liked=[];state.recent=[];
     state.queue=[];state.queueIndex=-1;state.currentId=null;state.selected=[];state.detail=null;
     state.currentView="home";state.search="";state.searchFilter="all";
     state.librarySort="added";state.librarySortDir="desc";
