@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#7dd3fc" />
-  <meta name="localify-build" content="2026-10-04-mobile-folders-meta" />
+  <meta name="localify-build" content="2026-10-04-mobile-folders-metadata" />
   <title>Localify — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -1060,7 +1060,7 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
         if(id[0]==="T"){
           if(id==="TXXX"){
             const raw=decodeId3Text(body),parts=raw.split(" "),desc=(parts.shift()||"").trim().toLowerCase(),value=parts.join(" ").trim();
-            if(/editor|edit(?:ed|ing)?\s*by|software|encoded\s*by/.test(desc))out.editor=value;
+            if(/^(?:title|name|track\s*title)$/i.test(desc)&&value)out.title=value;else if(/^(?:artist|performer|author)$/i.test(desc)&&value)out.artist=value;else if(/^(?:album|release)$/i.test(desc)&&value)out.album=value;else if(/editor|edit(?:ed|ing)?\s*by|software|encoded\s*by/.test(desc))out.editor=value;
           }else{
             const value=decodeId3Text(body);
             if(id==="TIT2")out.title=value;
@@ -1424,7 +1424,7 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
 
   function trackPrefixMatch(value){
     const raw=String(value||"").trim();
-    return raw.match(/^0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
+    return raw.match(/^\s*0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
   }
   function trackNo(t){
     const filenameNo=parseInt(t?.fileTrack,10);
@@ -2591,7 +2591,9 @@ function editLocalProfile(){
           const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
           if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
         }
-        await addFiles(files,{folderImageMap:byDir,folderImport:true});
+        const imported=await addFiles(files,{folderImageMap:byDir,folderImport:true});
+        const folder=createFolderFromImportedTracks(root.name,imported);
+        if(folder){await save();showFolder(folder.id)}
         return;
       }catch(e){
         if(e?.name==="AbortError")return;
@@ -2611,7 +2613,11 @@ function editLocalProfile(){
         const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
         if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
       }
-      await addFiles(files.filter(isAudioFile),{folderImageMap:byDir,folderImport:true});
+      const imported=await addFiles(files.filter(isAudioFile),{folderImageMap:byDir,folderImport:true});
+      const firstRel=files.find(f=>f.webkitRelativePath)?.webkitRelativePath||"";
+      const folderName=firstRel.split("/").filter(Boolean)[0]||"Imported folder";
+      const folder=createFolderFromImportedTracks(folderName,imported);
+      if(folder){await save();showFolder(folder.id)}
       input.value="";
     };
     input.click();
@@ -2705,6 +2711,7 @@ function editLocalProfile(){
       autoSave();
       if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search"||state.currentView==="albums"||state.currentView==="playlists"||state.currentView==="home")renderCurrentViewWithoutScroll();
     })().catch(e=>console.warn("Localify duration scan failed",e));
+    return added;
   }
   function createFolderFromImportedTracks(name,tracks){
     const list=Array.isArray(tracks)?tracks.filter(Boolean):[];
