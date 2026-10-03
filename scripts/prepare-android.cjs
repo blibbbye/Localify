@@ -19,11 +19,11 @@ function walk(dir) {
   return out;
 }
 
-const mainActivity = walk(appSrc).find(p => /MainActivity\\.(java|kt)$/.test(p));
+const mainActivity = walk(appSrc).find(p => /MainActivity\.(java|kt)$/.test(p));
 if (!mainActivity) throw new Error("MainActivity.java/kt not found.");
 
 const activitySource = fs.readFileSync(mainActivity, "utf8");
-const pkg = (activitySource.match(/^\\s*package\\s+([A-Za-z0-9_.]+)\\s*;/m) || [])[1];
+const pkg = (activitySource.match(/^\s*package\s+([A-Za-z0-9_.]+)\s*;/m) || [])[1];
 if (!pkg) throw new Error("Could not determine Android package name.");
 
 const javaDir = path.dirname(mainActivity);
@@ -108,11 +108,11 @@ if (!updatedManifest.includes("android.permission.FOREGROUND_SERVICE")) {
 }
 if (!updatedManifest.includes("LocalifyPlaybackService")) {
   const serviceLine = '        <service android:name=".LocalifyPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />\n';
-  updatedManifest = updatedManifest.replace(/\s*<\\/application>/, "\n" + serviceLine + "    </application>");
+  updatedManifest = updatedManifest.replace(/\s*<\/application>/, "\n" + serviceLine + "    </application>");
 }
 fs.writeFileSync(manifestPath, updatedManifest, "utf8");
 
-if (!/\\.java$/.test(mainActivity)) {
+if (!/\.java$/.test(mainActivity)) {
   throw new Error("Expected Capacitor MainActivity.java, but a Kotlin activity was generated.");
 }
 
