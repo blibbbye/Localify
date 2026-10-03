@@ -1364,6 +1364,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(v==="recent")renderRecent();
     else if(v==="folders")renderFolders();
     else if(v==="folder"&&state.detail?.id)showFolder(state.detail.id);
+    else if(v==="folders")renderFolders();
+    else if(v==="folder"&&state.detail?.id)showFolder(state.detail.id);
     else if(v==="profile")showProfile();else if(v==="listeningStats")showListeningStats();else if(v==="accountSettings")showAccountSettings();
     renderPlayer();
   }
@@ -1580,6 +1582,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(state.currentView==="recent")renderRecent();
     else if(state.currentView==="folders")renderFolders();
     else if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id);
+    else if(state.currentView==="folders")renderFolders();
+    else if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id);
     renderPlayer();
   }
 
@@ -1593,8 +1597,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
     const artistNames=artistNamesForAlbum(a);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
-    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary iconOnlyAction" id="albumFolder" title="Add to folder" aria-label="Add to folder">${uiIcon("folder")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumFolder").onclick=()=>openFolderChooser("albums",id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
   }
 
   function showArtist(id,keepDetail=false){
@@ -2429,7 +2433,7 @@ function showListeningStats(){
     closeProfileMenu();ensureAnalytics();state.currentView="listeningStats";state.detail=null;state.selected=[];renderNav();
     const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10),recent=state.recent.map(trackById).filter(Boolean).slice(0,10);
     const totalPlays=Object.values(state.analytics.plays||{}).reduce((n,v)=>n+(Number(v)||0),0);
-    $("#content").innerHTML='<div class="profilePage"><div class="profilePanel" style="margin-bottom:20px"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap and most played music.</div></div>'+
+    $("#content").innerHTML='<div class="profilePage"><div class="statsPageHero"><div class="statsHeroIcon">◷</div><div class="statsPageHeroText"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap and most played music.</div></div></div>'+
       '<div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">'+formatHours(total)+'</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">'+totalPlays.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">'+Math.floor(weekly.seconds/60).toLocaleString()+' min</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">'+Object.keys(state.analytics.plays||{}).filter(id=>trackById(id)).length.toLocaleString()+'</div></div></div>'+
       '<div class="profileGrid"><div class="profilePanel"><h3>Weekly recap</h3><div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened</div><div class="profileRecapMinutes">'+Math.floor(weekly.seconds/60).toLocaleString()+'</div></div><div><div class="profileStatLabel">Plays</div><div class="profileRecapMinutes">'+weekly.plays.toLocaleString()+'</div></div></div><div class="profileRecapColumns"><div><div class="profileRecapTitle">Top songs</div><div class="profileList">'+(weekly.topSongs.length?weekly.topSongs.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(displayTrackTitle(x.t,true))+'</div><div class="profileTrackSub">'+esc(artistName(x.t))+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">No weekly plays yet.</div>')+'</div></div><div><div class="profileRecapTitle">Top artists</div><div class="profileList">'+(weekly.topArtists.length?weekly.topArtists.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(x.name)+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">No weekly plays yet.</div>')+'</div></div></div></div>'+
       '<div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">'+(top.length?top.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(displayTrackTitle(x.t,true))+'</div><div class="profileTrackSub">'+esc(artistName(x.t))+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">Play some music to build your stats.</div>')+'</div></div></div>'+
@@ -2947,7 +2951,7 @@ function editLocalProfile(){
 
   function openContext(x,y,id,kind="song"){
     const m=$("#contextMenu");
-    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
+    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="folder">${uiIcon("folder")} Add to folder</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
     m.classList.add("show");
     const rect=m.getBoundingClientRect(),pad=8;
     m.style.left=Math.max(pad,Math.min(x,innerWidth-rect.width-pad))+"px";
@@ -2958,6 +2962,7 @@ function editLocalProfile(){
       if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}
       if(a==="like")toggleLike(id);
       if(a==="playlist")bulkAddPlaylist([id]);
+      if(a==="folder")openFolderChooser("tracks",id);
       if(a==="lyrics")showLyrics(id);
       if(a==="edit")editTrack(id);
       if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}
@@ -3610,6 +3615,7 @@ function editLocalProfile(){
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
 
   // Static controls
+  $("#newFolderBtn").onclick=()=>editFolder(null);
   document.addEventListener("pointerdown",e=>{
     const cardPlay=e.target.closest?.(".play-track");
     const rowPlay=e.target.closest?.(".play-row");
