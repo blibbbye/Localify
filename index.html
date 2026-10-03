@@ -1348,6 +1348,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function renderNav(){
     $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
     $("#libraryBadge").textContent=`${state.tracks.length} ${state.tracks.length===1?"track":"tracks"}`;
+    renderFolderNav();
   }
   function render(){
     __prepareLocalifyDerived();
@@ -1361,6 +1362,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(v==="playlists")renderPlaylists();
     else if(v==="liked")renderLiked();
     else if(v==="recent")renderRecent();
+    else if(v==="folders")renderFolders();
+    else if(v==="folder"&&state.detail?.id)showFolder(state.detail.id);
     else if(v==="profile")showProfile();else if(v==="listeningStats")showListeningStats();else if(v==="accountSettings")showAccountSettings();
     renderPlayer();
   }
@@ -1575,6 +1578,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(state.currentView==="playlists")renderPlaylists();
     else if(state.currentView==="liked")renderLiked();
     else if(state.currentView==="recent")renderRecent();
+    else if(state.currentView==="folders")renderFolders();
+    else if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id);
     renderPlayer();
   }
 
@@ -2632,13 +2637,13 @@ function editLocalProfile(){
       if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
     }
     for(const t of added){
-      const artistNames=String(t.artist||"").split(/[,;]s*/).map(x=>x.trim()).filter(x=>x&&x!==NONE_LABEL);
+      const artistNames=String(t.artist||"").split(/[,;]\s*/).map(x=>x.trim()).filter(x=>x&&x!==NONE_LABEL);
       if(artistNames.length){const ids=artistNames.map(n=>getOrCreateArtist(n).id);applyArtistIds(t,ids);t.artist=namesOfIds(ids).join(", ")}
       const albumTitle=String(t.album||"").trim();
       if(albumTitle&&albumTitle!==NONE_LABEL&&!t.albumId&&!context.folderImport){
         const artist=artistNames[0]?getOrCreateArtist(artistNames[0]):null;
         const a=getOrCreateAlbum(albumTitle,artist);t.albumId=a.id;t.album=a.title;
-        if(String(t.albumArtist||"").trim()&&t.albumArtist!==NONE_LABEL){const aid=String(t.albumArtist).split(/[,;]s*/).map(x=>x.trim()).filter(Boolean).map(n=>getOrCreateArtist(n).id);applyArtistIds(a,aid);applyAlbumArtistIds(t,aid)}
+        if(String(t.albumArtist||"").trim()&&t.albumArtist!==NONE_LABEL){const aid=String(t.albumArtist).split(/[,;]\s*/).map(x=>x.trim()).filter(Boolean).map(n=>getOrCreateArtist(n).id);applyArtistIds(a,aid);applyAlbumArtistIds(t,aid)}
       }
     }
     importContext={};
