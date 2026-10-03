@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
-  <meta name="theme-color" content="#090b0e" />
-  <meta name="localify-build" content="2026-10-04-dark-no-theme" />
+  <meta name="theme-color" content="#7dd3fc" />
+  <meta name="localify-build" content="2026-10-01-profile-settings-3" />
   <title>Localify — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -27,7 +27,7 @@
     .app{height:100dvh;min-height:100%;width:100%;max-width:100vw;overflow:hidden;display:grid;grid-template-columns:clamp(190px,20vw,250px) minmax(0,1fr);grid-template-rows:1fr 92px}.app.nowPanelOpen{grid-template-columns:clamp(170px,16vw,220px) minmax(0,1fr) minmax(260px,320px)}
     aside{grid-row:1/2;background:#0c0f13;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;min-width:0}
     .brand{display:flex;align-items:center;gap:11px;padding:6px 10px 22px;font-weight:900;font-size:23px;letter-spacing:-.8px}
-    .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px rgba(125,211,252,.24)}
+    .logo{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;overflow:hidden;box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}
     .logo img{width:100%;height:100%;display:block;object-fit:cover}
     .nav{display:grid;gap:5px}
     .nav button,.sideAction{background:transparent;padding:11px 12px;border-radius:11px;text-align:left;color:#c5cad2;font-weight:700;display:flex;align-items:center;gap:11px}
@@ -612,53 +612,7 @@ main{min-width:0;min-height:0}
   html.localify-mobile .folderTypeGrid{grid-template-columns:repeat(2,1fr)}
   html.localify-mobile .statsPageHero{padding:13px}
 }
-.logoGlyph{font-size:19px;font-weight:1000;color:#081017;line-height:1;display:grid;place-items:center}
-/* Localify mobile mode */
-html.localify-mobile,html.localify-mobile body{background:#090b0e;overflow:hidden;overscroll-behavior:none}
-html.localify-mobile .app{display:flex;flex-direction:column;grid-template-columns:none;grid-template-rows:none;height:100svh;min-height:100svh}
-html.localify-mobile aside{display:none!important}
-html.localify-mobile main{flex:1;min-height:0;width:100%;overflow:auto;background:#090b0e;padding-bottom:0}
-html.localify-mobile .topbar{position:sticky;top:0;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;gap:7px;background:rgba(9,11,14,.96);backdrop-filter:blur(18px)}
-html.localify-mobile .search{min-width:0;max-width:none;flex:1}
-html.localify-mobile .search input{height:42px;border-radius:13px;padding:10px 13px 10px 38px}
-html.localify-mobile .topSpacer,html.localify-mobile .discordTopBtn,html.localify-mobile .discordStatus,html.localify-mobile .pill{display:none!important}
-html.localify-mobile .topbar #quickAdd{display:grid!important;width:42px;height:42px;padding:0;border-radius:13px;place-items:center}
-html.localify-mobile .topbar #quickAdd span:last-child{display:none}
-html.localify-mobile .profileTopBtn{display:grid!important;width:42px;height:42px;padding:0;border-radius:50%;place-items:center;overflow:hidden;flex:none}
-html.localify-mobile .content{padding:14px 12px calc(190px + env(safe-area-inset-bottom));width:100%;max-width:none}
-html.localify-mobile .hero{grid-template-columns:1fr;gap:10px;margin-bottom:14px}
-html.localify-mobile .heroCard{min-height:210px;padding:19px;border-radius:19px}
-html.localify-mobile h1{font-size:42px;letter-spacing:-2px}
-html.localify-mobile .quickCard{min-height:120px;border-radius:19px}
-html.localify-mobile .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-html.localify-mobile .card{padding:9px;border-radius:14px}
-html.localify-mobile .cardTitle{font-size:12px;margin:8px 1px 3px}
-html.localify-mobile .cardSub{font-size:10px}
-html.localify-mobile .tableWrap{border-radius:14px}
-html.localify-mobile table{min-width:0!important;font-size:11px}
-html.localify-mobile th,html.localify-mobile td{padding:9px 7px!important}
-html.localify-mobile .section{margin-top:20px}
-html.localify-mobile .sectionHead h2{font-size:18px}
-html.localify-mobile .profileHero{grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:center}
-html.localify-mobile .profileArt,html.localify-mobile .collectionArt{width:86px;height:86px;border-radius:18px;font-size:34px}
-html.localify-mobile .profileName{font-size:24px!important}
-html.localify-mobile .profileGrid,.localify-mobile .profileRecapColumns{grid-template-columns:1fr}
-html.localify-mobile .profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-html.localify-mobile .profileStat{padding:11px;border-radius:13px}
-html.localify-mobile .profileStatValue{font-size:22px}
-html.localify-mobile .profileMenu{position:fixed;right:8px;top:calc(60px + env(safe-area-inset-top));width:min(320px,calc(100vw - 16px));max-height:calc(100dvh - 80px);overflow:auto}
-html.localify-mobile .modalShade{align-items:flex-end;padding:0!important}
-html.localify-mobile .modal{width:100%!important;max-width:none!important;max-height:90dvh;border-radius:20px 20px 0 0!important;margin:0!important}
-html.localify-mobile .player{left:8px!important;right:8px!important;bottom:calc(58px + env(safe-area-inset-bottom))!important;width:auto!important;border-radius:17px!important;padding:9px!important}
-html.localify-mobile .player .playerCenter{gap:7px}
-html.localify-mobile .player .playerMeta{min-width:0}
-html.localify-mobile .mobileNav{display:grid!important;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:90;padding:7px 6px calc(7px + env(safe-area-inset-bottom));background:rgba(10,12,15,.97);border-top:1px solid #242a31;backdrop-filter:blur(18px)}
-html.localify-mobile .mobileNav button{min-width:0;padding:5px 3px;background:transparent;color:#737c88;border-radius:11px;font-size:10px}
-html.localify-mobile .mobileNav button.active{color:var(--accent);background:rgba(125,211,252,.08)}
-html.localify-mobile .mobileNav button span{display:grid;place-items:center}
-html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
-@media(max-width:390px){html.localify-mobile .grid{grid-template-columns:repeat(2,minmax(0,1fr))}html.localify-mobile h1{font-size:36px}}
-</style>
+.logoGlyph{font-size:19px;font-weight:1000;color:#081017;line-height:1;display:grid;place-items:center}</style>
 </head>
 <body>
 <div class="app">
@@ -765,16 +719,15 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
   const audio = $("#audio");
-  function updateLocalifyMediaSession(t,cover=""){if(!("mediaSession"in navigator)||!t)return;try{const art=cover||knownCoverUrlForTrack(t)||"";navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistName(t)||"Unknown Artist",album:albumName(t)||"Localify",artwork:art?[{src:art,sizes:"512x512",type:"image/*"}]:[]})}catch{}}
+  function updateLocalifyMediaSession(t,cover=""){if(!("mediaSession"in navigator)||!t)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistName(t)||"Unknown Artist",album:albumName(t)||"Localify",artwork:cover?[{src:cover,sizes:"512x512",type:"image/*"}]:[]})}catch{}}
 
-  function setLocalifyNativePlayback(active){try{const n=globalThis.LocalifyNative;if(!n)return;if(active)n.startPlaybackService?.();else n.stopPlaybackService?.()}catch{}}
   const LOCALIFY_MOBILE_MODE=new URLSearchParams(location.search).get("mobile")==="1"||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||!!globalThis.Capacitor;
   if(LOCALIFY_MOBILE_MODE)document.documentElement.classList.add("localify-mobile");
 
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"} },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
@@ -1060,7 +1013,7 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
         if(id[0]==="T"){
           if(id==="TXXX"){
             const raw=decodeId3Text(body),parts=raw.split(" "),desc=(parts.shift()||"").trim().toLowerCase(),value=parts.join(" ").trim();
-            if(/^(?:title|name|track\s*title)$/i.test(desc)&&value)out.title=value;else if(/^(?:artist|performer|author)$/i.test(desc)&&value)out.artist=value;else if(/^(?:album|release)$/i.test(desc)&&value)out.album=value;else if(/editor|edit(?:ed|ing)?\s*by|software|encoded\s*by/.test(desc))out.editor=value;
+            if(/editor|edit(?:ed|ing)?\s*by|software|encoded\s*by/.test(desc))out.editor=value;
           }else{
             const value=decodeId3Text(body);
             if(id==="TIT2")out.title=value;
@@ -1376,7 +1329,6 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
     state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false},state.settings||{});
-    delete state.settings.theme;
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
@@ -1424,7 +1376,7 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
 
   function trackPrefixMatch(value){
     const raw=String(value||"").trim();
-    return raw.match(/^\s*0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
+    return raw.match(/^0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
   }
   function trackNo(t){
     const filenameNo=parseInt(t?.fileTrack,10);
@@ -2465,7 +2417,7 @@ html.localify-mobile .mobileNav .svgIcon{width:20px;height:20px}
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8),liked=state.liked.filter(id=>trackById(id)).length;
     const albumCount=state.albums.length,artistCount=state.artists.length,songCount=state.tracks.length,playlistCount=state.playlists.length;
     $("#content").innerHTML='<div class="profilePage"><div class="profileHeader"><div class="profileAvatar">'+(state.profile?.avatar?'<img src="'+esc(state.profile.avatar)+'" alt="">':initials)+'</div><div><div class="profileName">'+esc(name)+'</div><div class="profileSub">Your Localify profile and library overview.</div><div class="profileActions"><button class="secondary small" id="profileEdit">Edit profile</button></div></div></div>'+
-      '<div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Songs</div><div class="profileStatValue">'+songCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Albums</div><div class="profileStatValue">'+albumCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Artists</div><div class="profileStatValue">'+artistCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Playlists</div><div class="profileStatValue">'+playlistCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Folders</div><div class="profileStatValue">'+state.folders.length.toLocaleString()+'</div></div></div>'+
+      '<div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Songs</div><div class="profileStatValue">'+songCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Albums</div><div class="profileStatValue">'+albumCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Artists</div><div class="profileStatValue">'+artistCount.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">Playlists</div><div class="profileStatValue">'+playlistCount.toLocaleString()+'</div></div></div>'+
       '<div class="profileGrid"><div class="profilePanel"><h3>Library</h3><div class="profileList"><div class="profileListRow"><div class="profileRank">♥</div><div><div class="profileTrackTitle">Liked songs</div><div class="profileTrackSub">Songs in your liked collection</div></div><div class="profileCount">'+liked+'</div></div><div class="profileListRow"><div class="profileRank">▶</div><div><div class="profileTrackTitle">Recently played</div><div class="profileTrackSub">Tracks in your recent history</div></div><div class="profileCount">'+state.recent.length+'</div></div></div></div>'+
       '<div class="profilePanel"><h3>Listening</h3><div class="profileList"><div class="profileListRow"><div class="profileRank">◷</div><div><div class="profileTrackTitle">Listening time</div><div class="profileTrackSub">Total tracked playback</div></div><div class="profileCount">'+formatHours(Number(state.analytics?.totalSeconds)||0)+'</div></div><div class="profileListRow"><div class="profileRank">#</div><div><div class="profileTrackTitle">Total plays</div><div class="profileTrackSub">Plays recorded on this device</div></div><div class="profileCount">'+Object.values(state.analytics?.plays||{}).reduce((n,v)=>n+(Number(v)||0),0).toLocaleString()+'</div></div></div></div></div>'+
       '<div class="profilePanel"><h3>Recently played</h3><div class="profileList">'+(recent.length?recent.map((t,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(displayTrackTitle(t,true))+'</div><div class="profileTrackSub">'+esc(artistName(t))+' • '+esc(albumName(t))+'</div></div><div class="profileCount">Recently</div></div>').join(""):'<div class="profileEmpty">Play a song to start your recently played list.</div>')+'</div></div></div>';
@@ -2591,9 +2543,7 @@ function editLocalProfile(){
           const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
           if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
         }
-        const imported=await addFiles(files,{folderImageMap:byDir,folderImport:true});
-        const folder=createFolderFromImportedTracks(root.name,imported);
-        if(folder){await save();showFolder(folder.id)}
+        await addFiles(files,{folderImageMap:byDir,folderImport:true});
         return;
       }catch(e){
         if(e?.name==="AbortError")return;
@@ -2613,18 +2563,14 @@ function editLocalProfile(){
         const dir=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
         if(!byDir.has(dir))byDir.set(dir,await readFileImage(img));
       }
-      const imported=await addFiles(files.filter(isAudioFile),{folderImageMap:byDir,folderImport:true});
-      const firstRel=files.find(f=>f.webkitRelativePath)?.webkitRelativePath||"";
-      const folderName=firstRel.split("/").filter(Boolean)[0]||"Imported folder";
-      const folder=createFolderFromImportedTracks(folderName,imported);
-      if(folder){await save();showFolder(folder.id)}
+      await addFiles(files.filter(isAudioFile),{folderImageMap:byDir,folderImport:true});
       input.value="";
     };
     input.click();
   }
   async function addFiles(files,context={}){
     const arr=files.filter(isAudioFile);
-    if(!arr.length){toast("No audio files found.");return []}
+    if(!arr.length){toast("No audio files found.");return}
     const album=context.albumId?albumById(context.albumId):null;
     const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
@@ -2687,7 +2633,7 @@ function editLocalProfile(){
       }
     }
     importContext={};
-    if(!added.length){toast("Nothing new was imported.");return []}
+    if(!added.length){toast("Nothing new was imported.");return}
 
     save(false,added.map(t=>t.id));
     toast(context.folderImport?`Added ${added.length} ${added.length===1?"song":"songs"} from ${new Set(added.map(t=>t.albumId)).size} folder ${new Set(added.map(t=>t.albumId)).size===1?"album":"albums"}.`:`Added ${added.length} ${added.length===1?"song":"songs"}.`);
@@ -2711,19 +2657,6 @@ function editLocalProfile(){
       autoSave();
       if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search"||state.currentView==="albums"||state.currentView==="playlists"||state.currentView==="home")renderCurrentViewWithoutScroll();
     })().catch(e=>console.warn("Localify duration scan failed",e));
-    return added;
-  }
-  function createFolderFromImportedTracks(name,tracks){
-    const list=Array.isArray(tracks)?tracks.filter(Boolean):[];
-    if(!list.length)return null;
-    const folder=createFolderEntity(String(name||"Imported folder"));
-    ensureFolderArrays(folder);
-    for(const t of list){
-      if(!folder.trackIds.includes(t.id))folder.trackIds.push(t.id);
-      if(t.albumId&&!folder.albumIds.includes(t.albumId))folder.albumIds.push(t.albumId);
-      for(const aid of artistIdsForTrack(t))if(aid&&!folder.artistIds.includes(aid))folder.artistIds.push(aid);
-    }
-    return folder;
   }
   function inferTrackNumberFromFilename(name){const m=String(name||"").match(/^(?:Track\s*)?0*(\d+)(?:[.\-_)\s])/i);return m?parseInt(m[1],10):null}
   function setupDrop(z){if(!z)return;["dragenter","dragover"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.add("drag")}));["dragleave","drop"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.remove("drag")}));z.addEventListener("drop",e=>addFiles([...e.dataTransfer.files],{}))}
@@ -3697,15 +3630,15 @@ $("#globalSearch").addEventListener("input",e=>{
   setInterval(pollDesktopControl,350);
   setInterval(checkDesktopPlayer,4000);
   audio.addEventListener("timeupdate",()=>{updatePlayerTime();creditListeningTime();sendDiscordPresence(false)});
-  audio.addEventListener("play",()=>{setLocalifyNativePlayback(true);try{if("mediaSession"in navigator){navigator.mediaSession.playbackState="playing";updateLocalifyMediaSession(trackById(state.currentId));}}catch{};renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
-  audio.addEventListener("pause",()=>{setLocalifyNativePlayback(false);try{if("mediaSession"in navigator)navigator.mediaSession.playbackState="paused"}catch{};creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
-  audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();try{updateLocalifyMediaSession(trackById(state.currentId))}catch{};sendDiscordPresence(true)});
+  audio.addEventListener("play",()=>{try{if("mediaSession"in navigator){navigator.mediaSession.playbackState="playing";updateLocalifyMediaSession(trackById(state.currentId));}}catch{};renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
+  audio.addEventListener("pause",()=>{try{if("mediaSession"in navigator)navigator.mediaSession.playbackState="paused"}catch{};creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
+  audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();sendDiscordPresence(true)});
   audio.addEventListener("seeking",()=>sendDiscordPresence(true));
   audio.addEventListener("seeked",()=>sendDiscordPresence(true));
   audio.addEventListener("error",()=>{
     if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play this audio format.");
   });
-  audio.addEventListener("ended",()=>{setLocalifyNativePlayback(false);creditListeningTime();autoSave();
+  audio.addEventListener("ended",()=>{creditListeningTime();autoSave();
     if(state.settings.repeat==="one"){
       try{audio.currentTime=0;const p=audio.play();if(p?.catch)p.catch(()=>{})}catch{}
     }else next();
@@ -3714,7 +3647,7 @@ $("#globalSearch").addEventListener("input",e=>{
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next);set("seekbackward",()=>audio.currentTime=Math.max(0,audio.currentTime-10));set("seekforward",()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+10));set("stop",()=>audio.pause())}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
-  if("serviceWorker"in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("./sw.js").then(r=>r.update()).catch(()=>{});}
+  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js").catch(()=>{});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
@@ -3751,10 +3684,3 @@ $("#globalSearch").addEventListener("input",e=>{
 </script>
 </body>
 </html>
-
-<style id="localify-dark-palette-lock">
-/* Theme customization is intentionally disabled for now. */
-.themeGrid,.themeChoice,.themeSwatch,.customThemeControls,.themeColorField,.themeColorRow,.themeColorValue,.themeModeRow,.themeModeBtn{display:none!important}
-body.theme-gradient,body.theme-solid{background:#090b0e!important}
-body.theme-gradient main,body.theme-solid main{background:linear-gradient(180deg,#0b0e12 0%,#0a0c0f 34%,#090b0e 100%)!important}
-</style>
