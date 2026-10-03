@@ -1,0 +1,6 @@
+{
+  "appId":"com.blibbby.localify",
+  "appName":"Localify",
+  "webDir":"www",
+  "bundledWebRuntime":false
+}
