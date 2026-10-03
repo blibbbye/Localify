@@ -717,6 +717,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
   const audio = $("#audio");
+  const LOCALIFY_MOBILE_MODE=new URLSearchParams(location.search).get("mobile")==="1";
+  if(LOCALIFY_MOBILE_MODE)document.documentElement.classList.add("localify-mobile");
 
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
@@ -967,6 +969,67 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       };
       fr.readAsDataURL(file);
     });
+  }
+
+  function readBe32(bytes,off){return (((bytes[off]||0)<<24)>>>0)|((bytes[off+1]||0)<<16)|((bytes[off+2]||0)<<8)|(bytes[off+3]||0)}
+  function readSyncSafe(bytes,off){return (((bytes[off]||0)&127)<<21)|(((bytes[off+1]||0)&127)<<14)|(((bytes[off+2]||0)&127)<<7)|((bytes[off+3]||0)&127)}
+  function decodeId3Text(bytes){
+    if(!bytes?.length)return "";
+    const enc=bytes[0],data=bytes.subarray(1);
+    try{
+      if(enc===3)return new TextDecoder("utf-8").decode(data).replace(/ +$/,"").trim();
+      if(enc===2){let s="";for(let i=0;i+1<data.length;i+=2)s+=String.fromCharCode((data[i]<<8)|data[i+1]);return s.replace(/ +$/,"").trim()}
+      if(enc===1){let p=0,little=true,s="";if(data.length>=2&&(data[0]===255||data[0]===254)){little=data[0]===254;p=2}for(;p+1<data.length;p+=2)s+=String.fromCharCode(little?(data[p]|data[p+1]<<8):(data[p]<<8|data[p+1]));return s.replace(/ +$/,"").trim()}
+      return new TextDecoder("windows-1252").decode(data).replace(/ +$/,"").trim();
+    }catch{return ""}
+  }
+  async function readMp3V1Metadata(file){
+    try{
+      if((Number(file?.size)||0)<128)return {};
+      const bytes=new Uint8Array(await file.slice(file.size-128,file.size).arrayBuffer());
+      if(bytes[0]!==84||bytes[1]!==65||bytes[2]!==71)return {};
+      const td=new TextDecoder("windows-1252"),clean=x=>td.decode(x).replace(/ +$/,"").trim();
+      return {title:clean(bytes.subarray(3,33)),artist:clean(bytes.subarray(33,63)),album:clean(bytes.subarray(63,93)),year:clean(bytes.subarray(93,97))};
+    }catch{return {}}
+  }
+  async function readMp3Id3Metadata(file){
+    try{
+      const max=Math.min(Number(file?.size)||0,4*1024*1024);
+      if(max<10)return readMp3V1Metadata(file);
+      const bytes=new Uint8Array(await file.slice(0,max).arrayBuffer());
+      if(bytes[0]!==73||bytes[1]!==68||bytes[2]!==51)return readMp3V1Metadata(file);
+      const ver=bytes[3]||3,end=Math.min(bytes.length,10+readSyncSafe(bytes,6));
+      const out={};let p=10;
+      while(p+10<=end){
+        if(bytes[p]===0)break;
+        const id=String.fromCharCode(bytes[p],bytes[p+1],bytes[p+2],bytes[p+3]);
+        const sz=ver>=4?readSyncSafe(bytes,p+4):readBe32(bytes,p+4);
+        if(!sz||p+10+sz>end)break;
+        const body=bytes.subarray(p+10,p+10+sz);
+        if(id[0]==="T"){
+          if(id==="TXXX"){
+            const raw=decodeId3Text(body),parts=raw.split(" "),desc=(parts.shift()||"").trim().toLowerCase(),value=parts.join(" ").trim();
+            if(/editor|edit(?:ed|ing)?s*by|software|encodeds*by/.test(desc))out.editor=value;
+          }else{
+            const value=decodeId3Text(body);
+            if(id==="TIT2")out.title=value;
+            else if(id==="TPE1")out.artist=value;
+            else if(id==="TPE2")out.albumArtist=value;
+            else if(id==="TALB")out.album=value;
+            else if(id==="TDRC"||id==="TYER")out.year=(value.match(/d{4}/)||[])[0]||value;
+            else if(id==="TCON")out.genre=value.replace(/^(d+)s*/,"");
+            else if(id==="TRCK")out.track=parseInt((value.match(/d+/)||[])[0],10)||null;
+            else if(id==="TPOS")out.disc=parseInt((value.match(/d+/)||[])[0],10)||null;
+          }
+        }
+        p+=10+sz;
+      }
+      return out;
+    }catch{return {}}
+  }
+  async function readEmbeddedAudioMetadata(file){
+    if(/.mp3$/i.test(file?.name||""))return readMp3Id3Metadata(file);
+    return {};
   }
 
   function readDuration(t){
@@ -2520,6 +2583,9 @@ function editLocalProfile(){
     const album=context.albumId?albumById(context.albumId):null;
     const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
+    const metaByFile=new Map();let metaCursor=0;
+    const metaWorkers=Array.from({length:Math.min(4,arr.length)},async()=>{while(metaCursor<arr.length){const f=arr[metaCursor++];try{metaByFile.set(f,await readEmbeddedAudioMetadata(f))}catch{metaByFile.set(f,{})}}});
+    await Promise.all(metaWorkers);
     const folderAlbums=new Map();
     const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
     const added=[];
@@ -2547,12 +2613,14 @@ function editLocalProfile(){
       const albumArtistIds=al?artistIdsForAlbum(al):[];
       const fallbackArtistIds=artist?[artist.id]:[];
       const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||NONE_LABEL;
+      const tags=metaByFile.get(f)||{},fileTrack=inferTrackNumberFromFilename(f.name);
       const t={
-        id:uid(),title:f.name.replace(/\.[^.]+$/,"") ,
-        artist:fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
-        album:al?.title||NONE_LABEL,albumId:al?.id||null,
-        albumArtist:namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
-        genre:al?.genre||"",year:al?.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
+        id:uid(),title:String(tags.title||"").trim()||f.name.replace(/\.[^.]+$/,"") ,
+        artist:String(tags.artist||"").trim()||fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
+        album:String(tags.album||"").trim()||al?.title||NONE_LABEL,albumId:al?.id||null,
+        albumArtist:String(tags.albumArtist||"").trim()||namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
+        genre:String(tags.genre||al?.genre||"").trim(),year:String(tags.year||al?.year||"").trim(),track:Number.isFinite(Number(tags.track))?Number(tags.track):fileTrack,disc:Number.isFinite(Number(tags.disc))?Number(tags.disc):null,fileTrack,
+        metadataEditor:String(tags.editor||""),
         explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
         blob:f,_blobDirty:true,cover:al?.cover||artist?.image||folderCover||null,
         lyrics:"",credits:normalizeCredits(al?.credits||{}),addedAt:Date.now()
@@ -2562,6 +2630,16 @@ function editLocalProfile(){
       existing.add(sig);
       queueBlob(t.id);
       if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
+    }
+    for(const t of added){
+      const artistNames=String(t.artist||"").split(/[,;]s*/).map(x=>x.trim()).filter(x=>x&&x!==NONE_LABEL);
+      if(artistNames.length){const ids=artistNames.map(n=>getOrCreateArtist(n).id);applyArtistIds(t,ids);t.artist=namesOfIds(ids).join(", ")}
+      const albumTitle=String(t.album||"").trim();
+      if(albumTitle&&albumTitle!==NONE_LABEL&&!t.albumId&&!context.folderImport){
+        const artist=artistNames[0]?getOrCreateArtist(artistNames[0]):null;
+        const a=getOrCreateAlbum(albumTitle,artist);t.albumId=a.id;t.album=a.title;
+        if(String(t.albumArtist||"").trim()&&t.albumArtist!==NONE_LABEL){const aid=String(t.albumArtist).split(/[,;]s*/).map(x=>x.trim()).filter(Boolean).map(n=>getOrCreateArtist(n).id);applyArtistIds(a,aid);applyAlbumArtistIds(t,aid)}
+      }
     }
     importContext={};
     if(!added.length){toast("Nothing new was imported.");return}
@@ -3114,6 +3192,7 @@ function editLocalProfile(){
       if(JSON.stringify(ids)!==JSON.stringify(oldIds)){applyArtistIds(a,ids);changed=true;}
     }
     for(const t of state.tracks){
+      if(!Number.isFinite(Number(t.fileTrack)))t.fileTrack=inferTrackNumberFromFilename(t.fileName||t.title||"");
       const oldTitle=t.title;
       if(!nonPlaceholderText(t.title)){
         const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
