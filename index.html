@@ -4,12 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#7dd3fc" />
-  <meta name="localify-build" content="2026-10-04-web-fixed-4" />
+  <meta name="localify-build" content="2026-10-01-profile-settings-3" />
   <title>Localify — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
     :root{
       --bg:#090b0e; --panel:#111419; --panel2:#171a20; --panel3:#20242c;
@@ -36,7 +33,9 @@
     .icon{width:20px;height:20px;display:grid;place-items:center;opacity:.9}
     .sectionTitle{padding:10px 12px 7px;color:#7d8591;font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:900}
     .sideBottom{margin-top:8px;display:grid;gap:7px}
-    main{grid-row:1/2;min-width:0;overflow:auto;background:linear-gradient(180deg,#0b0e12 0%,#0a0c0f 34%,#090b0e 100%)}
+    main{grid-row:1/2;min-width:0;overflow:auto;background:
+      radial-gradient(900px 500px at 85% -10%,rgba(125,211,252,.08),transparent 60%),
+      linear-gradient(180deg,#0b0e12 0%,#0a0c0f 34%,#090b0e 100%)}
     .topbar{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:12px;padding:15px 24px;background:rgba(9,11,14,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.04)}
     .search{flex:1;max-width:720px;position:relative}
     .search input{width:100%;background:#15181e;border:1px solid #252a33;color:#fff;border-radius:14px;padding:12px 16px 12px 42px;outline:none}
@@ -75,7 +74,7 @@
     .hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:18px;align-items:stretch;margin-bottom:28px}
     .heroCard,.quickCard{border:1px solid rgba(255,255,255,.06);background:linear-gradient(145deg,#171b20,#101318);border-radius:24px;box-shadow:var(--shadow)}
     .heroCard{padding:28px;min-height:260px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden}
-    .heroCard:after{display:none}
+    .heroCard:after{content:"";position:absolute;inset:auto -80px -110px auto;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(125,211,252,.2),transparent 65%)}
     .heroKicker{font-size:12px;color:var(--accent);font-weight:1000;letter-spacing:.13em;text-transform:uppercase}
     h1{font-size:clamp(34px,5vw,66px);line-height:.97;letter-spacing:-2.6px;margin:9px 0 12px;max-width:760px}
     .heroDesc{color:#a7adb8;max-width:650px;line-height:1.5}
@@ -420,9 +419,9 @@ main{min-width:0;min-height:0}
   .progressLine{position:absolute;left:0;right:0;bottom:0;display:block;height:3px;overflow:hidden;line-height:0}
   .progressLine span{display:none}
   .progressLine input{display:block;width:100%;height:3px;margin:0;padding:0;appearance:none;background:rgba(255,255,255,.16);border-radius:0}
-  .progressLine input::-webkit-slider-thumb{appearance:none;width:3px;height:3px;background:rgba(255,255,255,.82);box-shadow:none}
-  .progressLine input::-moz-range-thumb{width:3px;height:3px;border:0;border-radius:0;background:rgba(255,255,255,.82)}
-  .progressLine input::-moz-range-progress{height:3px;background:rgba(255,255,255,.16)}
+  .progressLine input::-webkit-slider-thumb{appearance:none;width:3px;height:3px;background:var(--accent);box-shadow:-100vw 0 0 100vw var(--accent)}
+  .progressLine input::-moz-range-thumb{width:3px;height:3px;border:0;border-radius:0;background:var(--accent)}
+  .progressLine input::-moz-range-progress{height:3px;background:var(--accent)}
   .topbar .mobileTools,.topbar .mobileImportBtn{display:none}
   .discordTopBtn{width:40px;height:40px;border-radius:12px}
 }
@@ -548,10 +547,10 @@ main{min-width:0;min-height:0}
   .profileGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px}.profilePanel{padding:15px;border:1px solid #252d36;border-radius:16px;background:#10151b}.profilePanel h3{margin:0 0 10px;font-size:15px}.profileList{display:grid;gap:6px}
   .profileListRow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 7px;border-radius:9px}.profileListRow:hover{background:#171d24}.profileRank{color:#6f7a86;font-size:11px;text-align:center;font-weight:900}.profileTrackTitle{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileTrackSub{font-size:10px;color:#77818c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileCount{color:#aeb7c2;font-size:11px;font-weight:900}.profileEmpty{color:#76818c;font-size:12px;padding:10px 0}
   @media (max-width:780px){.profileTopBtn{display:none!important}.profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.profileGrid{grid-template-columns:1fr}.profileHeader{grid-template-columns:66px minmax(0,1fr);padding:14px}.profileAvatar{width:66px;height:66px;font-size:23px}.profileName{font-size:22px}}
-.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}
-  @media (max-width:780px){.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}}
+.statsHeroIcon{width:88px;height:88px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));color:#fff;font-size:30px;font-weight:1000;box-shadow:0 12px 28px var(--theme-glow-a);border:1px solid rgba(255,255,255,.12);flex:none}
+  @media (max-width:780px){.statsHeroIcon{width:66px;height:66px;font-size:23px;border-radius:18px}}
 /* Theme + profile menu */
-.profileMenu{position:absolute;right:18px;top:66px;width:300px;z-index:80;padding:9px;border:1px solid #2d3540;border-radius:18px;background:rgba(15,19,24,.98);box-shadow:0 24px 70px rgba(0,0,0,.48);backdrop-filter:blur(18px);display:none}.profileMenu.open{display:block}.profileMenuHead{display:flex;align-items:center;gap:11px;padding:10px 10px 12px;border-bottom:1px solid #252c34;margin-bottom:6px}.profileMenuAvatar{width:44px;height:44px;border-radius:50%;overflow:hidden;background:#17212a;border:1px solid #33404c;display:grid;place-items:center;color:var(--accent);font-weight:1000;flex:none}.profileMenuAvatar img{width:100%;height:100%;object-fit:cover;display:block}.profileMenuName{font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileMenuSub{font-size:10px;color:#76808c;margin-top:3px}.profileMenuItem{display:flex;align-items:center;gap:11px;width:100%;padding:11px 10px;background:transparent;border-radius:12px;text-align:left;color:#e6e9ed;font-weight:800}.profileMenuItem:hover{background:#1b2128}.profileMenuItem .menuIcon{width:20px;height:20px;display:grid;place-items:center;color:#aeb7c2;flex:none}.profileMenuItem small{display:block;color:#77828e;font-size:10px;font-weight:650;margin-top:2px}.profileMenuDivider{height:1px;background:#252c34;margin:7px 4px}.settingsGrid{display:grid;gap:18px}.settingsSection{padding:16px;border:1px solid #252d36;border-radius:16px;background:#10151a}.settingsSectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.settingsSectionTitle{font-size:15px;font-weight:950}.settingsSectionSub{margin-top:3px;font-size:11px;color:#77818d;line-height:1.45}.themeChoice:hover{border-color:#566171;transform:translateY(-1px)}.themeChoice.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(125,211,252,.12)}.themeChoice strong{display:block;font-size:11px}.themeChoice span{display:block;color:#74808d;font-size:9px;margin-top:2px}.themeColorField label{font-size:10px;color:#7d8792;font-weight:850;text-transform:uppercase;letter-spacing:.08em}.themeColorRow input[type=color]{width:34px;height:30px;padding:0;border:0;background:transparent;border-radius:8px;cursor:pointer}.themeModeBtn.active{border-color:var(--accent);color:#fff;background:rgba(125,211,252,.09)}.settingsToggleRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #232a32}.settingsToggleRow:first-child{border-top:0;padding-top:0}.settingsToggleCopy strong{display:block;font-size:12px}.settingsToggleCopy span{display:block;margin-top:3px;color:#75808c;font-size:10px;line-height:1.35}.settingsToggleRow input[type=checkbox]{width:19px;height:19px;accent-color:var(--accent);cursor:pointer;flex:none}.settingsRange{width:100%;accent-color:var(--accent)}@media(max-width:700px){.profileMenu{right:8px;top:58px;width:min(300px,calc(100vw - 16px))}}
+.profileMenu{position:absolute;right:18px;top:66px;width:300px;z-index:80;padding:9px;border:1px solid #2d3540;border-radius:18px;background:rgba(15,19,24,.98);box-shadow:0 24px 70px rgba(0,0,0,.48);backdrop-filter:blur(18px);display:none}.profileMenu.open{display:block}.profileMenuHead{display:flex;align-items:center;gap:11px;padding:10px 10px 12px;border-bottom:1px solid #252c34;margin-bottom:6px}.profileMenuAvatar{width:44px;height:44px;border-radius:50%;overflow:hidden;background:#17212a;border:1px solid #33404c;display:grid;place-items:center;color:var(--accent);font-weight:1000;flex:none}.profileMenuAvatar img{width:100%;height:100%;object-fit:cover;display:block}.profileMenuName{font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profileMenuSub{font-size:10px;color:#76808c;margin-top:3px}.profileMenuItem{display:flex;align-items:center;gap:11px;width:100%;padding:11px 10px;background:transparent;border-radius:12px;text-align:left;color:#e6e9ed;font-weight:800}.profileMenuItem:hover{background:#1b2128}.profileMenuItem .menuIcon{width:20px;height:20px;display:grid;place-items:center;color:#aeb7c2;flex:none}.profileMenuItem small{display:block;color:#77828e;font-size:10px;font-weight:650;margin-top:2px}.profileMenuDivider{height:1px;background:#252c34;margin:7px 4px}.settingsGrid{display:grid;gap:18px}.settingsSection{padding:16px;border:1px solid #252d36;border-radius:16px;background:#10151a}.settingsSectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.settingsSectionTitle{font-size:15px;font-weight:950}.settingsSectionSub{margin-top:3px;font-size:11px;color:#77818d;line-height:1.45}.themeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}.themeChoice{min-height:74px;padding:9px;border:1px solid #2a323c;border-radius:13px;background:#13181e;text-align:left;transition:.14s}.themeChoice:hover{border-color:#566171;transform:translateY(-1px)}.themeChoice.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(125,211,252,.12)}.themeSwatch{height:34px;border-radius:9px;margin-bottom:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}.themeChoice strong{display:block;font-size:11px}.themeChoice span{display:block;color:#74808d;font-size:9px;margin-top:2px}.customThemeControls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.themeColorField{display:grid;gap:6px}.themeColorField label{font-size:10px;color:#7d8792;font-weight:850;text-transform:uppercase;letter-spacing:.08em}.themeColorRow{display:flex;align-items:center;gap:9px;padding:8px 9px;border:1px solid #2a323c;border-radius:11px;background:#0d1217}.themeColorRow input[type=color]{width:34px;height:30px;padding:0;border:0;background:transparent;border-radius:8px;cursor:pointer}.themeColorValue{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#dce3ea}.themeModeRow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}.themeModeBtn{padding:9px 11px;border:1px solid #2a323c;border-radius:10px;background:#11171c;color:#b9c2cc;font-size:11px;font-weight:850}.themeModeBtn.active{border-color:var(--accent);color:#fff;background:rgba(125,211,252,.09)}.settingsToggleRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #232a32}.settingsToggleRow:first-child{border-top:0;padding-top:0}.settingsToggleCopy strong{display:block;font-size:12px}.settingsToggleCopy span{display:block;margin-top:3px;color:#75808c;font-size:10px;line-height:1.35}.settingsToggleRow input[type=checkbox]{width:19px;height:19px;accent-color:var(--accent);cursor:pointer;flex:none}.settingsRange{width:100%;accent-color:var(--accent)}@media(max-width:700px){.profileMenu{right:8px;top:58px;width:min(300px,calc(100vw - 16px))}.customThemeControls{grid-template-columns:1fr}}body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}
 /* Profile + compact topbar polish */
 .profileRecapMain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.profileRecapMain>div{padding:14px;border:1px solid #252d36;border-radius:14px;background:#11161c}.profileRecapMinutes{margin-top:5px;font-size:28px;font-weight:1000;letter-spacing:-.8px}.profileRecapColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profileRecapTitle{font-size:10px;color:#79838f;text-transform:uppercase;letter-spacing:.09em;font-weight:950;margin-bottom:7px}
 @media(max-width:780px){
@@ -566,58 +565,14 @@ main{min-width:0;min-height:0}
   .profileRecapMain{grid-template-columns:1fr 1fr}
 }
 
-.statsPageHero{display:flex;align-items:center;gap:18px;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318);min-width:0}.statsPageHeroText{min-width:0}.statsPageHero .profileName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}.settingsPage{padding-bottom:40px}@media(max-width:780px){.statsPageHero{gap:12px;padding:14px}.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}}
+.statsPageHero{display:flex;align-items:center;gap:18px;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318);min-width:0}.statsPageHeroText{min-width:0}.statsPageHero .profileName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.statsHeroIcon{width:76px;height:76px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));color:#fff;font-size:28px;font-weight:1000;box-shadow:0 14px 32px var(--theme-glow-a);border:1px solid rgba(255,255,255,.12);flex:0 0 76px}.settingsPage{padding-bottom:40px}@media(max-width:780px){.statsPageHero{gap:12px;padding:14px}.statsHeroIcon{width:60px;height:60px;flex-basis:60px;font-size:22px;border-radius:17px}}
 
-
-.folderNavHead{display:flex;align-items:center;justify-content:space-between;padding-right:7px}.folderNavAdd{width:26px;height:26px;border-radius:8px;background:#151a20;border:1px solid #29313b;color:#aeb7c2;font-size:18px;line-height:1}.folderNavAdd:hover{background:#202731;color:#fff}.folderNavBtn{background:transparent;color:#aeb6c1;padding:8px 10px;border-radius:10px;text-align:left;display:flex;gap:9px;align-items:center;min-width:0;font-size:12px;font-weight:800;width:100%}.folderNavBtn:hover{background:#171b21;color:#fff}.folderNavBtn.active{background:#171b21;color:var(--accent)}.folderNavBtn span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderCollage{aspect-ratio:1/1;border-radius:13px;overflow:hidden;background:#161b21;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}.folderTile{min-width:0;min-height:0;background:#20242b;display:grid;place-items:center;overflow:hidden;color:#697482}.folderTile img{width:100%;height:100%;object-fit:cover;display:block}.folderTile .svgIcon{width:32%;height:32%}.folderDetailCollage{width:175px;height:175px;flex:0 0 175px;border-radius:22px}.folderPickerGrid{display:grid;gap:7px;max-height:52vh;overflow:auto}.folderPickerItem{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid #252d36;border-radius:11px;background:#11161c}.folderPickerItem:hover{background:#171d24;border-color:#35404d}.folderPickerItem input{width:17px;height:17px;accent-color:var(--accent)}.folderPickerCopy{min-width:0}.folderPickerCopy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderPickerCopy span{display:block;margin-top:2px;font-size:10px;color:#727d89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.folderTypeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.folderTypeButton{padding:13px 9px;border:1px solid #29313b;background:#11161b;border-radius:12px;text-align:center;font-weight:850;font-size:11px}.folderTypeButton:hover{background:#1a2027;border-color:#3b4653}.folderTypeButton strong{display:block;margin-top:4px}.statsPageHero{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #252d36;border-radius:18px;background:#11161c;min-width:0}.statsPageHeroText{min-width:0}.statsHeroIcon{width:60px;height:60px;border-radius:17px;display:grid;place-items:center;background:#171d24;color:var(--accent);font-size:24px;font-weight:1000;border:1px solid #2a333d;flex:0 0 60px}.mobileNav{display:none}
-@media(max-width:780px){
-  .folderNavHead,#folderNav{display:none!important}
-  html.localify-mobile,html.localify-mobile body{overflow:hidden}
-  html.localify-mobile .app{display:block;height:100dvh}
-  html.localify-mobile .app>aside:first-child,html.localify-mobile .nowSidebar{display:none!important}
-  html.localify-mobile main{height:100dvh;width:100%;overflow:auto;padding-bottom:84px}
-  html.localify-mobile .topbar{position:sticky;top:0;z-index:30;padding:10px;background:rgba(9,11,14,.94);gap:7px}
-  html.localify-mobile .topbar .search{max-width:none}
-  html.localify-mobile .topbar .search input{height:42px;padding-top:10px;padding-bottom:10px;border-radius:12px}
-  html.localify-mobile .topbar #quickAdd{display:grid!important;width:42px;height:42px;padding:0;place-items:center;border-radius:12px}
-  html.localify-mobile .topbar #quickAdd span:last-child{display:none}
-  html.localify-mobile .topbar .profileTopBtn{display:grid!important;width:42px;height:42px;padding:0;place-items:center;border-radius:50%}
-  html.localify-mobile .topbar .discordTopBtn,html.localify-mobile .topbar .discordStatus,html.localify-mobile .topbar .pill,html.localify-mobile .topbar .mobileTools{display:none!important}
-  html.localify-mobile .content{padding:16px 12px 150px}
-  html.localify-mobile .hero{display:block;margin-bottom:18px}
-  html.localify-mobile .heroCard,html.localify-mobile .quickCard{min-height:0;margin-bottom:12px}
-  html.localify-mobile .heroCard{padding:20px}
-  html.localify-mobile .heroCard h1{font-size:38px;letter-spacing:-1.7px}
-  html.localify-mobile .grid,html.localify-mobile .viewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  html.localify-mobile .card{padding:9px;border-radius:13px}
-  html.localify-mobile .playOverlay{opacity:1;transform:none;right:6px;height:38px;width:38px}
-  html.localify-mobile .profileHero{grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center}
-  html.localify-mobile .profileArt,html.localify-mobile .collectionArt{width:80px;height:80px;border-radius:15px;font-size:30px}
-  html.localify-mobile .folderDetailCollage{width:80px;height:80px;border-radius:15px;flex-basis:80px}
-  html.localify-mobile .profileStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  html.localify-mobile .profileGrid{grid-template-columns:1fr;gap:10px}
-  html.localify-mobile .profileRecapColumns{grid-template-columns:1fr}
-  html.localify-mobile .tableWrap{border-radius:13px}
-  html.localify-mobile table{table-layout:fixed;width:100%}
-  html.localify-mobile thead th:nth-child(3),html.localify-mobile tbody td:nth-child(3),html.localify-mobile thead th:nth-child(5),html.localify-mobile tbody td:nth-child(5){display:none}
-  html.localify-mobile .player{left:0;right:0;bottom:66px;width:100%;max-width:100%;padding:8px 10px}
-  html.localify-mobile .now{min-width:0}
-  html.localify-mobile .nowTitle{max-width:160px}
-  html.localify-mobile .mobileNav{position:fixed;display:grid!important;grid-template-columns:repeat(6,1fr);left:8px;right:8px;bottom:8px;height:58px;z-index:100;padding:4px;background:rgba(14,18,23,.97);border:1px solid #252d36;border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.42);backdrop-filter:blur(16px)}
-  html.localify-mobile .mobileNav button{background:transparent;border-radius:12px;color:#818b97;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:850}
-  html.localify-mobile .mobileNav button.active{color:var(--accent);background:#171d24}
-  html.localify-mobile .mobileNav .svgIcon{width:18px;height:18px}
-  html.localify-mobile .settingsGrid{gap:10px}
-  html.localify-mobile .settingsSection{padding:13px}
-  html.localify-mobile .folderTypeGrid{grid-template-columns:repeat(2,1fr)}
-  html.localify-mobile .statsPageHero{padding:13px}
-}
-.logoGlyph{font-size:19px;font-weight:1000;color:#081017;line-height:1;display:grid;place-items:center}</style>
+body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}body.theme-gradient .logo,body.theme-solid .logo{box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}</style>
 </head>
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><div class="logo"><span class="logoGlyph">L</span></div><span>LOCALIFY</span></div>
+    <div class="brand"><div class="logo"><img src="data:image/png;base64,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" alt="Localify"></div><span>LOCALIFY</span></div>
     <nav class="nav" id="nav">
       <button data-view="home" class="active"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><span>Home</span></button>
       <button data-view="search"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><span>Search</span></button>
@@ -627,8 +582,7 @@ main{min-width:0;min-height:0}
       <button data-view="playlists"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h10"/></svg></span><span>Playlists</span></button>
       <button data-view="liked"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/></svg></span><span>Liked Songs</span></button>
       <button data-view="recent"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Recently Played</span></button>
-      <button data-view="folders"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/></svg></span><span>Folders</span></button>
-    <div id="folderNav"></div></nav>
+    </nav>
     <div class="sectionTitle">Library tools</div>
     <div class="sideBottom">
       <button class="sideAction btnIcon" id="importBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add music</span></button>
@@ -657,13 +611,7 @@ main{min-width:0;min-height:0}
       <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button>
     </div>
     <div id="content" class="content"></div>
-  </main><div class="mobileNav" id="mobileNav" aria-label="Mobile navigation">
-  <button type="button" data-mobile-view="home"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><small>Home</small></button>
-  <button type="button" data-mobile-view="library"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M5 4v16"/><path d="M8 5h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8z"/></svg></span><small>Library</small></button>
-  <button type="button" data-mobile-view="albums"><span><svg class="svgIcon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg></span><small>Albums</small></button>
-  <button type="button" data-mobile-view="playlists"><span><svg class="svgIcon" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h10"/></svg></span><small>Playlists</small></button>
-  <button type="button" data-mobile-view="profile"><span><svg class="svgIcon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span><small>Profile</small></button>
-</div>
+  </main>
 
   <aside class="nowSidebar" id="nowSidebar" aria-label="Now Playing panel"></aside>
 
@@ -716,15 +664,11 @@ main{min-width:0;min-height:0}
   const META_BACKUP_KEY = "localify-persistent-meta-backup-v1";
   const LEGACY_DB_NAMES = ["localify-db-v7-save","localify-db-v6","localify-db-v5","localify-db-v1"];
   const $ = s => document.querySelector(s);
-  const qAll = (s,root=document) => [...root.querySelectorAll(s)];
+  const $$ = s => [...document.querySelectorAll(s)];
   const audio = $("#audio");
-  function updateLocalifyMediaSession(t,cover=""){if(!("mediaSession"in navigator)||!t)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistName(t)||"Unknown Artist",album:albumName(t)||"Localify",artwork:cover?[{src:cover,sizes:"512x512",type:"image/*"}]:[]})}catch{}}
-
-  const LOCALIFY_MOBILE_MODE=new URLSearchParams(location.search).get("mobile")==="1"||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||!!globalThis.Capacitor;
-  if(LOCALIFY_MOBILE_MODE)document.documentElement.classList.add("localify-mobile");
 
   const state = {
-    version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
+    version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"} },
     profile: { displayName:"", avatar:null },
@@ -897,18 +841,9 @@ main{min-width:0;min-height:0}
     if(db)return Promise.resolve(db);
     if(dbPromise)return dbPromise;
     dbPromise=new Promise((resolve,reject)=>{
-      let settled=false;
-      let timeout=0;
-      const finish=(ok,value)=>{
-        if(settled)return;
-        settled=true;
-        clearTimeout(timeout);
-        ok?resolve(value):reject(value);
-      };
       try{
         if(!window.indexedDB) throw new Error("IndexedDB unavailable");
         const req=indexedDB.open(DB_NAME,1);
-        timeout=setTimeout(()=>{storageBlocked=true;finish(false,new Error("IndexedDB timed out; Localify will run without it."));},3500);
         req.onupgradeneeded=()=>{
           const d=req.result;
           if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta");
@@ -921,10 +856,10 @@ main{min-width:0;min-height:0}
           storageBlocked=false;
           db.onversionchange=()=>db.close();
           db.onclose=()=>{db=null};
-          finish(true,db);
+          resolve(db);
         };
-        req.onerror=()=>{storageBlocked=true;finish(false,req.error||new Error("IndexedDB could not open"))};
-      }catch(e){storageBlocked=true;finish(false,e)}
+        req.onerror=()=>{storageBlocked=true;reject(req.error||new Error("IndexedDB could not open"))};
+      }catch(e){storageBlocked=true;reject(e)}
     }).finally(()=>{dbPromise=null});
     return dbPromise;
   }
@@ -981,67 +916,6 @@ main{min-width:0;min-height:0}
       };
       fr.readAsDataURL(file);
     });
-  }
-
-  function readBe32(bytes,off){return (((bytes[off]||0)<<24)>>>0)|((bytes[off+1]||0)<<16)|((bytes[off+2]||0)<<8)|(bytes[off+3]||0)}
-  function readSyncSafe(bytes,off){return (((bytes[off]||0)&127)<<21)|(((bytes[off+1]||0)&127)<<14)|(((bytes[off+2]||0)&127)<<7)|((bytes[off+3]||0)&127)}
-  function decodeId3Text(bytes){
-    if(!bytes?.length)return "";
-    const enc=bytes[0],data=bytes.subarray(1);
-    try{
-      if(enc===3)return new TextDecoder("utf-8").decode(data).replace(/ +$/,"").trim();
-      if(enc===2){let s="";for(let i=0;i+1<data.length;i+=2)s+=String.fromCharCode((data[i]<<8)|data[i+1]);return s.replace(/ +$/,"").trim()}
-      if(enc===1){let p=0,little=true,s="";if(data.length>=2&&(data[0]===255||data[0]===254)){little=data[0]===254;p=2}for(;p+1<data.length;p+=2)s+=String.fromCharCode(little?(data[p]|data[p+1]<<8):(data[p]<<8|data[p+1]));return s.replace(/ +$/,"").trim()}
-      return new TextDecoder("windows-1252").decode(data).replace(/ +$/,"").trim();
-    }catch{return ""}
-  }
-  async function readMp3V1Metadata(file){
-    try{
-      if((Number(file?.size)||0)<128)return {};
-      const bytes=new Uint8Array(await file.slice(file.size-128,file.size).arrayBuffer());
-      if(bytes[0]!==84||bytes[1]!==65||bytes[2]!==71)return {};
-      const td=new TextDecoder("windows-1252"),clean=x=>td.decode(x).replace(/ +$/,"").trim();
-      return {title:clean(bytes.subarray(3,33)),artist:clean(bytes.subarray(33,63)),album:clean(bytes.subarray(63,93)),year:clean(bytes.subarray(93,97))};
-    }catch{return {}}
-  }
-  async function readMp3Id3Metadata(file){
-    try{
-      const max=Math.min(Number(file?.size)||0,4*1024*1024);
-      if(max<10)return readMp3V1Metadata(file);
-      const bytes=new Uint8Array(await file.slice(0,max).arrayBuffer());
-      if(bytes[0]!==73||bytes[1]!==68||bytes[2]!==51)return readMp3V1Metadata(file);
-      const ver=bytes[3]||3,end=Math.min(bytes.length,10+readSyncSafe(bytes,6));
-      const out={};let p=10;
-      while(p+10<=end){
-        if(bytes[p]===0)break;
-        const id=String.fromCharCode(bytes[p],bytes[p+1],bytes[p+2],bytes[p+3]);
-        const sz=ver>=4?readSyncSafe(bytes,p+4):readBe32(bytes,p+4);
-        if(!sz||p+10+sz>end)break;
-        const body=bytes.subarray(p+10,p+10+sz);
-        if(id[0]==="T"){
-          if(id==="TXXX"){
-            const raw=decodeId3Text(body),parts=raw.split(" "),desc=(parts.shift()||"").trim().toLowerCase(),value=parts.join(" ").trim();
-            if(/editor|edit(?:ed|ing)?\s*by|software|encoded\s*by/.test(desc))out.editor=value;
-          }else{
-            const value=decodeId3Text(body);
-            if(id==="TIT2")out.title=value;
-            else if(id==="TPE1")out.artist=value;
-            else if(id==="TPE2")out.albumArtist=value;
-            else if(id==="TALB")out.album=value;
-            else if(id==="TDRC"||id==="TYER")out.year=(value.match(/\d{4}/)||[])[0]||value;
-            else if(id==="TCON")out.genre=value.replace(/^\(\d+\)\s*/,"");
-            else if(id==="TRCK")out.track=parseInt((value.match(/\d+/)||[])[0],10)||null;
-            else if(id==="TPOS")out.disc=parseInt((value.match(/\d+/)||[])[0],10)||null;
-          }
-        }
-        p+=10+sz;
-      }
-      return out;
-    }catch{return {}}
-  }
-  async function readEmbeddedAudioMetadata(file){
-    if(/\.mp3$/i.test(file?.name||""))return readMp3Id3Metadata(file);
-    return {};
   }
 
   function readDuration(t){
@@ -1170,7 +1044,6 @@ main{min-width:0;min-height:0}
     state.albums=Array.isArray(state.albums)?state.albums:[];
     state.artists=Array.isArray(state.artists)?state.artists:[];
     state.playlists=Array.isArray(state.playlists)?state.playlists:[];
-    state.folders=Array.isArray(state.folders)?state.folders:[];
     state.liked=Array.isArray(state.liked)?state.liked:[];
     state.recent=Array.isArray(state.recent)?state.recent:[];
     state.queue=Array.isArray(state.queue)?state.queue:[];
@@ -1197,7 +1070,7 @@ main{min-width:0;min-height:0}
       t.blob=null;
       t._blobDirty=false;
     }
-    state.version=12;
+    state.version=11;
     state._restoredFromFallback=restoredFromFallback;
     return true;
   }
@@ -1229,21 +1102,10 @@ main{min-width:0;min-height:0}
     else if(cover&&!a.cover)a.cover=cover;
     return a;
   }
-  function folderById(id){return state.folders.find(f=>f.id===id)||null}
-  function ensureFolderArrays(f){if(!f)return f;f.albumIds=Array.isArray(f.albumIds)?f.albumIds:[];f.trackIds=Array.isArray(f.trackIds)?f.trackIds:[];f.artistIds=Array.isArray(f.artistIds)?f.artistIds:[];f.playlistIds=Array.isArray(f.playlistIds)?f.playlistIds:[];return f}
-  function folderAlbumIds(f){ensureFolderArrays(f);const ids=[...f.albumIds];for(const id of f.trackIds){const t=trackById(id);if(t?.albumId)ids.push(t.albumId)}return [...new Set(ids)].filter(id=>albumById(id))}
-  function folderTrackIds(f){ensureFolderArrays(f);return [...new Set(f.trackIds)].filter(id=>trackById(id))}
-  function folderArtistIds(f){ensureFolderArrays(f);const ids=[...f.artistIds];for(const id of f.trackIds){const t=trackById(id);for(const aid of artistIdsForTrack(t))ids.push(aid)}for(const id of f.albumIds){const a=albumById(id);for(const aid of artistIdsForAlbum(a))ids.push(aid)}return [...new Set(ids)].filter(id=>artistById(id))}
-  function folderPlaylistIds(f){ensureFolderArrays(f);return [...new Set(f.playlistIds)].filter(id=>playlistById(id))}
-  function createFolderEntity(name="New folder"){const f={id:uid(),name:String(name||"New folder").trim()||"New folder",albumIds:[],trackIds:[],artistIds:[],playlistIds:[],createdAt:Date.now()};state.folders.push(f);return f}
-  function folderItemKey(kind){return kind==="albums"?"albumIds":kind==="tracks"?"trackIds":kind==="artists"?"artistIds":"playlistIds"}
-  function folderHasItem(f,kind,id){ensureFolderArrays(f);return f[folderItemKey(kind)].includes(id)}
-  function folderToggleItem(f,kind,id,on){ensureFolderArrays(f);const key=folderItemKey(kind);if(on){if(!f[key].includes(id))f[key].push(id)}else f[key]=f[key].filter(x=>x!==id)}
-
   function migrate(raw){
     if(!raw)return;
     const incoming=raw;
-    for(const k of ["tracks","albums","artists","playlists","folders","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
+    for(const k of ["tracks","albums","artists","playlists","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
     incoming.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},incoming.analytics||{});
     incoming.profile=Object.assign({displayName:"",avatar:null},incoming.profile||{});
     Object.assign(state,incoming);
@@ -1270,7 +1132,7 @@ main{min-width:0;min-height:0}
       al.artistIds=artistIdsForAlbum(al);al.artistId=al.artistIds[0]||null;
       t.albumId=al.id;t.album=al.title;if(!t.cover&&al.cover)t.cover=al.cover;t.credits=normalizeCredits(t.credits||al.credits||{});if(t.explicit==null)t.explicit=false;if(!t.addedAt)t.addedAt=Date.now();if(!t.lyrics)t.lyrics="";
     }
-    state.version=12;
+    state.version=11;
   }
 
   async function openPreviousV6(){
@@ -1337,7 +1199,13 @@ main{min-width:0;min-height:0}
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
     state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false},state.settings||{});
+  const DEFAULT_LOCALIFY_THEMES={cyan:{name:"Cyan",mode:"solid",color1:"#7dd3fc",color2:"#7dd3fc"},blue:{name:"Blue",mode:"solid",color1:"#3b82f6",color2:"#3b82f6"},purple:{name:"Purple",mode:"solid",color1:"#8b5cf6",color2:"#8b5cf6"},red:{name:"Red",mode:"solid",color1:"#ef4444",color2:"#ef4444"},pink:{name:"Pink",mode:"solid",color1:"#ec4899",color2:"#ec4899"},green:{name:"Green",mode:"solid",color1:"#22c55e",color2:"#22c55e"},orange:{name:"Orange",mode:"solid",color1:"#f97316",color2:"#f97316"},yellow:{name:"Yellow",mode:"solid",color1:"#eab308",color2:"#eab308"},teal:{name:"Teal",mode:"solid",color1:"#14b8a6",color2:"#14b8a6"},ice:{name:"Ice",mode:"solid",color1:"#60a5fa",color2:"#dbeafe"},sunset:{name:"Sunset",mode:"gradient",color1:"#ef4444",color2:"#f97316"},ocean:{name:"Ocean",mode:"gradient",color1:"#2563eb",color2:"#06b6d4"},aurora:{name:"Aurora",mode:"gradient",color1:"#06b6d4",color2:"#8b5cf6"},forest:{name:"Forest",mode:"gradient",color1:"#22c55e",color2:"#14b8a6"},berry:{name:"Berry",mode:"gradient",color1:"#ec4899",color2:"#8b5cf6"},fire:{name:"Fire",mode:"gradient",color1:"#f97316",color2:"#ef4444"}};
+  function hexToRgb(hex){const raw=String(hex||"").replace("#",""),full=raw.length===3?raw.split("").map(c=>c+c).join(""):raw,n=parseInt(full,16);if(!Number.isFinite(n))return [125,211,252];return [(n>>16)&255,(n>>8)&255,n&255]}
+  function mixHex(a,b,amount=.25){const A=hexToRgb(a),B=hexToRgb(b),m=Math.max(0,Math.min(1,amount)),v=A.map((x,i)=>Math.round(x+(B[i]-x)*m));return "#"+v.map(x=>x.toString(16).padStart(2,"0")).join("")}
+  function normalizeTheme(theme){const base=theme&&DEFAULT_LOCALIFY_THEMES[theme.preset]?DEFAULT_LOCALIFY_THEMES[theme.preset]:DEFAULT_LOCALIFY_THEMES.cyan;return {preset:theme?.preset||"cyan",mode:theme?.mode||base.mode,color1:/^#[0-9a-f]{6}$/i.test(theme?.color1||"")?theme.color1:base.color1,color2:/^#[0-9a-f]{6}$/i.test(theme?.color2||"")?theme.color2:base.color2}}
+  function applyTheme(){const root=document.documentElement,t=normalizeTheme(state.settings.theme),a=t.color1,b=t.color2,ar=hexToRgb(a),br=hexToRgb(b);state.settings.theme=t;root.style.setProperty("--theme-a",a);root.style.setProperty("--theme-b",b);root.style.setProperty("--accent",a);root.style.setProperty("--accent2",t.mode==="gradient"?b:mixHex(a,"#ffffff",.23));root.style.setProperty("--theme-shadow",`rgba(${ar[0]},${ar[1]},${ar[2]},.22)`);document.body.classList.toggle("theme-gradient",t.mode==="gradient");document.body.classList.toggle("theme-solid",t.mode!=="gradient");return t}
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
+    state.settings.theme=normalizeTheme(state.settings.theme);applyTheme();
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
@@ -1358,9 +1226,8 @@ main{min-width:0;min-height:0}
   function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}if(v==="listeningStats"){showListeningStats();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
   function empty(title,desc){return `<div class="empty"><h3>${esc(title)}</h3><div>${esc(desc)}</div></div>`}
   function renderNav(){
-    $("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
+    $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
     $("#libraryBadge").textContent=`${state.tracks.length} ${state.tracks.length===1?"track":"tracks"}`;
-    renderFolderNav();
   }
   function render(){
     __prepareLocalifyDerived();
@@ -1374,8 +1241,6 @@ main{min-width:0;min-height:0}
     else if(v==="playlists")renderPlaylists();
     else if(v==="liked")renderLiked();
     else if(v==="recent")renderRecent();
-    else if(v==="folders")renderFolders();
-    else if(v==="folder"&&state.detail?.id)showFolder(state.detail.id);
     else if(v==="profile")showProfile();else if(v==="listeningStats")showListeningStats();else if(v==="accountSettings")showAccountSettings();
     renderPlayer();
   }
@@ -1387,8 +1252,6 @@ main{min-width:0;min-height:0}
     return raw.match(/^0*(\d+)\s*(?:[.)-:]\s*|\s+(?=\D))/);
   }
   function trackNo(t){
-    const filenameNo=parseInt(t?.fileTrack,10);
-    if(Number.isFinite(filenameNo))return filenameNo;
     const explicit=parseInt(t?.track,10);
     if(Number.isFinite(explicit))return explicit;
     const m=trackPrefixMatch(t?.title);
@@ -1462,10 +1325,10 @@ main{min-width:0;min-height:0}
     const fr=q?catalog.searchArtists.filter(x=>x.text.includes(q)).map(x=>x.a):state.artists;
     $("#content").innerHTML=`<div class="sectionHead"><h2 class="viewTitle">Search</h2><span>${q?`${ft.length} songs • ${fa.length} albums • ${fr.length} artists`:`Search your local catalog`}</span></div>
       <div class="toolbar">${[["all","All"],["songs","Songs"],["albums","Albums"],["artists","Artists"]].map(([k,l])=>`<button class="${state.searchFilter===k?"active":""}" data-search-filter="${k}">${l}</button>`).join("")}</div>${searchResultsHtml(ft,fa,fr)}`;
-    $('[data-search-filter]').forEach(b=>b.onclick=()=>{state.searchFilter=b.dataset.searchFilter;renderSearch()});
+    $$('[data-search-filter]').forEach(b=>b.onclick=()=>{state.searchFilter=b.dataset.searchFilter;renderSearch()});
     if(state.searchFilter==="songs"||state.searchFilter==="all")bindTrackTable();
     bindAlbumCards();
-    $(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
+    $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
   }
   function searchResultsHtml(ft,fa,fr){
     const sections=[];
@@ -1493,12 +1356,12 @@ main{min-width:0;min-height:0}
 
   function renderArtists(){
     $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">${uiIcon("plus")}</button></div>${state.artists.length?localifyPagedHtml(artistList(),artistCard,"artists","viewGrid"):empty("No artists","Create an artist or import music to build your artist index.")}`;
-    $("#newArtist").onclick=()=>editArtist(null); $(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
+    $("#newArtist").onclick=()=>editArtist(null); $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
   }
 
   function renderPlaylists(){
     $("#content").innerHTML=`<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><button class="primary iconOnlyCreate" id="newPlaylist" title="New playlist" aria-label="New playlist">${uiIcon("plus")}</button></div>${state.playlists.length?localifyPagedHtml(state.playlists,playlistCard,"playlists","viewGrid"):empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.")}`;
-    $("#newPlaylist").onclick=()=>editPlaylist(null); $(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+    $("#newPlaylist").onclick=()=>editPlaylist(null); $$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
   }
 
   function renderLiked(){
@@ -1517,7 +1380,7 @@ main{min-width:0;min-height:0}
 
   function trackCard(t){return `<div class="card track-card" data-id="${t.id}" style="cursor:pointer">${artBox(t)}<button class="playOverlay play-track" data-id="${t.id}">${uiIcon("play")}</button><div class="cardTitle">${esc(t.title)}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="cardSub">${esc(artistName(t))}</div></div>`}
   function albumCard(a){const tracks=__localifyCatalog().byAlbum.get(a.id)||[];const cover=coverForAlbum(a,a.cover);return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${cover?`<div class="art"><img src="${cover}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${esc(artistNamesForAlbum(a).join(", ")||NONE_LABEL)} • ${tracks.length} songs • ${durationLabel(tracks)}</div><div class="albumHoverInfo"><div class="albumHoverItem"><strong>Year</strong><span>${esc(a.year||"None")}</span></div><div class="albumHoverItem"><strong>Genre</strong><span>${esc(a.genre||"None")}</span></div><div class="albumHoverItem"><strong>Label</strong><span>${esc(a.label||"None")}</span></div></div></div>`}
-  function bindAlbumCards(){$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id))}
+  function bindAlbumCards(){$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id))}
 
   function artistCard(a){const count=(__localifyCatalog().byArtist.get(a.id)||[]).length;return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img src="${a.image}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${count} songs</div></div>`}
   function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img src="${p.cover}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("playlist")}</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs • ${durationLabel(p.trackIds.map(trackById).filter(Boolean))}</div></div>`}
@@ -1566,13 +1429,13 @@ main{min-width:0;min-height:0}
     const wrap=$(".tableWrap");
     const before=wrap?selectionBar(shown):"";
     if(wrap && before){const existing=wrap.previousElementSibling;if(!existing?.classList.contains("selectionBar")){wrap.insertAdjacentHTML("beforebegin",before)}}
-    $(".rowCheck").forEach(c=>c.onclick=e=>{e.stopPropagation();const id=c.closest("tr").dataset.id;if(c.checked){if(!state.selected.includes(id))state.selected.push(id)}else state.selected=state.selected.filter(x=>x!==id);autoSave();renderCurrentViewWithoutScroll()});
+    $$(".rowCheck").forEach(c=>c.onclick=e=>{e.stopPropagation();const id=c.closest("tr").dataset.id;if(c.checked){if(!state.selected.includes(id))state.selected.push(id)}else state.selected=state.selected.filter(x=>x!==id);autoSave();renderCurrentViewWithoutScroll()});
     $(".selectAll")?.addEventListener("change",e=>{const ids=shown.map(t=>t.id);if(e.target.checked)state.selected=[...new Set([...state.selected,...ids])];else state.selected=state.selected.filter(id=>!ids.includes(id));renderCurrentViewWithoutScroll()});
-    $(".play-row").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.closest("tr").dataset.id)});
-    $(".like-row").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleLike(b.closest("tr").dataset.id)});
-    $(".more-row").forEach(b=>b.onclick=e=>{e.stopPropagation();const r=b.closest("tr");openContext(e.clientX,e.clientY,r.dataset.id)});
-    $("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
-    $("#bulkPlay").forEach(b=>b.onclick=()=>bulkPlay(shown));
+    $$(".play-row").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.closest("tr").dataset.id)});
+    $$(".like-row").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleLike(b.closest("tr").dataset.id)});
+    $$(".more-row").forEach(b=>b.onclick=e=>{e.stopPropagation();const r=b.closest("tr");openContext(e.clientX,e.clientY,r.dataset.id)});
+    $$("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
+    $$("#bulkPlay").forEach(b=>b.onclick=()=>bulkPlay(shown));
     $("#bulkEdit")?.addEventListener("click",()=>bulkEdit(state.selected.map(trackById).filter(Boolean)));
     $("#bulkLike")?.addEventListener("click",async()=>{for(const id of state.selected)if(!state.liked.includes(id))state.liked.push(id);await save();renderCurrentViewWithoutScroll()});
     $("#bulkPlaylist")?.addEventListener("click",()=>bulkAddPlaylist(state.selected));
@@ -1592,14 +1455,12 @@ main{min-width:0;min-height:0}
     else if(state.currentView==="playlists")renderPlaylists();
     else if(state.currentView==="liked")renderLiked();
     else if(state.currentView==="recent")renderRecent();
-    else if(state.currentView==="folders")renderFolders();
-    else if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id);
     renderPlayer();
   }
 
   function bindCards(){
-    $(".play-track").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.dataset.id)});
-    $(".track-card").forEach(c=>c.onclick=()=>playId(c.dataset.id));
+    $$(".play-track").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.dataset.id)});
+    $$(".track-card").forEach(c=>c.onclick=()=>playId(c.dataset.id));
   }
 
   function showAlbum(id,keepDetail=false){
@@ -1607,8 +1468,8 @@ main{min-width:0;min-height:0}
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
     const artistNames=artistNamesForAlbum(a);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary iconOnlyAction" id="albumFolder" title="Add to folder" aria-label="Add to folder">${uiIcon("folder")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
-    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumFolder").onclick=()=>openFolderChooser("albums",id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
   }
 
   function showArtist(id,keepDetail=false){
@@ -2401,7 +2262,7 @@ main{min-width:0;min-height:0}
     m.innerHTML='<div class="profileMenuHead"><div class="profileMenuAvatar">'+avatar+'</div><div style="min-width:0"><div class="profileMenuName">'+esc(name)+'</div><div class="profileMenuSub">Localify account on this device</div></div></div>'+
       '<button type="button" class="profileMenuItem" id="profileMenuProfile"><span class="menuIcon">'+uiIcon("artist")+'</span><span>Profile<small>Library overview and profile picture</small></span></button>'+
       '<button type="button" class="profileMenuItem" id="profileMenuStats"><span class="menuIcon">'+uiIcon("clock")+'</span><span>Listening stats<small>Weekly and all-time listening</small></span></button>'+
-      '<button type="button" class="profileMenuItem" id="profileMenuSettings"><span class="menuIcon">'+uiIcon("equalizer")+'</span><span>Account settings<small>Playback, Discord and folders</small></span></button>';
+      '<button type="button" class="profileMenuItem" id="profileMenuSettings"><span class="menuIcon">'+uiIcon("equalizer")+'</span><span>Account settings<small>Playback, Discord and themes</small></span></button>';
     m.classList.add("open");m.setAttribute("aria-hidden","false");
     const stop=e=>{e.preventDefault();e.stopPropagation()};
     $("#profileMenuProfile").onclick=e=>{stop(e);closeProfileMenu();showProfile()};
@@ -2409,6 +2270,13 @@ main{min-width:0;min-height:0}
     $("#profileMenuSettings").onclick=e=>{stop(e);closeProfileMenu();showAccountSettings()};
   }
   function toggleProfileMenu(){const m=$("#profileMenu");if(!m)return;m.classList.contains("open")?closeProfileMenu():openProfileMenu()}
+  function profileMenuSettingsCapture(e){
+    const item=e.target.closest?.("#profileMenuSettings");
+    if(!item)return;
+    e.preventDefault();e.stopPropagation();
+    closeProfileMenu();showAccountSettings();
+  }
+
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
     if(!b||!g)return;
@@ -2436,7 +2304,7 @@ function showListeningStats(){
     closeProfileMenu();ensureAnalytics();state.currentView="listeningStats";state.detail=null;state.selected=[];renderNav();
     const total=Number(state.analytics.totalSeconds)||0,weekly=profileWeeklyData(),top=profileTopSongs(10),recent=state.recent.map(trackById).filter(Boolean).slice(0,10);
     const totalPlays=Object.values(state.analytics.plays||{}).reduce((n,v)=>n+(Number(v)||0),0);
-    $("#content").innerHTML='<div class="profilePage"><div class="statsPageHero"><div class="statsHeroIcon">◷</div><div class="statsPageHeroText"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap and most played music.</div></div></div>'+
+    $("#content").innerHTML='<div class="profilePage"><div class="profilePanel" style="margin-bottom:20px"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap and most played music.</div></div>'+
       '<div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">'+formatHours(total)+'</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">'+totalPlays.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">'+Math.floor(weekly.seconds/60).toLocaleString()+' min</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">'+Object.keys(state.analytics.plays||{}).filter(id=>trackById(id)).length.toLocaleString()+'</div></div></div>'+
       '<div class="profileGrid"><div class="profilePanel"><h3>Weekly recap</h3><div class="profileRecapMain"><div><div class="profileStatLabel">Minutes listened</div><div class="profileRecapMinutes">'+Math.floor(weekly.seconds/60).toLocaleString()+'</div></div><div><div class="profileStatLabel">Plays</div><div class="profileRecapMinutes">'+weekly.plays.toLocaleString()+'</div></div></div><div class="profileRecapColumns"><div><div class="profileRecapTitle">Top songs</div><div class="profileList">'+(weekly.topSongs.length?weekly.topSongs.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(displayTrackTitle(x.t,true))+'</div><div class="profileTrackSub">'+esc(artistName(x.t))+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">No weekly plays yet.</div>')+'</div></div><div><div class="profileRecapTitle">Top artists</div><div class="profileList">'+(weekly.topArtists.length?weekly.topArtists.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(x.name)+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">No weekly plays yet.</div>')+'</div></div></div></div>'+
       '<div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">'+(top.length?top.map((x,i)=>'<div class="profileListRow"><div class="profileRank">'+(i+1)+'</div><div><div class="profileTrackTitle">'+esc(displayTrackTitle(x.t,true))+'</div><div class="profileTrackSub">'+esc(artistName(x.t))+'</div></div><div class="profileCount">'+x.count+' plays</div></div>').join(""):'<div class="profileEmpty">Play some music to build your stats.</div>')+'</div></div></div>'+
@@ -2456,27 +2324,40 @@ function editLocalProfile(){
 
   function showAccountSettings(){
     closeProfileMenu();
-    state.currentView="accountSettings";state.detail=null;state.selected=[];
-    $("#content").innerHTML='<div class="section settingsPage" style="margin-top:0"><div class="sectionHead"><div><h2 class="viewTitle" style="font-size:30px">Account settings</h2><div class="subtle">Localify settings saved on this device.</div></div><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div>'+
+    state.currentView="accountSettings";state.detail=null;state.selected=[];localifyClearPages();renderNav();
+    const t=normalizeTheme(state.settings.theme);
+    const presets=Object.entries(DEFAULT_LOCALIFY_THEMES).map(([id,x])=>'<button type="button" class="themeChoice '+(t.preset===id?'active':'')+'" data-theme-preset="'+id+'"><div class="themeSwatch" style="background:'+(x.mode==="gradient"?'linear-gradient(135deg,'+x.color1+','+x.color2+')':x.color1)+'"></div><strong>'+esc(x.name)+'</strong><span>'+(x.mode==="gradient"?"2-color blend":"solid color")+'</span></button>').join("");
+    $("#content").innerHTML=
+      '<div class="section" style="margin-top:0"><div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Manage your Localify preferences and themes.</span></div><div class="sectionHeadActions"><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div></div>'+
       '<div class="settingsGrid">'+
-      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback</div><div class="settingsSectionSub">Control how Localify plays your music.</div></div></div>'+
-      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?"checked":"")+'></div>'+
-      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
-      '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div></section>'+
-      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">The normal web version can connect to the desktop connector.</div></div></div>'+
-      '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show my current song</strong><span>Enable Discord Rich Presence.</span></div><input type="checkbox" id="accountDiscord" '+(state.settings.discordPresence!==false?"checked":"")+'></div></section>'+
-      '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Library & data</div><div class="settingsSectionSub">Manage portable Localify data and folders.</div></div></div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="accountPresets" type="button">Open presets</button><button class="secondary" id="accountNewFolder" type="button">New folder</button></div></section>'+
+        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Themes</div><div class="settingsSectionSub">Choose a preset or make your own solid color or two-color blend.</div></div></div>'+
+          '<div class="themeGrid">'+presets+'</div>'+
+          '<div style="margin-top:14px;border-top:1px solid #252d36;padding-top:14px">'+
+            '<div class="settingsSectionTitle" style="font-size:13px;margin-bottom:9px">Custom theme</div>'+
+            '<div class="themeModeRow"><button type="button" class="themeModeBtn '+(t.mode==="solid"?"active":"")+'" id="accountThemeSolid">Solid color</button><button type="button" class="themeModeBtn '+(t.mode==="gradient"?"active":"")+'" id="accountThemeGradient">Blend two colors</button></div>'+
+            '<div class="customThemeControls"><div class="themeColorField"><label>Color 1</label><div class="themeColorRow"><input id="accountColor1" type="color" value="'+esc(t.color1)+'"><span class="themeColorValue" id="accountColor1Value">'+esc(t.color1.toUpperCase())+'</span></div></div><div class="themeColorField"><label>Color 2</label><div class="themeColorRow"><input id="accountColor2" type="color" value="'+esc(t.color2)+'"><span class="themeColorValue" id="accountColor2Value">'+esc(t.color2.toUpperCase())+'</span></div></div></div>'+
+          '</div>'+
+        '</section>'+
+        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback & app</div><div class="settingsSectionSub">Changes are saved locally.</div></div></div>'+
+          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?"checked":"")+'></div>'+
+          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Discord Rich Presence</strong><span>Show your current song and artist on Discord.</span></div><input type="checkbox" id="accountDiscord" '+(state.settings.discordPresence!==false?"checked":"")+'></div>'+
+          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
+          '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div>'+
+        '</section>'+
+        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Library & data</div><div class="settingsSectionSub">Manage portable Localify presets.</div></div></div><button class="secondary" id="accountPresets" type="button">Open presets</button></section>'+
       '</div></div>';
     $("#accountSettingsBack").onclick=()=>showProfile();
+    $$("[data-theme-preset]").forEach(b=>b.onclick=async()=>{const p=DEFAULT_LOCALIFY_THEMES[b.dataset.themePreset];if(!p)return;state.settings.theme={preset:b.dataset.themePreset,mode:p.mode,color1:p.color1,color2:p.color2};applyTheme();await save();showAccountSettings()});
+    $("#accountThemeSolid").onclick=async()=>{const n=normalizeTheme(state.settings.theme);state.settings.theme={preset:"custom",mode:"solid",color1:n.color1,color2:n.color2};applyTheme();await save();showAccountSettings()};
+    $("#accountThemeGradient").onclick=async()=>{const n=normalizeTheme(state.settings.theme);state.settings.theme={preset:"custom",mode:"gradient",color1:n.color1,color2:n.color2};applyTheme();await save();showAccountSettings()};
+    const updateTheme=()=>{const c1=$("#accountColor1"),c2=$("#accountColor2");if(!c1||!c2)return;state.settings.theme={preset:"custom",mode:state.settings.theme?.mode==="gradient"?"gradient":"solid",color1:c1.value,color2:c2.value};applyTheme();$("#accountColor1Value").textContent=c1.value.toUpperCase();$("#accountColor2Value").textContent=c2.value.toUpperCase();autoSave()};
+    $("#accountColor1").oninput=updateTheme;$("#accountColor2").oninput=updateTheme;
     $("#accountShuffle").onchange=async e=>{state.settings.shuffle=e.target.checked;await save();renderPlayer()};
     $("#accountDiscord").onchange=async e=>{state.settings.discordPresence=e.target.checked;await save();e.target.checked?connectDiscordBridge():clearDiscordPresence()};
     $("#accountNowPanel").onchange=()=>setNowSidebar($("#accountNowPanel").checked);
     $("#accountVolume").oninput=e=>{const v=+e.target.value;state.settings.volume=v;audio.volume=v;autoSave();renderPlayer()};
-    $("#accountPresets").onclick=()=>openPresetsMenu();
-    $("#accountNewFolder").onclick=()=>editFolder(null);
+    $("#accountPresets").onclick=()=>{showAccountSettingsPresets()};
   }
-
 
   function showAccountSettingsPresets(){openPresetsMenu()}
   
@@ -2582,9 +2463,6 @@ function editLocalProfile(){
     const album=context.albumId?albumById(context.albumId):null;
     const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
-    const metaByFile=new Map();let metaCursor=0;
-    const metaWorkers=Array.from({length:Math.min(4,arr.length)},async()=>{while(metaCursor<arr.length){const f=arr[metaCursor++];try{metaByFile.set(f,await readEmbeddedAudioMetadata(f))}catch{metaByFile.set(f,{})}}});
-    await Promise.all(metaWorkers);
     const folderAlbums=new Map();
     const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
     const added=[];
@@ -2612,14 +2490,12 @@ function editLocalProfile(){
       const albumArtistIds=al?artistIdsForAlbum(al):[];
       const fallbackArtistIds=artist?[artist.id]:[];
       const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||NONE_LABEL;
-      const tags=metaByFile.get(f)||{},fileTrack=inferTrackNumberFromFilename(f.name);
       const t={
-        id:uid(),title:String(tags.title||"").trim()||f.name.replace(/\.[^.]+$/,"") ,
-        artist:String(tags.artist||"").trim()||fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
-        album:String(tags.album||"").trim()||al?.title||NONE_LABEL,albumId:al?.id||null,
-        albumArtist:String(tags.albumArtist||"").trim()||namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
-        genre:String(tags.genre||al?.genre||"").trim(),year:String(tags.year||al?.year||"").trim(),track:Number.isFinite(Number(tags.track))?Number(tags.track):fileTrack,disc:Number.isFinite(Number(tags.disc))?Number(tags.disc):null,fileTrack,
-        metadataEditor:String(tags.editor||""),
+        id:uid(),title:f.name.replace(/\.[^.]+$/,"") ,
+        artist:fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
+        album:al?.title||NONE_LABEL,albumId:al?.id||null,
+        albumArtist:namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
+        genre:al?.genre||"",year:al?.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
         explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
         blob:f,_blobDirty:true,cover:al?.cover||artist?.image||folderCover||null,
         lyrics:"",credits:normalizeCredits(al?.credits||{}),addedAt:Date.now()
@@ -2629,16 +2505,6 @@ function editLocalProfile(){
       existing.add(sig);
       queueBlob(t.id);
       if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
-    }
-    for(const t of added){
-      const artistNames=String(t.artist||"").split(/[,;]\s*/).map(x=>x.trim()).filter(x=>x&&x!==NONE_LABEL);
-      if(artistNames.length){const ids=artistNames.map(n=>getOrCreateArtist(n).id);applyArtistIds(t,ids);t.artist=namesOfIds(ids).join(", ")}
-      const albumTitle=String(t.album||"").trim();
-      if(albumTitle&&albumTitle!==NONE_LABEL&&!t.albumId&&!context.folderImport){
-        const artist=artistNames[0]?getOrCreateArtist(artistNames[0]):null;
-        const a=getOrCreateAlbum(albumTitle,artist);t.albumId=a.id;t.album=a.title;
-        if(String(t.albumArtist||"").trim()&&t.albumArtist!==NONE_LABEL){const aid=String(t.albumArtist).split(/[,;]\s*/).map(x=>x.trim()).filter(Boolean).map(n=>getOrCreateArtist(n).id);applyArtistIds(a,aid);applyAlbumArtistIds(t,aid)}
-      }
     }
     importContext={};
     if(!added.length){toast("Nothing new was imported.");return}
@@ -2675,7 +2541,7 @@ function editLocalProfile(){
     audio.pause();
     audio.removeAttribute("src");
     try{audio.load()}catch{}
-    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.folders=[];state.liked=[];state.recent=[];
+    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.liked=[];state.recent=[];
     state.queue=[];state.queueIndex=-1;state.currentId=null;state.selected=[];state.detail=null;
     state.currentView="home";state.search="";state.searchFilter="all";
     state.librarySort="added";state.librarySortDir="desc";
@@ -2716,7 +2582,7 @@ function editLocalProfile(){
   }
   function markDirty(){modalDirty=true}
   function bindModalDirty(){
-    $("#modal input,#modal textarea,#modal select").forEach(el=>el.addEventListener("input",markDirty));
+    $$("#modal input,#modal textarea,#modal select").forEach(el=>el.addEventListener("input",markDirty));
     bindArtistPickers();
   }
   function imagePicker(current, onDone){
@@ -2769,10 +2635,10 @@ function editLocalProfile(){
     syncArtistPickerSummary(wrap);
   }
   function bindArtistPickers(){
-    $(".artistPickerWrap").forEach(wrap=>{
+    $$(".artistPickerWrap").forEach(wrap=>{
       const btn=wrap.querySelector(".artistSelectButton"),menu=wrap.querySelector(".artistPickerMenu");if(!btn||!menu)return;
-      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
-      $('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
+      btn.onclick=e=>{e.preventDefault();e.stopPropagation();$$(".artistPickerWrap.open").forEach(x=>{if(x!==wrap){x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")}});const open=!wrap.classList.contains("open");wrap.classList.toggle("open",open);btn.setAttribute("aria-expanded",String(open));if(open)setTimeout(()=>wrap.scrollIntoView({block:"nearest",inline:"nearest"}),0)};
+      $$('input[type="checkbox"]',wrap).forEach(input=>input.addEventListener("change",()=>{
         let order=getArtistPickerOrder(wrap);
         if(input.value==="__none__"&&input.checked){wrap.querySelectorAll('input[type="checkbox"]').forEach(x=>{if(x!==input)x.checked=false});order=[]}
         else if(input.value!=="__none__"&&input.checked){const none=wrap.querySelector('input[value="__none__"]');if(none)none.checked=false;if(!order.includes(input.value))order.push(input.value)}
@@ -2838,7 +2704,7 @@ function editLocalProfile(){
     const tracks=ids.map(trackById).filter(Boolean);if(!tracks.length)return;
     if(!state.playlists.length){editPlaylist(null, {prefillTracks:ids});return}
     setModal(`<div class="modalHead"><h2>Add ${tracks.length} songs to a playlist</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>${state.playlists.map(p=>`<button class="secondary" data-plid="${p.id}" style="width:100%;text-align:left;margin:5px 0">${esc(p.name)}<span style="float:right">${tracks.filter(t=>p.trackIds.includes(t.id)).length}/${tracks.length}</span></button>`).join("")}<div class="modalFoot"><button class="secondary" id="cancelBulkPl">Cancel</button></div>`);
-    $("#closeModal").onclick=()=>closeModal();$("#cancelBulkPl").onclick=()=>closeModal();$("#modal [data-plid]").forEach(b=>b.onclick=async()=>{const p=playlistById(b.dataset.plid);for(const t of tracks)if(!p.trackIds.includes(t.id))p.trackIds.push(t.id);await save();closeModal(true);toast(`Added ${tracks.length} songs to ${p.name}`);renderCurrentViewWithoutScroll()});
+    $("#closeModal").onclick=()=>closeModal();$("#cancelBulkPl").onclick=()=>closeModal();$$("#modal [data-plid]").forEach(b=>b.onclick=async()=>{const p=playlistById(b.dataset.plid);for(const t of tracks)if(!p.trackIds.includes(t.id))p.trackIds.push(t.id);await save();closeModal(true);toast(`Added ${tracks.length} songs to ${p.name}`);renderCurrentViewWithoutScroll()});
   }
 
   function albumModalHtml(a,opts={}){
@@ -2862,97 +2728,19 @@ function editLocalProfile(){
   function editPlaylist(id,opts={}){
     const p=id?playlistById(id):null;let cover=p?.cover||null;setModal(playlistModalHtml(p));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`;markDirty()});$("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim()||"New playlist";let target=p;if(!target){target={id:uid(),name:"",description:"",label:"",cover:null,trackIds:[]};state.playlists.push(target)}target.name=name;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.cover=cover;if(opts.prefillTracks)target.trackIds=[...new Set([...target.trackIds,...opts.prefillTracks])];await save();closeModal(true);showPlaylist(target.id);toast(p?"Playlist updated.":"Playlist created.")}}
 
-  function folderCollageHtml(f,large=false){
-    const albums=folderAlbumIds(f).slice(0,4);
-    let html='<div class="folderCollage'+(large?' folderDetailCollage':'')+'">';
-    for(let i=0;i<4;i++){
-      const a=albums[i],cover=a?coverForAlbum(a,a.cover):null;
-      html+=cover?'<div class="folderTile"><img src="'+cover+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>':'<div class="folderTile">'+uiIcon("album")+'</div>';
-    }
-    return html+'</div>';
-  }
-  function folderCard(f){
-    const albums=folderAlbumIds(f),tracks=folderTrackIds(f),artists=folderArtistIds(f),playlists=folderPlaylistIds(f);
-    return '<div class="card folderCard folder-open" data-id="'+esc(f.id)+'" style="cursor:pointer">'+folderCollageHtml(f)+'<div class="cardTitle">'+esc(f.name)+'</div><div class="cardSub">'+albums.length+' albums • '+tracks.length+' songs • '+artists.length+' artists • '+playlists.length+' playlists</div></div>';
-  }
-  function renderFolderNav(){
-    const box=$("#folderNav");if(!box)return;
-    box.innerHTML=state.folders.map(f=>'<button type="button" class="folderNavBtn '+(state.detail?.type==="folder"&&state.detail.id===f.id?"active":"")+'" data-folder-nav="'+esc(f.id)+'"><span>'+uiIcon("folder")+'</span><span>'+esc(f.name)+'</span></button>').join("");
-    qAll("[data-folder-nav]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();showFolder(b.dataset.folderNav)});
-  }
-  function renderFolders(){
-    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Folders</h2><div class="subtle">Organize albums, songs, artists and playlists into your own folders.</div></div><button class="primary" id="newFolderPage" type="button">'+uiIcon("plus")+' New folder</button></div>'+
-      (state.folders.length?'<div class="grid">'+state.folders.map(folderCard).join("")+'</div>':empty("No folders yet","Create a folder to organize your Localify library."));
-    $("#newFolderPage").onclick=()=>editFolder(null);
-    qAll(".folder-open").forEach(e=>e.onclick=()=>showFolder(e.dataset.id));
-  }
-  function showFolder(id){
-    const f=folderById(id);if(!f)return;
-    ensureFolderArrays(f);state.currentView="folder";state.detail={type:"folder",id};renderNav();
-    const albums=folderAlbumIds(f),tracks=folderTrackIds(f),artists=folderArtistIds(f),playlists=folderPlaylistIds(f);
-    $("#content").innerHTML='<div class="profileHero"><div>'+folderCollageHtml(f,true)+'</div><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+albums.length+' albums • '+tracks.length+' songs • '+artists.length+' artists • '+playlists.length+' playlists</div><div class="entityActions"><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Rename</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete</button></div></div></div>'+
-      (albums.length?'<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(albumCard).join("")+'</div></div>':'')+
-      (tracks.length?'<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+tracks.length+'</span></div><div class="tableWrap">'+trackTable(tracks)+'</div></div>':'')+
-      (artists.length?'<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(artistCard).join("")+'</div></div>':'')+
-      (playlists.length?'<div class="section"><div class="sectionHead"><h2>Playlists</h2><span>'+playlists.length+'</span></div><div class="viewGrid">'+playlists.map(playlistCard).join("")+'</div></div>':'')+
-      ((!albums.length&&!tracks.length&&!artists.length&&!playlists.length)?'<div class="empty"><h3>Folder is empty</h3><div>Use Add items to put albums, songs, artists or playlists here.</div></div>':'');
-    $("#folderAddItems").onclick=()=>openFolderAddMenu(f.id);
-    $("#folderEdit").onclick=()=>editFolder(f.id);
-    $("#folderDelete").onclick=async()=>{if(!confirm("Delete this folder? The music in your library will stay untouched."))return;state.folders=state.folders.filter(x=>x.id!==f.id);await save();state.detail=null;state.currentView="home";render()};
-    bindAlbumCards();bindTrackTable();
-    qAll(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
-    qAll(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
-  }
-  function editFolder(id){
-    const f=id?folderById(id):null;
-    setModal('<div class="modalHead"><h2>'+(f?'Rename folder':'New folder')+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="field"><label>Folder name</label><input id="folderNameInput" maxlength="80" value="'+esc(f?.name||"")+'" placeholder="My music"></div><div class="help">Folders are collections inside Localify. They do not move or delete files from your computer.</div><div class="modalFoot"><button class="secondary" id="folderCancel">Cancel</button><button class="primary" id="folderSave">'+(f?'Save':'Create')+'</button></div>');
-    $("#closeModal").onclick=()=>closeModal(true);$("#folderCancel").onclick=()=>closeModal(true);
-    $("#folderSave").onclick=async()=>{const n=$("#folderNameInput").value.trim();if(!n){toast("Give the folder a name.");return}const target=f||createFolderEntity(n);target.name=n;await save();closeModal(true);showFolder(target.id)};
-  }
-  function openFolderAddMenu(folderId){
-    const f=folderById(folderId);if(!f)return;
-    setModal('<div class="modalHead"><h2>Add items to '+esc(f.name)+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="help">Choose a library category.</div><div class="folderTypeGrid" style="margin-top:15px"><button class="folderTypeButton" data-folder-kind="albums">'+uiIcon("album")+'<strong>Albums</strong></button><button class="folderTypeButton" data-folder-kind="tracks">'+uiIcon("music")+'<strong>Songs</strong></button><button class="folderTypeButton" data-folder-kind="artists">'+uiIcon("artist")+'<strong>Artists</strong></button><button class="folderTypeButton" data-folder-kind="playlists">'+uiIcon("playlist")+'<strong>Playlists</strong></button></div>');
-    $("#closeModal").onclick=()=>closeModal(true);
-    qAll("[data-folder-kind]").forEach(b=>b.onclick=()=>openFolderCollectionPicker(folderId,b.dataset.folderKind));
-  }
-  function openFolderCollectionPicker(folderId,kind){
-    const f=folderById(folderId);if(!f)return;
-    const lists={albums:state.albums,tracks:state.tracks,artists:state.artists,playlists:state.playlists},items=lists[kind]||[];
-    const label=kind==="albums"?"Albums":kind==="tracks"?"Songs":kind==="artists"?"Artists":"Playlists";
-    const itemHtml=x=>{
-      const title=kind==="artists"?artistDisplayName(x):kind==="albums"?x.title:kind==="playlists"?x.name:displayTrackTitle(x,true);
-      const sub=kind==="artists"?(x.genres||[]).join(", "):kind==="albums"?artistNamesForAlbum(x).join(", "):kind==="playlists"?(x.trackIds||[]).length+" songs":artistName(x)+" • "+albumName(x);
-      return '<label class="folderPickerItem"><input class="folderItemCheck" type="checkbox" data-id="'+esc(x.id)+'" '+(folderHasItem(f,kind,x.id)?"checked":"")+'><span class="folderPickerCopy"><strong>'+esc(title)+'</strong><span>'+esc(sub||"")+'</span></span></label>';
-    };
-    const visible=items.slice(0,300);
-    setModal('<div class="modalHead"><h2>Add '+label+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="folderPickerToolbar"><button class="secondary small" id="folderSelectAll" type="button">Select all shown</button><button class="secondary small" id="folderClearAll" type="button">Clear shown</button><span class="subtle">'+items.length+' available'+(items.length>visible.length?' • showing first '+visible.length:'')+'</span></div><div class="folderPickerGrid">'+visible.map(itemHtml).join("")+'</div><div class="modalFoot"><button class="secondary" id="folderBack" type="button">Back</button><button class="primary" id="folderSaveItems" type="button">Save</button></div>');
-    $("#closeModal").onclick=()=>closeModal(true);$("#folderBack").onclick=()=>openFolderAddMenu(folderId);
-    qAll("#folderSelectAll").onclick=()=>{$(".folderItemCheck").forEach(x=>x.checked=true)};
-    qAll("#folderClearAll").onclick=()=>{$(".folderItemCheck").forEach(x=>x.checked=false)};
-    $("#folderSaveItems").onclick=async()=>{const selected=new Set($(".folderItemCheck:checked").map(x=>x.dataset.id));for(const item of items)folderToggleItem(f,kind,item.id,selected.has(item.id));await save();closeModal(true);showFolder(folderId)};
-  }
-  function openFolderChooser(kind,id){
-    if(!state.folders.length){editFolder(null);return}
-    const title=kind==="albums"?"album":kind==="tracks"?"song":kind==="artists"?"artist":"playlist";
-    setModal('<div class="modalHead"><h2>Add '+title+' to folders</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="folderPickerGrid">'+state.folders.map(f=>'<label class="folderPickerItem"><input class="folderItemCheck" type="checkbox" data-id="'+esc(f.id)+'" '+(folderHasItem(f,kind,id)?"checked":"")+'><span class="folderPickerCopy"><strong>'+esc(f.name)+'</strong><span>'+folderAlbumIds(f).length+' albums • '+folderTrackIds(f).length+' songs</span></span></label>').join("")+'</div><div class="modalFoot"><button class="secondary" id="folderCancelChooser" type="button">Cancel</button><button class="primary" id="folderChooserSave" type="button">Save</button></div>');
-    $("#closeModal").onclick=()=>closeModal(true);$("#folderCancelChooser").onclick=()=>closeModal(true);
-    $("#folderChooserSave").onclick=async()=>{for(const f of state.folders){const box=$(".folderItemCheck[data-id='"+f.id+"']");folderToggleItem(f,kind,id,!!box?.checked)}await save();closeModal(true);toast("Folder membership updated.");if(state.currentView==="folder"&&state.detail?.id)showFolder(state.detail.id)};
-  }
-
   function openContext(x,y,id,kind="song"){
     const m=$("#contextMenu");
-    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="folder">${uiIcon("folder")} Add to folder</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
+    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button><button data-a="playlist">${uiIcon("playlist")} Add to playlist</button><button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="savePreset">Save preset</button><button data-a="download">${uiIcon("download")} Download</button>`;
     m.classList.add("show");
     const rect=m.getBoundingClientRect(),pad=8;
     m.style.left=Math.max(pad,Math.min(x,innerWidth-rect.width-pad))+"px";
     m.style.top=Math.max(pad,Math.min(y,innerHeight-rect.height-pad))+"px";
-    $("\#contextMenu button").forEach(b=>b.onclick=async()=>{
+    $$("\#contextMenu button").forEach(b=>b.onclick=async()=>{
       const a=b.dataset.a;
       m.classList.remove("show");
       if(a==="queue"){state.queue.push(id);await save();toast("Added to queue")}
       if(a==="like")toggleLike(id);
       if(a==="playlist")bulkAddPlaylist([id]);
-      if(a==="folder")openFolderChooser("tracks",id);
       if(a==="lyrics")showLyrics(id);
       if(a==="edit")editTrack(id);
       if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();render()}}
@@ -3269,7 +3057,6 @@ function editLocalProfile(){
       if(JSON.stringify(ids)!==JSON.stringify(oldIds)){applyArtistIds(a,ids);changed=true;}
     }
     for(const t of state.tracks){
-      if(!Number.isFinite(Number(t.fileTrack)))t.fileTrack=inferTrackNumberFromFilename(t.fileName||t.title||"");
       const oldTitle=t.title;
       if(!nonPlaceholderText(t.title)){
         const fallback=String(t.fileName||t.name||"").replace(/\.[^.\\/]+$/,"").trim();
@@ -3442,8 +3229,8 @@ function editLocalProfile(){
     }
   }
   async function exportPreset(kind,ids=[]){let handle=null;try{if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:`Localify-${kind}.localify`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});await flushSave(false);const manifest=await collectPresetMeta(kind,ids);if(handle){await writePresetStreaming(handle,manifest);return true}const entries=[{name:'library.json',bytes:new TextEncoder().encode(JSON.stringify(manifest))}];for(const t of manifest.tracks){const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;if(isBlobLike(blob))entries.push({name:t.audioFile,bytes:await blobToBytes(blob)})}downloadBlob(await makeZip(entries),`Localify-${kind}.localify`);toast(`${manifest.presetName} exported.`);return true}catch(e){if(e?.name==='AbortError')return false;console.error(e);toast(e?.message||'Could not export this preset.');return false}}
-  function openPresetExportSelection(kind){const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists},items=lists[kind]||[];setModal(`<div class="modalHead"><h2>Export ${presetLabel(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Choose what to export. Album presets include their connected artists, artist profile pictures/info, and songs. Song and playlist presets include their connected artists and albums.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">${items.length} selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">${items.map(x=>kind==='artists'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName">${esc(x.name)}</span></label>`:kind==='albums'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')}</span></span></label>`:kind==='songs'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistName(x))}</span></span></label>`:`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.name)}</strong> <span class="muted">— ${(x.trackIds||[]).length} songs</span></span></label>`).join('')}</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export preset</button></div>`,{large:true});const refresh=()=>{$('#presetSelectedCount').textContent=`${qAll('.presetCheck:checked').length} selected`};$('.presetCheck').forEach(x=>x.addEventListener('change',refresh));qAll('#presetSelectAll').onclick=()=>{qAll('.presetCheck').forEach(x=>x.checked=true);refresh()};qAll('#presetClearAll').onclick=()=>{qAll('.presetCheck').forEach(x=>x.checked=false);refresh()};$('#closeModal').onclick=()=>closeModal(true);$('#presetCancel').onclick=()=>closeModal(true);$('#presetExport').onclick=async()=>{const ids=qAll('.presetCheck:checked').map(x=>x.value);if(!ids.length){toast('Choose at least one item.');return}closeModal(true);await exportPreset(kind,ids)}}
-  function openPresetExportChooser(){const kinds=['full','artists','albums','songs','playlists','liked','recent','settings'];setModal(`<div class="modalHead"><h2>Export preset</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Export one part of your Localify library or everything. Nothing is removed. Artist info and profile pictures travel with albums/songs that use those artists.</div><div style="display:grid;gap:8px;margin-top:16px">${kinds.map(k=>`<button class="secondary btnIcon" data-export-kind="${k}" style="justify-content:flex-start;text-align:left"><span style="min-width:28px">${uiIcon(k==='artists'?'artist':k==='albums'?'album':k==='songs'?'music':k==='playlists'?'playlist':k==='liked'?'heart':k==='recent'?'clock':k==='settings'?'save':'download')}</span><span><strong>${presetLabel(k)}</strong><br><span class="help">${({full:'Everything',artists:'Selected artist profiles, info and pictures',albums:'Selected albums + artists + songs',songs:'Selected songs + artists + albums',playlists:'Selected playlists + songs',liked:'Liked songs list + songs',recent:'Recently played list + songs',settings:'Playback and Localify settings'})[k]}</span></span></button>`).join('')}</div>`,{large:true});$('#closeModal').onclick=()=>closeModal(true);$('[data-export-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.exportKind;closeModal(true);if(['artists','albums','songs','playlists'].includes(k))openPresetExportSelection(k);else exportPreset(k,[])})}
+  function openPresetExportSelection(kind){const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists},items=lists[kind]||[];setModal(`<div class="modalHead"><h2>Export ${presetLabel(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Choose what to export. Album presets include their connected artists, artist profile pictures/info, and songs. Song and playlist presets include their connected artists and albums.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">${items.length} selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">${items.map(x=>kind==='artists'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName">${esc(x.name)}</span></label>`:kind==='albums'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')}</span></span></label>`:kind==='songs'?`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.title)}</strong> <span class="muted">— ${esc(artistName(x))}</span></span></label>`:`<label class="artistChoice"><input class="presetCheck" type="checkbox" value="${esc(x.id)}" checked><span class="artistChoiceName"><strong>${esc(x.name)}</strong> <span class="muted">— ${(x.trackIds||[]).length} songs</span></span></label>`).join('')}</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export preset</button></div>`,{large:true});const refresh=()=>{$('#presetSelectedCount').textContent=`${$$('.presetCheck:checked').length} selected`};$$('.presetCheck').forEach(x=>x.addEventListener('change',refresh));$('#presetSelectAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=true);refresh()};$('#presetClearAll').onclick=()=>{$$('.presetCheck').forEach(x=>x.checked=false);refresh()};$('#closeModal').onclick=()=>closeModal(true);$('#presetCancel').onclick=()=>closeModal(true);$('#presetExport').onclick=async()=>{const ids=$$('.presetCheck:checked').map(x=>x.value);if(!ids.length){toast('Choose at least one item.');return}closeModal(true);await exportPreset(kind,ids)}}
+  function openPresetExportChooser(){const kinds=['full','artists','albums','songs','playlists','liked','recent','settings'];setModal(`<div class="modalHead"><h2>Export preset</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="help">Export one part of your Localify library or everything. Nothing is removed. Artist info and profile pictures travel with albums/songs that use those artists.</div><div style="display:grid;gap:8px;margin-top:16px">${kinds.map(k=>`<button class="secondary btnIcon" data-export-kind="${k}" style="justify-content:flex-start;text-align:left"><span style="min-width:28px">${uiIcon(k==='artists'?'artist':k==='albums'?'album':k==='songs'?'music':k==='playlists'?'playlist':k==='liked'?'heart':k==='recent'?'clock':k==='settings'?'save':'download')}</span><span><strong>${presetLabel(k)}</strong><br><span class="help">${({full:'Everything',artists:'Selected artist profiles, info and pictures',albums:'Selected albums + artists + songs',songs:'Selected songs + artists + albums',playlists:'Selected playlists + songs',liked:'Liked songs list + songs',recent:'Recently played list + songs',settings:'Playback and Localify settings'})[k]}</span></span></button>`).join('')}</div>`,{large:true});$('#closeModal').onclick=()=>closeModal(true);$$('[data-export-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.exportKind;closeModal(true);if(['artists','albums','songs','playlists'].includes(k))openPresetExportSelection(k);else exportPreset(k,[])})}
   let pendingPresetImport=null;
   let pendingExpectedPresetKind='';
   function pickPresetFile(expectedKind=''){const input=$('#bundlePicker');if(!input){toast('Preset import is unavailable.');return}pendingExpectedPresetKind=expectedKind||'';input.value='';input.click()}
@@ -3605,8 +3392,6 @@ function editLocalProfile(){
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
 
   // Static controls
-  qAll("[data-mobile-view]").forEach(b=>b.onclick=e=>{e.preventDefault();setView(b.dataset.mobileView)});
-  const newFolderBtn=$("#newFolderBtn");if(newFolderBtn)newFolderBtn.onclick=()=>editFolder(null);
   document.addEventListener("pointerdown",e=>{
     const cardPlay=e.target.closest?.(".play-track");
     const rowPlay=e.target.closest?.(".play-row");
@@ -3631,15 +3416,15 @@ $("#globalSearch").addEventListener("input",e=>{
     },90);
   });
   $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=e=>{e.preventDefault();e.stopPropagation();toggleProfileMenu()};$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
-  $("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+  $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=()=>{if(!state.currentId){if(state.tracks[0])playId(state.tracks[0].id);return}audio.paused?audio.play():audio.pause();renderPlayer()};
   $("#nowPanelToggle").onclick=()=>setNowSidebar(!document.querySelector(".app")?.classList.contains("nowPanelOpen"));
   $("#next").onclick=next;$("#prev").onclick=prev;$("#shuffle").onclick=async()=>{state.settings.shuffle=!state.settings.shuffle;if(state.settings.shuffle&&state.currentId&&state.queue.length){const current=state.currentId;const rest=shuffleArr(state.queue.filter(id=>id!==current));state.queue=[current,...rest];state.queueIndex=0}await save();renderPlayer();renderCurrentViewWithoutScroll()};$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
   setInterval(pollDesktopControl,350);
   setInterval(checkDesktopPlayer,4000);
   audio.addEventListener("timeupdate",()=>{updatePlayerTime();creditListeningTime();sendDiscordPresence(false)});
-  audio.addEventListener("play",()=>{try{if("mediaSession"in navigator){navigator.mediaSession.playbackState="playing";updateLocalifyMediaSession(trackById(state.currentId));}}catch{};renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
-  audio.addEventListener("pause",()=>{try{if("mediaSession"in navigator)navigator.mediaSession.playbackState="paused"}catch{};creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
+  audio.addEventListener("play",()=>{renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
+  audio.addEventListener("pause",()=>{creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
   audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();sendDiscordPresence(true)});
   audio.addEventListener("seeking",()=>sendDiscordPresence(true));
   audio.addEventListener("seeked",()=>sendDiscordPresence(true));
@@ -3652,38 +3437,39 @@ $("#globalSearch").addEventListener("input",e=>{
     }else next();
   });
   window.addEventListener("keydown",e=>{if(e.code==="Space"&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();$("#playPause").click()}if(e.key==="ArrowRight"&&e.shiftKey)next();if(e.key==="ArrowLeft"&&e.shiftKey)prev()});
-  if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next);set("seekbackward",()=>audio.currentTime=Math.max(0,audio.currentTime-10));set("seekforward",()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+10));set("stop",()=>audio.pause())}
+  if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next)}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
-  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js?v=20261004-3").catch(()=>{});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
+document.addEventListener("click",profileMenuSettingsCapture,true);
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
   document.addEventListener("click",e=>{
-    const settingsItem=e.target.closest?.("#menuSettings");
-    if(settingsItem){e.preventDefault();e.stopPropagation();openSettingsPanel();return}
     if(!e.target.closest?.("#profileBtn")&&!e.target.closest?.("#profileMenu"))closeProfileMenu();
     const picker=e.target.closest?.(".artistPickerWrap");
-    if(!picker)$(".artistPickerWrap.open").forEach(x=>{x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")});
+    if(!picker)$$(".artistPickerWrap.open").forEach(x=>{x.classList.remove("open");x.querySelector(".artistSelectButton")?.setAttribute("aria-expanded","false")});
   });
 
-  // Paint the UI before touching persistent storage so IndexedDB problems can never blank the page.
-  renderProfileTopButton();
-  render();
   (async()=>{
     try{
       db=await openDB();
       await Promise.all([load(),loadLocalifyCoverMap()]);
-      renderProfileTopButton();
-      render();
       if(navigator.storage?.persist)try{await navigator.storage.persist()}catch{}
     }catch(e){
-      console.error("Localify startup storage error",e);
-      renderProfileTopButton();
-      render();
-      try{toast("Localify loaded, but browser storage is unavailable. Your current session still works.");}catch{}
+      console.error("Localify startup error",e);
+      // Never overwrite an existing fallback backup when storage temporarily fails.
+      try{
+        const recovered=await restoreSaved();
+        if(recovered)toast("Localify restored your saved library from its safety backup. Check browser storage permissions.");
+        else toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
+      }catch(recoverError){
+        console.warn("Localify emergency restore failed",recoverError);
+        toast("Localify could not access saved storage yet. Your previous backup was preserved; refresh and try again.");
+      }
     }
+    renderProfileTopButton();
+    render();
     const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
     if("requestIdleCallback"in window)requestIdleCallback(warmFirst,{timeout:1500});else setTimeout(warmFirst,700);
   })();
