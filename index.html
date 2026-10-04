@@ -3643,16 +3643,45 @@ async function presetShareUrl(source=null){
 }
 
 async function buildPresetExportImage(manifest){
-  const width=1400,outer=46,headerH=150,cardW=640,cardH=150,cols=2,gapX=14,gapY=18,sectionGap=34;
-  const kinds=[["albums","Albums",manifest.albums||[]],["artists","Artists",manifest.artists||[]],["tracks","Songs",manifest.tracks||[]],["folders","Folders",manifest.folders||[]],["playlists","Playlists",manifest.playlists||[]]];
+  const kind=String(manifest?.presetKind||"full");
+  const enabled=manifest?.exportSections||{};
+  const sourceKinds=[
+    ["albums","Albums",manifest.albums||[]],
+    ["artists","Artists",manifest.artists||[]],
+    ["tracks","Songs",manifest.tracks||[]],
+    ["folders","Folders",manifest.folders||[]],
+    ["playlists","Playlists",manifest.playlists||[]]
+  ];
+  // A focused preset image only shows the thing that was actually exported.
+  const focused={artists:"artists",albums:"albums",songs:"tracks",playlists:"playlists",folders:"folders"};
+  const wanted=focused[kind]||null;
+  const kinds=sourceKinds.filter(function(group){
+    if(wanted)return group[0]===wanted;
+    if(kind==="full"&&manifest.exportSections)return enabled[group[0]]!==false;
+    return group[2].length;
+  });
   const rows=[];
   for(const group of kinds){
-    const items=group[2];
-    if(!items.length)continue;
-    if(manifest.presetKind==="full"&&manifest.exportSections&&manifest.exportSections[group[0]]===false)continue;
-    rows.push({kind:group[0],label:group[1],items:items});
+    if(!group[2].length)continue;
+    rows.push({kind:group[0],label:group[1],items:group[2]});
   }
-  const maxItems=1500;
+
+  // Keep large exports compact instead of making the generated picture extremely tall.
+  const totalItems=rows.reduce((n,g)=>n+g.items.length,0);
+  const compact=totalItems>24;
+  const veryCompact=totalItems>72;
+  const outer=veryCompact?34:compact?40:46;
+  const width=1400;
+  const cols=veryCompact?4:compact?3:2;
+  const gapX=veryCompact?10:compact?12:14;
+  const gapY=veryCompact?10:compact?12:18;
+  const cardW=Math.floor((width-outer*2-gapX*(cols-1))/cols);
+  const cardH=veryCompact?104:compact?122:150;
+  const art=veryCompact?78:compact?92:126;
+  const headerH=veryCompact?122:compact?136:150;
+  const sectionGap=veryCompact?22:compact?26:34;
+  const maxItems=2000;
+
   let remaining=0,shown=0;
   const visible=rows.map(function(group){
     const room=Math.max(0,maxItems-shown);
@@ -3661,16 +3690,34 @@ async function buildPresetExportImage(manifest){
     shown+=items.length;
     return {kind:group.kind,label:group.label,items:items};
   }).filter(function(x){return x.items.length});
-  const height=Math.min(32760,headerH+outer*2+70+visible.reduce(function(n,g){return n+46+Math.ceil(g.items.length/cols)*(cardH+gapY)+sectionGap},0));
+
+  const height=Math.min(
+    32760,
+    headerH+outer*2+60+
+    visible.reduce(function(n,g){
+      return n+40+Math.ceil(g.items.length/cols)*(cardH+gapY)+sectionGap;
+    },0)
+  );
   const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
   canvas.width=width;canvas.height=Math.max(420,height);
+
   ctx.fillStyle="#090b0e";ctx.fillRect(0,0,canvas.width,canvas.height);
-  const top=ctx.createLinearGradient(0,0,width,0);top.addColorStop(0,"#111923");top.addColorStop(1,"#0c1117");ctx.fillStyle=top;ctx.fillRect(0,0,width,headerH);
-  ctx.fillStyle="#7dd3fc";ctx.font="800 18px Arial";ctx.fillText("LOCALIFY EXPORT",outer,38);
-  ctx.fillStyle="#f7f7f8";ctx.font="900 42px Arial";ctx.fillText(String(manifest.presetName||"Localify library").slice(0,48),outer,88);
-  ctx.fillStyle="#8e98a4";ctx.font="600 15px Arial";
-  const summary=rows.map(function(g){return g.items.length+" "+g.label.toLowerCase()}).join("  •  ");
-  ctx.fillText(summary.slice(0,125),outer,120);
+  const top=ctx.createLinearGradient(0,0,width,0);
+  top.addColorStop(0,"#111923");top.addColorStop(1,"#0c1117");
+  ctx.fillStyle=top;ctx.fillRect(0,0,width,headerH);
+
+  ctx.fillStyle="#7dd3fc";ctx.font=(veryCompact?"700 15px Arial":compact?"800 17px Arial":"800 18px Arial");
+  ctx.fillText("LOCALIFY EXPORT",outer,32);
+  ctx.fillStyle="#f7f7f8";
+  ctx.font=(veryCompact?"900 30px Arial":compact?"900 36px Arial":"900 42px Arial");
+  ctx.fillText(String(manifest.presetName||"Localify library").slice(0,48),outer,veryCompact?72:compact?82:88);
+  ctx.fillStyle="#8e98a4";
+  ctx.font=(veryCompact?"600 11px Arial":compact?"600 12px Arial":"600 15px Arial");
+  const summary=rows.map(function(g){
+    return g.items.length+" "+g.label.toLowerCase();
+  }).join("  •  ");
+  ctx.fillText(summary.slice(0,145),outer,veryCompact?98:compact?110:120);
+
   const imgCache=new Map();
   async function loadImg(src){
     if(!src)return null;
@@ -3688,71 +3735,105 @@ async function buildPresetExportImage(manifest){
     return text(x.artist||x.albumArtist,"");
   }
   function coverOf(x){return text(x.cover||x.image||x.picture||x.avatar,"")}
-  function detailLines(x,kind){
+  function detailLines(x,k){
     const out=[];
-    if(kind==="albums"){
+    if(k==="albums"){
       out.push(artistText(x)||"Unknown Artist");
       if(text(x.year))out.push("Release year: "+text(x.year));
       if(text(x.genre))out.push("Genre: "+text(x.genre));
       if(text(x.label))out.push("Label: "+text(x.label));
       out.push("Songs: "+(manifest.tracks||[]).filter(function(t){return t.albumId===x.id}).length);
-      if(text(x.description))out.push(text(x.description));
-    }else if(kind==="artists"){
+    }else if(k==="artists"){
       if(Array.isArray(x.genres)&&x.genres.length)out.push("Genres: "+x.genres.join(", "));
       else if(text(x.genre))out.push("Genre: "+text(x.genre));
       out.push("Albums: "+(manifest.albums||[]).filter(function(a){return Array.isArray(a.artistIds)&&a.artistIds.includes(x.id)}).length);
       out.push("Songs: "+(manifest.tracks||[]).filter(function(t){return artistText(t).split(",").map(function(s){return s.trim()}).includes(text(x.name))}).length);
-      if(text(x.bio))out.push(text(x.bio));
-      else if(text(x.description))out.push(text(x.description));
-    }else if(kind==="tracks"){
+    }else if(k==="tracks"){
       if(artistText(x))out.push("Artists: "+artistText(x));
       if(text(x.album))out.push("Album: "+text(x.album));
       if(text(x.year))out.push("Year: "+text(x.year));
       if(text(x.genre))out.push("Genre: "+text(x.genre));
       if(text(x.trackNumber||x.track))out.push("Track: "+text(x.trackNumber||x.track));
-      if(text(x.albumArtist))out.push("Album artist: "+text(x.albumArtist));
-      if(text(x.label))out.push("Label: "+text(x.label));
-    }else if(kind==="folders"){
+    }else if(k==="folders"){
       const getNames=function(ids,list,key){return (ids||[]).map(function(id){const item=(list||[]).find(function(v){return v.id===id});return item?text(item[key],""):""}).filter(Boolean)};
       const an=getNames(x.albumIds,manifest.albums,"title"),sn=getNames(x.trackIds,manifest.tracks,"title"),arn=getNames(x.artistIds,manifest.artists,"name"),pn=getNames(x.playlistIds,manifest.playlists,"name");
-      out.push("Albums ("+(x.albumIds||[]).length+"): "+(an.slice(0,4).join(", ")||"None"));
-      out.push("Songs ("+(x.trackIds||[]).length+"): "+(sn.slice(0,4).join(", ")||"None"));
-      out.push("Artists ("+(x.artistIds||[]).length+"): "+(arn.slice(0,3).join(", ")||"None"));
-      out.push("Playlists ("+(x.playlistIds||[]).length+"): "+(pn.slice(0,3).join(", ")||"None"));
-    }else if(kind==="playlists"){
+      out.push("Albums ("+(x.albumIds||[]).length+"): "+(an.slice(0,3).join(", ")||"None"));
+      out.push("Songs ("+(x.trackIds||[]).length+"): "+(sn.slice(0,3).join(", ")||"None"));
+      out.push("Artists ("+(x.artistIds||[]).length+"): "+(arn.slice(0,2).join(", ")||"None"));
+      out.push("Playlists ("+(x.playlistIds||[]).length+"): "+(pn.slice(0,2).join(", ")||"None"));
+    }else if(k==="playlists"){
       const names=(x.trackIds||[]).map(function(id){const t=(manifest.tracks||[]).find(function(v){return v.id===id});return t?text(t.title||t.name||t.fileName,""):""}).filter(Boolean);
       out.push("Songs: "+(x.trackIds||[]).length);
-      if(names.length)out.push("Tracks: "+names.slice(0,4).join(", "));
-      if(text(x.description))out.push(text(x.description));
+      if(names.length)out.push("Tracks: "+names.slice(0,3).join(", "));
     }
-    return out.filter(Boolean).slice(0,5);
+    return out.filter(Boolean).slice(0,veryCompact?3:compact?4:5);
   }
+
   let y=headerH+outer;
   for(const group of visible){
-    ctx.fillStyle="#f7f7f8";ctx.font="900 24px Arial";ctx.fillText(group.label,outer,y+26);
-    ctx.fillStyle="#6f7b88";ctx.font="700 13px Arial";ctx.fillText(String(group.items.length)+" shown",width-outer-90,y+25);
-    y+=46;
+    ctx.fillStyle="#f7f7f8";
+    ctx.font=veryCompact?"900 18px Arial":compact?"900 21px Arial":"900 24px Arial";
+    ctx.fillText(group.label,outer,y+24);
+    ctx.fillStyle="#6f7b88";
+    ctx.font=veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
+    const countText=String(group.items.length)+" shown";
+    const tw=ctx.measureText(countText).width;
+    ctx.fillText(countText,width-outer-tw,y+23);
+    y+=40;
+
     for(let i=0;i<group.items.length;i++){
-      const x=group.items[i],col=i%cols,row=Math.floor(i/cols),cx=outer+col*(cardW+gapX),cy=y+row*(cardH+gapY);
+      const x=group.items[i],col=i%cols,row=Math.floor(i/cols);
+      const cx=outer+col*(cardW+gapX),cy=y+row*(cardH+gapY);
       ctx.fillStyle="#11171d";ctx.strokeStyle="#252d36";ctx.lineWidth=1;
-      ctx.beginPath();ctx.roundRect(cx,cy,cardW,cardH,16);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.roundRect(cx,cy,cardW,cardH,veryCompact?11:compact?13:16);ctx.fill();ctx.stroke();
+
       const im=await loadImg(coverOf(x));
-      if(im){ctx.save();ctx.beginPath();ctx.roundRect(cx+12,cy+12,126,126,12);ctx.clip();ctx.drawImage(im,cx+12,cy+12,126,126);ctx.restore()}
-      else{ctx.fillStyle="#1b2630";ctx.beginPath();ctx.roundRect(cx+12,cy+12,126,126,12);ctx.fill();ctx.fillStyle="#697682";ctx.font="900 34px Arial";ctx.fillText(kindGlyph(group.kind),cx+57,cy+85)}
+      const ax=cx+10,ay=cy+10;
+      if(im){
+        ctx.save();ctx.beginPath();ctx.roundRect(ax,ay,art,art,veryCompact?8:10);ctx.clip();
+        const scale=Math.max(art/(im.naturalWidth||im.width||1),art/(im.naturalHeight||im.height||1));
+        const dw=(im.naturalWidth||im.width||1)*scale,dh=(im.naturalHeight||im.height||1)*scale;
+        ctx.drawImage(im,ax+(art-dw)/2,ay+(art-dh)/2,dw,dh);ctx.restore();
+      }else{
+        ctx.fillStyle="#1b2630";ctx.beginPath();ctx.roundRect(ax,ay,art,art,veryCompact?8:10);ctx.fill();
+        ctx.fillStyle="#697682";ctx.font=(veryCompact?"900 24px Arial":"900 34px Arial");
+        ctx.fillText(kindGlyph(group.kind),ax+art*.39,ay+art*.67);
+      }
+
+      const textX=ax+art+(veryCompact?10:12);
       const title=text(x.title||x.name||x.fileName,"Untitled");
-      ctx.fillStyle="#f7f7f8";ctx.font="900 20px Arial";ctx.fillText(title.slice(0,42),cx+154,cy+36);
-      ctx.fillStyle="#84909c";ctx.font="600 13px Arial";
-      detailLines(x,group.kind).forEach(function(line,j){ctx.fillText(line.slice(0,62),cx+154,cy+61+j*18)});
+      const titleMax=Math.max(16,cardW-art-(veryCompact?26:36));
+      ctx.save();ctx.beginPath();ctx.rect(textX,cy+8,titleMax,cardH-16);ctx.clip();
+      ctx.fillStyle="#f7f7f8";
+      ctx.font=veryCompact?"900 14px Arial":compact?"900 16px Arial":"900 20px Arial";
+      ctx.fillText(title.slice(0,veryCompact?34:compact?40:46),textX,cy+(veryCompact?26:compact?30:36));
+      ctx.fillStyle="#84909c";
+      ctx.font=veryCompact?"600 9px Arial":compact?"600 10px Arial":"600 13px Arial";
+      detailLines(x,group.kind).forEach(function(line,j){
+        ctx.fillText(line.slice(0,veryCompact?46:compact?54:62),textX,cy+(veryCompact?46:compact?52:61)+j*(veryCompact?13:compact?15:18));
+      });
+      ctx.restore();
+
       if(group.kind==="folders"){
         const ids=[].concat(x.albumIds||[]).map(function(id){const a=(manifest.albums||[]).find(function(a){return a.id===id});return a?coverOf(a):""}).filter(Boolean).slice(0,4);
-        for(let j=0;j<ids.length;j++){const im2=await loadImg(ids[j]);if(im2){const sx=cx+154+(j*30),sy=cy+122;ctx.save();ctx.beginPath();ctx.roundRect(sx,sy,24,24,5);ctx.clip();ctx.drawImage(im2,sx,sy,24,24);ctx.restore()}}
+        const mini=veryCompact?18:compact?21:24;
+        for(let j=0;j<ids.length;j++){
+          const im2=await loadImg(ids[j]);
+          if(im2){
+            const sx=cx+cardW-mini-((ids.length-j)* (mini+3))+3,sy=cy+cardH-mini-5;
+            ctx.save();ctx.beginPath();ctx.roundRect(sx,sy,mini,mini,4);ctx.clip();
+            const sc=Math.max(mini/(im2.naturalWidth||im2.width||1),mini/(im2.naturalHeight||im2.height||1));
+            const dw=(im2.naturalWidth||im2.width||1)*sc,dh=(im2.naturalHeight||im2.height||1)*sc;
+            ctx.drawImage(im2,sx+(mini-dw)/2,sy+(mini-dh)/2,dw,dh);ctx.restore();
+          }
+        }
       }
     }
     y+=Math.ceil(group.items.length/cols)*(cardH+gapY)+sectionGap;
-    if(y>canvas.height-80)break;
+    if(y>canvas.height-70)break;
   }
-  ctx.fillStyle="#707b87";ctx.font="700 13px Arial";
-  ctx.fillText((remaining?"+"+remaining+" additional items are included in the preset file.":"Generated by Localify")+"",outer,canvas.height-32);
+  ctx.fillStyle="#707b87";ctx.font=veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
+  ctx.fillText((remaining?"+"+remaining+" additional items are included in the preset file.":"Generated by Localify")+"",outer,canvas.height-28);
   return canvas.toDataURL("image/png");
 }
 function kindGlyph(kind){return kind==="artists"?"♟":kind==="folders"?"▣":kind==="playlists"?"☷":"♫"}
