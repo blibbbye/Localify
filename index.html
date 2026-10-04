@@ -3677,9 +3677,16 @@ async function buildPresetExportImage(manifest){
   const focused={artists:"artists",albums:"albums",songs:"songs",playlists:"playlists",folders:"folders"};
   const wanted=focused[kind]||null;
   const rows=[];
+  let hiddenSongCount=0;
   for(const [k,label,items] of all){
     if(wanted&&k!==wanted)continue;
     if(!wanted&&kind==="full"&&manifest.exportSections&&enabled[k]!==true)continue;
+    // Songs are still included in the exported .localify file, but the image stays compact
+    // by showing only the library/album artwork and metadata instead of hundreds of song rows.
+    if(k==="songs"&&(kind==="full"||kind==="albums")){
+      hiddenSongCount=items.length;
+      continue;
+    }
     if(items.length)rows.push({kind:k,label,items});
   }
   const hasPersonal=!wanted&&kind==="full"&&(
@@ -3726,7 +3733,9 @@ async function buildPresetExportImage(manifest){
   ctx.fillStyle="#f7f7f8";ctx.font="900 42px Arial";
   ctx.fillText(String(manifest.presetName||"Library preset").slice(0,56),outer,80);
   ctx.fillStyle="#87929e";ctx.font="600 14px Arial";
-  const summary=visibleRows.filter(g=>g.kind!=="personal").map(g=>g.items.length+" "+g.label.toLowerCase()).join("  •  ");
+  const summaryParts=visibleRows.filter(g=>g.kind!=="personal").map(g=>g.items.length+" "+g.label.toLowerCase());
+  if(hiddenSongCount)summaryParts.push(hiddenSongCount.toLocaleString()+" songs in preset");
+  const summary=summaryParts.join("  •  ");
   ctx.fillText(summary.slice(0,190),outer,107);
 
   const imgCache=new Map();
@@ -3824,6 +3833,7 @@ async function buildPresetExportImage(manifest){
   ctx.fillStyle="#66737f";ctx.font="700 11px Arial";
   const creator=txt(manifest.creatorName,"Localify listener");
   let footer="Preset made by \""+creator+"\"";
+  if(hiddenSongCount)footer+=" • "+hiddenSongCount.toLocaleString()+" songs included in the preset file (not shown in image)";
   if(totalHidden)footer+=" • "+totalHidden.toLocaleString()+" more items included in the preset file";
   ctx.fillText(footer,outer,footerY);
   return canvas.toDataURL("image/png");
