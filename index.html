@@ -2537,81 +2537,115 @@ function editLocalProfile(){
     };
     input.click();
   }
+  function metadataText(bytes,encoding){
+    const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+    try{
+      if(encoding===0)return new TextDecoder("iso-8859-1").decode(data).replace(/\0+$/,"").trim();
+      if(encoding===2){let s="";for(let i=0;i+1<data.length;i+=2)s+=String.fromCharCode((data[i]<<8)|data[i+1]);return s.replace(/\0+$/,"").trim()}
+      if(encoding===1){const little=data[0]===0xff&&data[1]===0xfe;let off=(data[0]===0xff||data[0]===0xfe)?2:0,s="";for(;off+1<data.length;off+=2)s+=String.fromCharCode(little?(data[off]|data[off+1]<<8):(data[off+1]|data[off]<<8));return s.replace(/\0+$/,"").trim()}
+      return new TextDecoder("utf-8").decode(data).replace(/\0+$/,"").trim();
+    }catch{return ""}
+  }
+  function metadataList(v){return String(v||"").split(/[;,|]/).map(x=>x.trim()).filter(Boolean)}
+  function parseId3v2(bytes){
+    if(bytes.length<10||bytes[0]!==73||bytes[1]!==68||bytes[2]!==51)return {};
+    const version=bytes[3],flags=bytes[5],size=((bytes[6]&127)<<21)|((bytes[7]&127)<<14)|((bytes[8]&127)<<7)|(bytes[9]&127);
+    let pos=10,end=Math.min(bytes.length,10+size);
+    if(flags&0x40&&pos+4<=end){const ex=((bytes[pos]<<24|bytes[pos+1]<<16|bytes[pos+2]<<8|bytes[pos+3])>>>0);pos+=4+ex;if(pos>end)pos=end}
+    const out={};
+    while(pos+10<=end){
+      const id=String.fromCharCode(bytes[pos],bytes[pos+1],bytes[pos+2],bytes[pos+3]);
+      if(!/^[A-Z0-9]{4}$/.test(id))break;
+      const fs=version===4?((bytes[pos+4]&127)<<21)|((bytes[pos+5]&127)<<14)|((bytes[pos+6]&127)<<7)|(bytes[pos+7]&127):((bytes[pos+4]<<24|bytes[pos+5]<<16|bytes[pos+6]<<8|bytes[pos+7])>>>0);
+      pos+=10;if(fs<=0||pos+fs>end)break;
+      const val=bytes.slice(pos,pos+fs);pos+=fs;const enc=val[0],text=metadataText(val.slice(1),enc);
+      if(id==="TIT2")out.title=text;else if(id==="TPE1")out.artist=text;else if(id==="TPE2")out.albumArtist=text;else if(id==="TALB")out.album=text;else if(id==="TCON")out.genre=text;else if(id==="TDRC"||id==="TYER")out.year=text;else if(id==="TRCK")out.track=parseInt(text.split("/")[0],10)||null;else if(id==="TPOS")out.disc=parseInt(text.split("/")[0],10)||null;else if(id==="TCOM")out.composer=text;else if(id==="TPUB")out.publisher=text;else if(id==="TCOP")out.copyright=text;else if(id==="TENC"||id==="TSSE")out.encoder=text;
+      if(id==="TXXX"&&val.length>2){const z=val.indexOf(0,1),desc=metadataText(val.slice(1,z<0?val.length:z),enc).toLowerCase(),value=metadataText(val.slice(z<0?val.length:z+1),enc);if(/^(title|song|name)$/.test(desc)&&value)out.title=value;else if(desc==="genre"&&value)out.genre=value;else if(desc==="album"&&value)out.album=value}
+    }
+    return out;
+  }
+  async function readAudioMetadata(file){
+    try{
+      const bytes=new Uint8Array(await file.slice(0,512*1024).arrayBuffer());
+      const ext=(file.name.match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase()||"";
+      if(ext==="mp3"||file.type==="audio/mpeg"||(bytes[0]===73&&bytes[1]===68&&bytes[2]===51))return parseId3v2(bytes);
+    }catch(e){console.warn("Localify metadata read failed",file?.name,e)}
+    return {};
+  }
   async function addFiles(files,context={}){
     const arr=files.filter(isAudioFile);
     if(!arr.length){toast("No audio files found.");return}
     const album=context.albumId?albumById(context.albumId):null;
-    const forcedArtist=context.artistId?artistById(context.artistId):album?artistById(firstArtistId(album)):null;
     const playlist=context.playlistId?playlistById(context.playlistId):null;
     const folderAlbums=new Map();
-    const existing=new Set(state.tracks.map(t=>`${t.fileName}|${t.size||t.blob?.size||0}|${t.lastModified||t.blob?.lastModified||0}`));
+    const existing=new Set(state.tracks.map(t=>String(t.fileName||"")+"|"+String(t.size||t.blob?.size||0)+"|"+String(t.lastModified||t.blob?.lastModified||0)));
     const added=[];
     for(const f of arr){
-      const sig=`${f.name}|${f.size}|${f.lastModified}`;
+      const sig=String(f.name||"")+"|"+String(f.size||0)+"|"+String(f.lastModified||0);
       if(existing.has(sig))continue;
-      const folderMode=!!context.folderImport;
-      const unassignedAlbum=!!album&&!artistIdsForAlbum(album).length;
-      const artist=(folderMode||unassignedAlbum)?null:(forcedArtist||null);
-      let folderCover=null, folderKey="", folderTitle="Unknown Album";
-      if(context.folderImageMap||folderMode){
+      const meta=await readAudioMetadata(f);
+      const trackArtistNames=metadataList(meta.artist);
+      const trackArtists=(trackArtistNames.length?trackArtistNames:(context.artistId?[artistById(context.artistId)?.name||""]:[])).map(n=>getOrCreateArtist(n)).filter(Boolean);
+      const albumArtistNames=metadataList(meta.albumArtist);
+      const albumArtists=(albumArtistNames.length?albumArtistNames:trackArtists.map(a=>a.name)).map(n=>getOrCreateArtist(n)).filter(Boolean);
+      let folderKey="",folderTitle="Unknown Album",folderCover=null;
+      if(context.folderImageMap||context.folderImport){
         const rel=f.webkitRelativePath||f.name||"";
         folderKey=rel.includes("/")?rel.slice(0,rel.lastIndexOf("/")):"";
         folderTitle=folderKey?folderKey.split("/").filter(Boolean).pop()||"Unknown Album":"Unknown Album";
         folderCover=context.folderImageMap?.get(folderKey)||null;
       }
-      let al;
-      if(folderMode){
-        if(!folderAlbums.has(folderKey))folderAlbums.set(folderKey,getOrCreateFolderAlbum(folderTitle,folderCover));
-        al=folderAlbums.get(folderKey);
-      }else{
-        al=album||null;
+      const metaAlbum=String(meta.album||"").trim();
+      let al=album;
+      if(!al&&metaAlbum){
+        const aa=albumArtists[0]||trackArtists[0]||null;
+        al=getOrCreateAlbum(metaAlbum,aa,folderCover||null);
+        applyArtistIds(al,albumArtists.length?albumArtists.map(a=>a.id):aa?[aa.id]:[]);
+      }else if(!al&&context.folderImport){
+        const key=folderKey.toLowerCase();
+        if(!folderAlbums.has(key))folderAlbums.set(key,getOrCreateFolderAlbum(folderTitle,folderCover));
+        al=folderAlbums.get(key);
       }
       if(folderCover&&al&&!al.cover)al.cover=folderCover;
-      const albumArtistIds=al?artistIdsForAlbum(al):[];
-      const fallbackArtistIds=artist?[artist.id]:[];
-      const fallbackArtist=namesOfIds(fallbackArtistIds).join(", ")||NONE_LABEL;
+      const year=String(meta.year||"").trim(),genre=String(meta.genre||"").trim();
+      if(al){
+        if(year)al.year=year;
+        if(genre)al.genre=genre;
+        if(meta.publisher)al.label=String(meta.publisher);
+        al.credits=normalizeCredits({...al.credits,composer:meta.composer||al.credits?.composer,publisher:meta.publisher||al.credits?.publisher,copyright:meta.copyright||al.credits?.copyright});
+      }
+      const artistIds=trackArtists.map(a=>a.id),artistTextValue=namesOfIds(artistIds).join(", ")||NONE_LABEL;
+      const title=String(meta.title||"").trim()||String(f.name||"").replace(/\.[^.]+$/,"");
+      const trackNumber=Number.isFinite(Number(meta.track))?Number(meta.track):inferTrackNumberFromFilename(f.name);
+      const discNumber=Number.isFinite(Number(meta.disc))?Number(meta.disc):null;
+      const albumIds=al&&artistIdsForAlbum(al).length?artistIdsForAlbum(al):albumArtists.map(a=>a.id);
       const t={
-        id:uid(),title:f.name.replace(/\.[^.]+$/,"") ,
-        artist:fallbackArtist,artistIds:fallbackArtistIds,artistId:fallbackArtistIds[0]||null,
-        album:al?.title||NONE_LABEL,albumId:al?.id||null,
-        albumArtist:namesOfIds(albumArtistIds.length?albumArtistIds:fallbackArtistIds).join(", ")||NONE_LABEL,albumArtistIds:albumArtistIds.length?albumArtistIds:fallbackArtistIds,albumArtistId:(albumArtistIds.length?albumArtistIds:fallbackArtistIds)[0]||null,
-        genre:al?.genre||"",year:al?.year||"",track:inferTrackNumberFromFilename(f.name),disc:null,
+        id:uid(),title,artist:artistTextValue,artistIds,artistId:artistIds[0]||null,
+        album:al?.title||metaAlbum||NONE_LABEL,albumId:al?.id||null,
+        albumArtist:namesOfIds(albumIds).join(", ")||artistTextValue,albumArtistIds:albumIds,albumArtistId:albumIds[0]||null,
+        genre:genre||al?.genre||"",year:year||al?.year||"",track:trackNumber,disc:discNumber,
         explicit:false,duration:0,fileName:f.name,size:f.size,lastModified:f.lastModified,mimeType:f.type||"",
-        blob:f,_blobDirty:true,cover:al?.cover||artist?.image||folderCover||null,
-        lyrics:"",credits:normalizeCredits(al?.credits||{}),addedAt:Date.now()
+        blob:f,_blobDirty:true,cover:al?.cover||trackArtists[0]?.image||folderCover||null,
+        lyrics:"",credits:normalizeCredits({composer:meta.composer||al?.credits?.composer,publisher:meta.publisher||al?.credits?.publisher,copyright:meta.copyright||al?.credits?.copyright,producer:al?.credits?.producer,songwriter:al?.credits?.songwriter,label:al?.credits?.label}),
+        metadata:{title:meta.title||"",artist:meta.artist||"",album:meta.album||"",albumArtist:meta.albumArtist||"",year:meta.year||"",genre:meta.genre||"",track:meta.track||null,disc:meta.disc||null,composer:meta.composer||"",publisher:meta.publisher||"",copyright:meta.copyright||"",encoder:meta.encoder||""},
+        addedAt:Date.now()
       };
-      state.tracks.push(t);
-      added.push(t);
-      existing.add(sig);
-      queueBlob(t.id);
+      state.tracks.push(t);added.push(t);existing.add(sig);queueBlob(t.id);
       if(playlist&&!playlist.trackIds.includes(t.id))playlist.trackIds.push(t.id);
     }
     importContext={};
     if(!added.length){toast("Nothing new was imported.");return}
-
     save(false,added.map(t=>t.id));
-    toast(context.folderImport?`Added ${added.length} ${added.length===1?"song":"songs"} from ${new Set(added.map(t=>t.albumId)).size} folder ${new Set(added.map(t=>t.albumId)).size===1?"album":"albums"}.`:`Added ${added.length} ${added.length===1?"song":"songs"}.`);
-    if(context.albumId)showAlbum(context.albumId);
-    else if(context.artistId)showArtist(context.artistId);
-    else if(context.playlistId)showPlaylist(context.playlistId);
-    else render();
-
-    window.addEventListener("unhandledrejection",e=>{console.warn("Localify unhandled promise rejection",e.reason);e.preventDefault()});
-  window.addEventListener("error",e=>{console.warn("Localify runtime error",e.error||e.message)});
-
-  (async()=>{
+    toast((context.folderImport?"Added ":"Added ")+added.length+(added.length===1?" song.":" songs."));
+    if(context.albumId)showAlbum(context.albumId);else if(context.artistId)showArtist(context.artistId);else if(context.playlistId)showPlaylist(context.playlistId);else render();
+    (async()=>{
       let cursor=0;
-      const workers=Array.from({length:Math.min(4,added.length)},async()=>{
-        while(cursor<added.length){
-          const t=added[cursor++];
-          await readDuration(t);
-        }
-      });
-      await Promise.all(workers);
-      autoSave();
-      if(state.currentView==="library"||state.detail?.type||state.currentView==="recent"||state.currentView==="liked"||state.currentView==="search"||state.currentView==="albums"||state.currentView==="playlists"||state.currentView==="home")renderCurrentViewWithoutScroll();
+      const workers=Array.from({length:Math.min(4,added.length)},async()=>{while(cursor<added.length){const t=added[cursor++];await readDuration(t)}});
+      await Promise.all(workers);autoSave();
+      if(["library","recent","liked","search","albums","playlists","home","folders"].includes(state.currentView))renderCurrentViewWithoutScroll();
     })().catch(e=>console.warn("Localify duration scan failed",e));
   }
+
   function inferTrackNumberFromFilename(name){const m=String(name||"").match(/^(?:Track\s*)?0*(\d+)(?:[.\-_)\s])/i);return m?parseInt(m[1],10):null}
   function setupDrop(z){if(!z)return;["dragenter","dragover"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.add("drag")}));["dragleave","drop"].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.remove("drag")}));z.addEventListener("drop",e=>addFiles([...e.dataTransfer.files],{}))}
 
