@@ -105,17 +105,17 @@ button,input{font:inherit}.wrap{max-width:1080px;margin:auto;padding:22px 16px 5
  let current="overview",query="";
  function itemData(id){
    if(id==="overview")return [
-     ...cats.albums.items.slice(0,8).map(x=>({type:"Album",name:x.t??x.title||"Untitled album",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.y||x.year||""})),
-     ...cats.artists.items.slice(0,8).map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:x.g??"Artist",cover:x.k??x.cover||""})),
-     ...cats.songs.items.slice(0,8).map(x=>({type:"Song",name:x.t??x.title||"Untitled song",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.n||x.trackNumber||""})),
-     ...cats.folders.items.slice(0,8).map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0")+" items"})),
-     ...cats.playlists.items.slice(0,8).map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}))
+     ...cats.albums.items.slice(0,8).map(x=>({type:"Album",name:(x.t??x.title)||"Untitled album",sub:(x.a??x.artist)||"Unknown Artist",cover:(x.k??x.cover)||"",badge:x.y||x.year||""})),
+     ...cats.artists.items.slice(0,8).map(x=>({type:"Artist",name:(x.n??x.name)||"Unknown Artist",sub:x.g??"Artist",cover:(x.k??x.cover)||""})),
+     ...cats.songs.items.slice(0,8).map(x=>({type:"Song",name:(x.t??x.title)||"Untitled song",sub:(x.a??x.artist)||"Unknown Artist",cover:(x.k??x.cover)||"",badge:x.n||x.trackNumber||""})),
+     ...cats.folders.items.slice(0,8).map(x=>({type:"Folder",name:(x.n??x.name)||"Untitled folder",sub:(x.i??x.extra??"0")+" items"})),
+     ...cats.playlists.items.slice(0,8).map(x=>({type:"Playlist",name:(x.n??x.name)||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}))
    ];
-   if(id==="albums")return cats.albums.items.map(x=>({type:"Album",name:x.t??x.title||"Untitled album",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.y||x.year||""}));
-   if(id==="artists")return cats.artists.items.map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:x.g??"Artist",cover:x.k??x.cover||""}));
-   if(id==="songs")return cats.songs.items.map(x=>({type:"Song",name:x.t??x.title||"Untitled song",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.n||x.trackNumber||""}));
-   if(id==="folders")return cats.folders.items.map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0")+" items"}));
-   return cats.playlists.items.map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}));
+   if(id==="albums")return cats.albums.items.map(x=>({type:"Album",name:(x.t??x.title)||"Untitled album",sub:(x.a??x.artist)||"Unknown Artist",cover:(x.k??x.cover)||"",badge:x.y||x.year||""}));
+   if(id==="artists")return cats.artists.items.map(x=>({type:"Artist",name:(x.n??x.name)||"Unknown Artist",sub:x.g??"Artist",cover:(x.k??x.cover)||""}));
+   if(id==="songs")return cats.songs.items.map(x=>({type:"Song",name:(x.t??x.title)||"Untitled song",sub:(x.a??x.artist)||"Unknown Artist",cover:(x.k??x.cover)||"",badge:x.n||x.trackNumber||""}));
+   if(id==="folders")return cats.folders.items.map(x=>({type:"Folder",name:(x.n??x.name)||"Untitled folder",sub:(x.i??x.extra??"0")+" items"}));
+   return cats.playlists.items.map(x=>({type:"Playlist",name:(x.n??x.name)||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}));
  }
  function render(){
    const q=query.trim().toLocaleLowerCase(),items=itemData(current).filter(x=>!q||(x.name+" "+x.sub).toLocaleLowerCase().includes(q));
