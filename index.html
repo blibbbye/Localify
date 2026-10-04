@@ -3388,7 +3388,7 @@ function editLocalProfile(){
   async function exportPreset(kind,ids=[],options=null){
   let handle=null;
   try{
-    if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:\`Localify-\${kind==='full'&&options?'library':kind}.localify\`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});
+    if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:`Localify-${kind==='full'&&options?'library':kind}.localify`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});
     await flushSave(false);
     const manifest=await collectPresetMeta(kind,ids,options);
     if(handle){
@@ -3401,8 +3401,8 @@ function editLocalProfile(){
       const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
       if(isBlobLike(blob))entries.push({name:t.audioFile,bytes:await blobToBytes(blob)});
     }
-    downloadBlob(await makeZip(entries),\`Localify-\${kind==='full'&&options?'library':kind}.localify\`);
-    toast(\`\${manifest.presetName} exported.\`);
+    downloadBlob(await makeZip(entries),`Localify-${kind==='full'&&options?'library':kind}.localify`);
+    toast(`${manifest.presetName} exported.`);
     await openPresetShareMenu(manifest);
     return true;
   }catch(e){
