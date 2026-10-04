@@ -35,60 +35,104 @@ button,input{font:inherit}.wrap{max-width:1080px;margin:auto;padding:22px 16px 5
 <script>
 (async()=>{
  const $=s=>document.querySelector(s);
- const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#39;"}[m]));
+ const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
  const b64u=s=>s.replace(/-/g,"+").replace(/_/g,"/");
- async function gunzip(bytes){if(!("DecompressionStream"in window))return null;const ds=new DecompressionStream("gzip"),stream=new Blob([bytes]).stream().pipeThrough(ds),buf=await new Response(stream).arrayBuffer();return new Uint8Array(buf)}
+ async function gunzip(bytes){
+   if(!("DecompressionStream"in window))return null;
+   const ds=new DecompressionStream("gzip");
+   const stream=new Blob([bytes]).stream().pipeThrough(ds);
+   const buf=await new Response(stream).arrayBuffer();
+   return new Uint8Array(buf);
+ }
+ async function fetchRemote(id){
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+   try{
+     const res=await fetch("https://pastebin.ai/api/v1/pastes/"+encodeURIComponent(id),{signal:controller.signal,cache:"no-store"});
+     if(!res.ok)throw new Error("HTTP "+res.status);
+     const body=await res.json();
+     const content=typeof body?.content==="string"?body.content:(typeof body==="string"?body:"");
+     if(!content)throw new Error("No share data");
+     return JSON.parse(content);
+   }finally{clearTimeout(timer)}
+ }
  async function decode(){
-   const raw=location.hash.slice(1);if(!raw)return null;
+   const raw=decodeURIComponent(location.hash.slice(1)||"");
+   if(!raw)return null;
+   if(/^[A-Za-z0-9_-]{6,40}$/.test(raw)){
+     try{return await fetchRemote(raw)}catch(e){console.warn("Remote Localify share could not be loaded",e)}
+   }
    try{
      const pad="=".repeat((4-raw.length%4)%4),bin=atob(b64u(raw)+pad);
      const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
-     if(bytes[0]===31&&bytes[1]===139){const out=await gunzip(bytes);if(!out)return null;return JSON.parse(new TextDecoder().decode(out))}
+     if(bytes[0]===31&&bytes[1]===139){
+       const out=await gunzip(bytes);if(!out)return null;
+       return JSON.parse(new TextDecoder().decode(out));
+     }
      return JSON.parse(new TextDecoder().decode(bytes));
    }catch{return null}
  }
+ function setMeta(sel,value){const el=document.querySelector(sel);if(el)el.setAttribute("content",value)}
  const d=await decode();
- if(!d){$("#subtitle").textContent="This share link is missing or invalid.";$("#list").innerHTML='<div class="empty">Create a new share preview from Localify.</div>';return}
+ if(!d){
+   $("#subtitle").textContent="This share link is missing, expired, or invalid.";
+   $("#list").innerHTML='<div class="empty">Create a new share preview from Localify.</div>';
+   setMeta('meta[property="og:title"]',"Localify Share");
+   setMeta('meta[property="og:description"]',"Open this Localify share link to preview a shared library.");
+   return;
+ }
  const cats={
   overview:{label:"Overview",items:[]},
-  albums:{label:"Albums",items:d.a||d.albums||[]},
-  artists:{label:"Artists",items:d.r||d.artists||[]},
-  songs:{label:"Songs",items:d.s||d.songs||[]},
-  folders:{label:"Folders",items:d.f||d.folders||[]},
-  playlists:{label:"Playlists",items:d.p||d.playlists||[]}
+  albums:{label:"Albums",items:Array.isArray(d.a)?d.a:(d.albums||[])},
+  artists:{label:"Artists",items:Array.isArray(d.r)?d.r:(d.artists||[])},
+  songs:{label:"Songs",items:Array.isArray(d.s)?d.s:(d.songs||[])},
+  folders:{label:"Folders",items:Array.isArray(d.f)?d.f:(d.folders||[])},
+  playlists:{label:"Playlists",items:Array.isArray(d.p)?d.p:(d.playlists||[])}
  };
  const counts=d.c||d.counts||{};
- $("#title").textContent=d.n||d.name||"Localify Library";
- $("#subtitle").textContent=(d.x||d.exportedAt||d.createdAt?"Shared Localify library":"Localify library preview")+" • "+Number(counts.songs??d.totalTracks??0).toLocaleString()+" songs";
- const stats=[["Albums",counts.albums],["Artists",counts.artists],["Songs",counts.songs??d.totalTracks],["Folders",counts.folders]];
+ const title=String(d.n||d.name||"Localify Library");
+ const songCount=Number(counts.songs??d.totalTracks??cats.songs.items.length);
+ const albumCount=Number(counts.albums??cats.albums.items.length);
+ const artistCount=Number(counts.artists??cats.artists.items.length);
+ const folderCount=Number(counts.folders??cats.folders.items.length);
+ $("#title").textContent=title;
+ $("#subtitle").textContent="Shared Localify library • "+songCount.toLocaleString()+" songs";
+ const stats=[["Albums",albumCount],["Artists",artistCount],["Songs",songCount],["Folders",folderCount]];
  $("#stats").innerHTML=stats.map(x=>'<div class="stat"><b>'+Number(x[1]||0).toLocaleString()+'</b><span>'+x[0]+'</span></div>').join("");
  const allCovers=[];
- for(const x of (cats.albums.items||[]))if(x.k||x.cover)allCovers.push(x.k||x.cover);
+ for(const x of cats.albums.items)if(x.k||x.cover)allCovers.push(x.k||x.cover);
  $("#coverWall").innerHTML=allCovers.slice(0,4).map(u=>'<div class="coverCell"><img src="'+esc(u)+'" alt=""></div>').join("");
  while($("#coverWall").children.length<4)$("#coverWall").insertAdjacentHTML("beforeend",'<div class="coverCell">♫</div>');
  let current="overview",query="";
- function renderTabs(){$("#tabs").innerHTML=Object.entries(cats).map(([id,x])=>'<button class="tab '+(id===current?"active":"")+'" data-tab="'+id+'">'+x.label+'</button>').join("");document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{current=b.dataset.tab;query="";$("#search").value="";render()})}
- function dataFor(id){
+ function itemData(id){
    if(id==="overview")return [
-     ...cats.albums.items.slice(0,8).map(x=>({type:"Album",name:x.t??x.title||"Untitled album",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||""})),
-     ...cats.artists.items.slice(0,8).map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:"Artist"})),
-     ...cats.songs.items.slice(0,8).map(x=>({type:"Song",name:x.t??x.title||"Untitled song",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||""})),
-     ...cats.folders.items.slice(0,8).map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0 items")+" items"})),
-     ...cats.playlists.items.slice(0,8).map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0 songs")+" songs"}))
+     ...cats.albums.items.slice(0,8).map(x=>({type:"Album",name:x.t??x.title||"Untitled album",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.y||x.year||""})),
+     ...cats.artists.items.slice(0,8).map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:x.g??"Artist",cover:x.k??x.cover||""})),
+     ...cats.songs.items.slice(0,8).map(x=>({type:"Song",name:x.t??x.title||"Untitled song",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.n||x.trackNumber||""})),
+     ...cats.folders.items.slice(0,8).map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0")+" items"})),
+     ...cats.playlists.items.slice(0,8).map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}))
    ];
    if(id==="albums")return cats.albums.items.map(x=>({type:"Album",name:x.t??x.title||"Untitled album",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.y||x.year||""}));
-   if(id==="artists")return cats.artists.items.map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:x.g||x.extra||"Artist",cover:x.k??x.cover||""}));
+   if(id==="artists")return cats.artists.items.map(x=>({type:"Artist",name:x.n??x.name||"Unknown Artist",sub:x.g??"Artist",cover:x.k??x.cover||""}));
    if(id==="songs")return cats.songs.items.map(x=>({type:"Song",name:x.t??x.title||"Untitled song",sub:x.a??x.artist||"Unknown Artist",cover:x.k??x.cover||"",badge:x.n||x.trackNumber||""}));
-   if(id==="folders")return cats.folders.items.map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0 items")+" items"}));
-   return cats.playlists.items.map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0 songs")+" songs"}));
+   if(id==="folders")return cats.folders.items.map(x=>({type:"Folder",name:x.n??x.name||"Untitled folder",sub:(x.i??x.extra??"0")+" items"}));
+   return cats.playlists.items.map(x=>({type:"Playlist",name:x.n??x.name||"Untitled playlist",sub:(x.i??x.extra??"0")+" songs"}));
  }
- function render(){renderTabs();const q=query.trim().toLocaleLowerCase();const items=dataFor(current).filter(x=>!q||(x.name+" "+x.sub).toLocaleLowerCase().includes(q));$("#count").textContent=items.length.toLocaleString()+" shown";$("#list").innerHTML=items.length?items.map(x=>'<div class="row"><div class="miniArt">'+(x.cover?'<img src="'+esc(x.cover)+'" alt="">':(x.type==="Folder"?"▣":x.type==="Artist"?"♟":x.type==="Playlist"?"☷":"♫"))+'</div><div><div class="name">'+esc(x.name)+'</div><div class="sub">'+esc(x.sub)+'</div></div><div class="badge">'+esc(x.badge||"")+'</div></div>').join(""):'<div class="empty">Nothing in this category matches your search.</div>'}
+ function render(){
+   const q=query.trim().toLocaleLowerCase(),items=itemData(current).filter(x=>!q||(x.name+" "+x.sub).toLocaleLowerCase().includes(q));
+   $("#count").textContent=items.length.toLocaleString()+" shown";
+   $("#list").innerHTML=items.length?items.map(x=>'<div class="row"><div class="miniArt">'+(x.cover?'<img src="'+esc(x.cover)+'" alt="">':(x.type==="Folder"?"▣":x.type==="Artist"?"♟":x.type==="Playlist"?"☷":"♫"))+'</div><div><div class="name">'+esc(x.name)+'</div><div class="sub">'+esc(x.sub)+'</div></div><div class="badge">'+esc(x.badge||"")+'</div></div>').join(""):'<div class="empty">Nothing in this category matches your search.</div>';
+ }
+ function renderTabs(){
+   $("#tabs").innerHTML=Object.entries(cats).map(([id,x])=>'<button class="tab '+(id===current?"active":"")+'" data-tab="'+id+'">'+x.label+'</button>').join("");
+   document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{current=b.dataset.tab;query="";$("#search").value="";renderTabs();render()});
+ }
  $("#search").oninput=e=>{query=e.target.value;render()};
- render();
- document.title=(d.n||d.name||"Localify Library")+" — Localify";
- const ogT=document.querySelector('meta[property="og:title"]'),ogD=document.querySelector('meta[property="og:description"]');
- if(ogT)ogT.content=d.n||d.name||"Localify Library";
- if(ogD)ogD.content=Number(counts.albums||0).toLocaleString()+" albums • "+Number(counts.songs??d.totalTracks??0).toLocaleString()+" songs • "+Number(counts.artists||0).toLocaleString()+" artists";
+ renderTabs();render();
+ document.title=title+" — Localify";
+ setMeta('meta[property="og:title"]',title+" — Localify");
+ setMeta('meta[property="og:description"]',albumCount.toLocaleString()+" albums • "+artistCount.toLocaleString()+" artists • "+songCount.toLocaleString()+" songs • "+folderCount.toLocaleString()+" folders");
+ setMeta('meta[name="twitter:title"]',title+" — Localify");
+ setMeta('meta[name="twitter:description"]',albumCount.toLocaleString()+" albums • "+artistCount.toLocaleString()+" artists • "+songCount.toLocaleString()+" songs • "+folderCount.toLocaleString()+" folders");
 })();
 </script>
 </body>
