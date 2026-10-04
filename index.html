@@ -567,7 +567,25 @@ main{min-width:0;min-height:0}
 
 .statsPageHero{display:flex;align-items:center;gap:18px;padding:18px;border:1px solid #252d36;border-radius:18px;background:linear-gradient(145deg,#151b22,#0f1318);min-width:0}.statsPageHeroText{min-width:0}.statsPageHero .profileName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.statsHeroIcon{width:76px;height:76px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));color:#fff;font-size:28px;font-weight:1000;box-shadow:0 14px 32px var(--theme-glow-a);border:1px solid rgba(255,255,255,.12);flex:0 0 76px}.settingsPage{padding-bottom:40px}@media(max-width:780px){.statsPageHero{gap:12px;padding:14px}.statsHeroIcon{width:60px;height:60px;flex-basis:60px;font-size:22px;border-radius:17px}}
 
-body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}body.theme-gradient .logo,body.theme-solid .logo{box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}</style>
+body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav button.active{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b));background-color:transparent}body.theme-solid .primary,body.theme-solid .logo{background-image:none;background-color:var(--theme-a)}body.theme-gradient .logo,body.theme-solid .logo{box-shadow:0 8px 28px var(--theme-shadow,rgba(125,211,252,.24))}/* Localify folders */
+.folderGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:15px}
+.folderCard{position:relative;padding:12px;border:1px solid #202731;border-radius:17px;background:#111419;cursor:pointer;transition:.15s}
+.folderCard:hover{transform:translateY(-2px);border-color:#343d49;background:#15191f}
+.folderPreview{display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1;border-radius:13px;overflow:hidden;background:#0d1116;gap:2px}
+.folderPreviewItem{min-width:0;min-height:0;overflow:hidden;background:#1a2027;display:grid;place-items:center;color:#67727f}
+.folderPreviewItem img{width:100%;height:100%;object-fit:cover;display:block}
+.folderPreviewItem .svgIcon{width:35%;height:35%}
+.folderIconBadge{position:absolute;right:20px;top:20px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(0,0,0,.52);backdrop-filter:blur(8px);color:#eaf0f5;border:1px solid rgba(255,255,255,.1)}
+.folderTitle{margin:10px 2px 3px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folderSub{font-size:11px;color:#79838f}
+.folderPicker{display:grid;gap:10px;max-height:58vh;overflow:auto}
+.folderPickerSection{display:grid;gap:6px}
+.folderPickerTitle{font-size:10px;font-weight:950;color:#7d8793;text-transform:uppercase;letter-spacing:.1em}
+.folderPickerItem{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid #252d36;border-radius:11px;background:#11171c}
+.folderPickerItem input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.folderPickerItemText{min-width:0}.folderPickerItemText strong{display:block;font-size:12px}.folderPickerItemText span{display:block;color:#77818c;font-size:10px;margin-top:2px}
+@media(max-width:700px){.folderGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -580,7 +598,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       <button data-view="albums"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><path d="m6.5 17 4.2-4.2 2.7 2.7 2-2 2.1 2.1"/></svg></span><span>Albums</span></button>
       <button data-view="artists"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span><span>Artists</span></button>
       <button data-view="playlists"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h10"/></svg></span><span>Playlists</span></button>
-      <button data-view="liked"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/></svg></span><span>Liked Songs</span></button>
+            <button data-view="folders"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/></svg></span><span>Folders</span></button>
+<button data-view="liked"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8.8c0 5.3-8 10.2-8 10.2S4 14.1 4 8.8A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 8 1.8Z"/></svg></span><span>Liked Songs</span></button>
       <button data-view="recent"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Recently Played</span></button>
     </nav>
     <div class="sectionTitle">Library tools</div>
@@ -668,7 +687,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   const audio = $("#audio");
 
   const state = {
-    version: 11, tracks: [], albums: [], artists: [], playlists: [], liked: [], recent: [],
+    version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"} },
     profile: { displayName:"", avatar:null },
@@ -1070,7 +1089,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       t.blob=null;
       t._blobDirty=false;
     }
-    state.version=11;
+    state.version=12;
     state._restoredFromFallback=restoredFromFallback;
     return true;
   }
@@ -1105,7 +1124,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function migrate(raw){
     if(!raw)return;
     const incoming=raw;
-    for(const k of ["tracks","albums","artists","playlists","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
+    for(const k of ["tracks","albums","artists","playlists","folders","liked","recent","queue","selected"])if(!Array.isArray(incoming[k]))incoming[k]=[];
     incoming.analytics=Object.assign({totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]},incoming.analytics||{});
     incoming.profile=Object.assign({displayName:"",avatar:null},incoming.profile||{});
     Object.assign(state,incoming);
@@ -1237,6 +1256,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(v==="search")renderSearch();
     else if(v==="library")renderLibrary();
     else if(v==="albums")renderAlbums();
+    else if(v==="folders")renderFolders();
     else if(v==="artists")renderArtists();
     else if(v==="playlists")renderPlaylists();
     else if(v==="liked")renderLiked();
@@ -1288,6 +1308,66 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     renderCurrentViewWithoutScroll();
   });
 
+  function folderById(id){return (state.folders||[]).find(f=>f.id===id)||null}
+  function folderItemKey(type,id){return type+":"+id}
+  function folderItems(folder){return (folder?.items||[]).filter(x=>x&&x.type&&x.id).filter(x=>x.type==="song"?!!trackById(x.id):x.type==="album"?!!albumById(x.id):x.type==="artist"?!!artistById(x.id):x.type==="playlist"?!!playlistById(x.id):false)}
+  function folderPreviewHtml(x){
+    const obj=x.type==="song"?trackById(x.id):x.type==="album"?albumById(x.id):x.type==="artist"?artistById(x.id):playlistById(x.id);
+    let url="";
+    if(x.type==="song"){const a=obj?.albumId?albumById(obj.albumId):null;url=coverForAlbum(a,a?.cover)||obj?.cover||""}
+    else if(x.type==="album")url=coverForAlbum(obj,obj?.cover);
+    else if(x.type==="artist")url=obj?.image||"";
+    else url=obj?.cover||"";
+    const ic=x.type==="album"?"album":x.type==="artist"?"artist":x.type==="playlist"?"playlist":"music";
+    return '<div class="folderPreviewItem">'+(url?'<img src="'+esc(url)+'" alt="" loading="lazy" decoding="async">':uiIcon(ic))+'</div>';
+  }
+  function folderCard(folder){
+    const items=folderItems(folder),cells=items.slice(0,4);while(cells.length<4)cells.push(null);
+    return '<div class="folderCard" data-folder-id="'+esc(folder.id)+'"><div class="folderPreview">'+cells.map(x=>x?folderPreviewHtml(x):'<div class="folderPreviewItem">'+uiIcon("folder")+'</div>').join("")+'</div><div class="folderIconBadge">'+uiIcon("folder")+'</div><div class="folderTitle">'+esc(folder.name||"Folder")+'</div><div class="folderSub">'+items.length+' '+(items.length===1?"item":"items")+'</div></div>';
+  }
+  function renderFolders(){
+    const folders=state.folders||[];
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Folders</h2><div class="subtle">Organize albums, songs, artists and playlists into folders.</div></div><button class="primary iconOnlyCreate" id="newFolder" type="button" title="Create folder" aria-label="Create folder">'+uiIcon("plus")+'</button></div>'+(folders.length?'<div class="folderGrid">'+folders.map(folderCard).join("")+'</div>':empty("No folders yet","Create a folder and add anything from your Localify library."));
+    $("#newFolder").onclick=()=>openFolderEditor();
+    $$(".folderCard").forEach(el=>el.onclick=()=>showFolder(el.dataset.folderId));
+  }
+  function openFolderEditor(id){
+    const f=id?folderById(id):null;
+    setModal('<div class="modalHead"><h2>'+(f?"Edit folder":"Create folder")+'</h2><button class="circle iconOnly" id="closeFolderEditor" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="field"><label>Folder name</label><input id="folderNameInput" maxlength="80" value="'+esc(f?.name||"")+'" placeholder="e.g. Ye unreleased"></div><div class="modalFoot"><button class="secondary" id="cancelFolderEditor">Cancel</button><button class="primary" id="saveFolderEditor">Save</button></div>');
+    $("#closeFolderEditor").onclick=()=>closeModal(true);
+    $("#cancelFolderEditor").onclick=()=>closeModal(true);
+    $("#saveFolderEditor").onclick=async()=>{const n=$("#folderNameInput").value.trim();if(!n){toast("Give the folder a name first.");return}if(f)f.name=n;else state.folders.push({id:uid(),name:n,items:[],createdAt:Date.now()});await save();closeModal(true);render()};
+    $("#folderNameInput").focus();
+  }
+  function openFolderItemPicker(folderId){
+    const f=folderById(folderId);if(!f)return;
+    const chosen=new Set(folderItems(f).map(x=>folderItemKey(x.type,x.id)));
+    const groups=[
+      ["Albums",state.albums,"album",x=>x.title,x=>artistNamesForAlbum(x).join(", ")],
+      ["Songs",state.tracks,"song",x=>displayTrackTitle(x,true),x=>artistName(x)+" • "+albumName(x)],
+      ["Artists",state.artists,"artist",x=>artistDisplayName(x),x=>"Artist"],
+      ["Playlists",state.playlists,"playlist",x=>x.name,x=>(x.trackIds||[]).length+" songs"]
+    ].filter(g=>g[1].length);
+    const body=groups.map(g=>'<div class="folderPickerSection"><div class="folderPickerTitle">'+g[0]+'</div>'+g[1].map(x=>{const key=folderItemKey(g[2],x.id);return '<label class="folderPickerItem"><input class="folderItemCheck" type="checkbox" value="'+esc(key)+'" '+(chosen.has(key)?"checked":"")+'><span class="folderPickerItemText"><strong>'+esc(g[3](x))+'</strong><span>'+esc(g[4](x))+'</span></span></label>'}).join("")+'</div>').join("");
+    setModal('<div class="modalHead"><h2>Add items to '+esc(f.name)+'</h2><button class="circle iconOnly" id="closeFolderPicker" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="help">Select albums, songs, artists or playlists for this folder.</div><div class="folderPicker">'+(body||'<div class="empty">Your library is empty. Add music first.</div>')+'</div><div class="modalFoot"><button class="secondary" id="cancelFolderPicker">Cancel</button><button class="primary" id="saveFolderItems">Save folder</button></div>',{large:true});
+    $("#closeFolderPicker").onclick=()=>closeModal(true);$("#cancelFolderPicker").onclick=()=>closeModal(true);
+    $("#saveFolderItems").onclick=async()=>{f.items=$$(".folderItemCheck:checked").map(el=>{const p=el.value.split(":");return {type:p[0],id:p.slice(1).join(":")}});await save();closeModal(true);showFolder(f.id)};
+  }
+  function showFolder(id){
+    const f=folderById(id);if(!f)return;
+    state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
+    const items=folderItems(f),albums=items.filter(x=>x.type==="album"),songs=items.filter(x=>x.type==="song"),artists=items.filter(x=>x.type==="artist"),playlists=items.filter(x=>x.type==="playlist");
+    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions"><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
+    if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
+    if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+'</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id)+'</div></div>';
+    if(artists.length)html+='<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(x=>artistCard(artistById(x.id))).join("")+'</div></div>';
+    if(playlists.length)html+='<div class="section"><div class="sectionHead"><h2>Playlists</h2><span>'+playlists.length+'</span></div><div class="viewGrid">'+playlists.map(x=>playlistCard(playlistById(x.id))).join("")+'</div></div>';
+    if(!items.length)html+=empty("Folder is empty","Add albums, songs, artists or playlists to this folder.");
+    $("#content").innerHTML=html;
+    $("#folderEdit").onclick=()=>openFolderEditor(f.id);
+    $("#folderAddItems").onclick=()=>openFolderItemPicker(f.id);
+    bindAlbumCards();bindTrackTable();
+  }
   function renderHome(){
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8);
     const albums=albumList().slice(0,8);
@@ -2541,7 +2621,7 @@ function editLocalProfile(){
     audio.pause();
     audio.removeAttribute("src");
     try{audio.load()}catch{}
-    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.liked=[];state.recent=[];
+    state.tracks=[];state.albums=[];state.artists=[];state.playlists=[];state.folders=[];state.liked=[];state.recent=[];
     state.queue=[];state.queueIndex=-1;state.currentId=null;state.selected=[];state.detail=null;
     state.currentView="home";state.search="";state.searchFilter="all";
     state.librarySort="added";state.librarySortDir="desc";
