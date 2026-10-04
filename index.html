@@ -3592,28 +3592,18 @@ function buildPresetSharePayload(source=null){
 }
 async function presetShareUrl(source=null){
  const payload=buildPresetSharePayload(source);
+ const bytes=new TextEncoder().encode(JSON.stringify(payload));
+ let out=bytes;
  try{
-   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
-   let res;
-   try{
-     res=await fetch("https://pastebin.ai/api/v1/pastes",{
-       method:"POST",
-       headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({title:String(payload.n||"Localify Library").slice(0,100),content:JSON.stringify(payload),language:"json",visibility:"unlisted",expiration:"never"}),
-       signal:controller.signal
-     });
-   }finally{clearTimeout(timer)}
-   if(!res.ok)throw new Error("Share service returned HTTP "+res.status+".");
-   const data=await res.json();
-   if(!data?.id)throw new Error("Share service did not return a share ID.");
-   return new URL("share.html",location.href).href+"#"+encodeURIComponent(String(data.id));
- }catch(e){
-   console.warn("Localify remote share creation failed; using compatibility link.",e);
-   const bytes=new TextEncoder().encode(JSON.stringify(payload));let out=bytes;
-   try{if("CompressionStream"in window){const cs=new CompressionStream("gzip"),stream=new Blob([bytes]).stream().pipeThrough(cs);out=new Uint8Array(await new Response(stream).arrayBuffer())}}catch{}
-   let bin="";for(let i=0;i<out.length;i+=0x8000)bin+=String.fromCharCode(...out.subarray(i,i+0x8000));
-   return new URL("share.html",location.href).href+"#"+btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
- }
+   if("CompressionStream"in window){
+     const cs=new CompressionStream("gzip");
+     const stream=new Blob([bytes]).stream().pipeThrough(cs);
+     out=new Uint8Array(await new Response(stream).arrayBuffer());
+   }
+ }catch(e){console.warn("Localify share compression unavailable; using plain preview data.",e)}
+ let bin="";
+ for(let i=0;i<out.length;i+=0x8000)bin+=String.fromCharCode(...out.subarray(i,i+0x8000));
+ return new URL("share.html",location.href).href+"#"+btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
 async function openPresetShareMenu(source=null){
  const d=buildPresetSharePayload(source),rows={albums:d.a,artists:d.r,songs:d.s,folders:d.f,playlists:d.p},tabs=[["overview","Overview"],["albums","Albums"],["artists","Artists"],["songs","Songs"],["folders","Folders"],["playlists","Playlists"]];
