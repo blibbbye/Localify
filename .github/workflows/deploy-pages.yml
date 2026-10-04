@@ -1,4 +1,4 @@
-name: Deploy Localify to GitHub Pages
+name: Deploy Localio to GitHub Pages
 
 on:
   push:
