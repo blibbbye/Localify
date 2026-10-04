@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#7dd3fc" />
-  <meta name="localify-build" content="2026-10-04-interactivity-folders-3" />
+  <meta name="localify-build" content="2026-10-04-web-fixed-4" />
   <title>Localify — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -716,7 +716,7 @@ main{min-width:0;min-height:0}
   const META_BACKUP_KEY = "localify-persistent-meta-backup-v1";
   const LEGACY_DB_NAMES = ["localify-db-v7-save","localify-db-v6","localify-db-v5","localify-db-v1"];
   const $ = s => document.querySelector(s);
-  const $$ = s => [...document.querySelectorAll(s)];
+  const $ = (s,root=document) => [...root.querySelectorAll(s)];
   const audio = $("#audio");
   function updateLocalifyMediaSession(t,cover=""){if(!("mediaSession"in navigator)||!t)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:displayTrackTitle(t,true)||"Unknown song",artist:artistName(t)||"Unknown Artist",album:albumName(t)||"Localify",artwork:cover?[{src:cover,sizes:"512x512",type:"image/*"}]:[]})}catch{}}
 
