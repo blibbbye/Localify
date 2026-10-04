@@ -69,7 +69,7 @@ public final class LocalifyPlaybackService extends Service {
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
 
-        builder.setContentTitle("Localify")
+        builder.setContentTitle("Localio")
                 .setContentText("Playing your local music")
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setOngoing(true)
@@ -82,8 +82,8 @@ public final class LocalifyPlaybackService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Localify playback", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("Keeps Localify playback active in the background.");
+                CHANNEL_ID, "Localio playback", NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Keeps Localio playback active in the background.");
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) manager.createNotificationChannel(channel);
     }
@@ -158,4 +158,4 @@ if (!activity.includes("attachLocalifyPlaybackBridge")) {
 }
 fs.writeFileSync(mainActivity, activity, "utf8");
 
-console.log("Configured foreground playback service and LocalifyNative bridge.");
+console.log("Configured foreground playback service and LocalioNative bridge.");
