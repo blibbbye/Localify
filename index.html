@@ -3713,12 +3713,16 @@ async function buildPresetExportImage(manifest){
       if(text(x.albumArtist))out.push("Album artist: "+text(x.albumArtist));
       if(text(x.label))out.push("Label: "+text(x.label));
     }else if(kind==="folders"){
-      out.push("Albums: "+(x.albumIds||[]).length);
-      out.push("Songs: "+(x.trackIds||[]).length);
-      out.push("Artists: "+(x.artistIds||[]).length);
-      out.push("Playlists: "+(x.playlistIds||[]).length);
+      const getNames=function(ids,list,key){return (ids||[]).map(function(id){const item=(list||[]).find(function(v){return v.id===id});return item?text(item[key],""):""}).filter(Boolean)};
+      const an=getNames(x.albumIds,manifest.albums,"title"),sn=getNames(x.trackIds,manifest.tracks,"title"),arn=getNames(x.artistIds,manifest.artists,"name"),pn=getNames(x.playlistIds,manifest.playlists,"name");
+      out.push("Albums ("+(x.albumIds||[]).length+"): "+(an.slice(0,4).join(", ")||"None"));
+      out.push("Songs ("+(x.trackIds||[]).length+"): "+(sn.slice(0,4).join(", ")||"None"));
+      out.push("Artists ("+(x.artistIds||[]).length+"): "+(arn.slice(0,3).join(", ")||"None"));
+      out.push("Playlists ("+(x.playlistIds||[]).length+"): "+(pn.slice(0,3).join(", ")||"None"));
     }else if(kind==="playlists"){
+      const names=(x.trackIds||[]).map(function(id){const t=(manifest.tracks||[]).find(function(v){return v.id===id});return t?text(t.title||t.name||t.fileName,""):""}).filter(Boolean);
       out.push("Songs: "+(x.trackIds||[]).length);
+      if(names.length)out.push("Tracks: "+names.slice(0,4).join(", "));
       if(text(x.description))out.push(text(x.description));
     }
     return out.filter(Boolean).slice(0,5);
