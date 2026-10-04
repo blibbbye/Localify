@@ -3635,12 +3635,19 @@ function editLocalProfile(){
 function buildPresetSharePayload(source=null){
  const x=source||state,artists=Array.isArray(x.artists)?x.artists:[],albums=Array.isArray(x.albums)?x.albums:[],tracks=Array.isArray(x.tracks)?x.tracks:[],folders=Array.isArray(x.folders)?x.folders:[],playlists=Array.isArray(x.playlists)?x.playlists:[];
  const artistNameFor=a=>String(a?.name||a?.title||"Unknown Artist"),albumArtists=a=>Array.isArray(a?.artistNames)?a.artistNames.join(", "):String(a?.artist||"Unknown Artist");
- return {v:2,n:String(x.presetName||x.name||"Localify Library"),x:String(x.exportedAt||x.createdAt||new Date().toISOString()),c:{albums:albums.length,artists:artists.length,songs:tracks.length,folders:folders.length,playlists:playlists.length},
-  a:albums.slice(0,12).map(a=>({t:String(a?.title||"Untitled album"),a:albumArtists(a),k:publicShareCover(a?.cover),y:String(a?.year||"")})),
-  r:artists.slice(0,12).map(a=>({n:artistNameFor(a),k:publicShareCover(a?.image||a?.picture||a?.avatar),g:Array.isArray(a?.genres)?a.genres.slice(0,2).join(", "):String(a?.genre||"")})),
-  s:tracks.slice(0,24).map(t=>({t:String(t?.title||t?.fileName||"Untitled song"),a:String(t?.artist||"Unknown Artist"),k:publicShareCover(t?.cover),n:String(t?.trackNumber||t?.track||"")})),
-  f:folders.slice(0,12).map(f=>({n:String(f?.name||"Untitled folder"),i:((f?.albumIds||[]).length+(f?.trackIds||[]).length+(f?.artistIds||[]).length+(f?.playlistIds||[]).length)})),
-  p:playlists.slice(0,12).map(p=>({n:String(p?.name||"Untitled playlist"),i:Array.isArray(p?.trackIds)?p.trackIds.length:0}))};
+ const analytics=x.analytics&&typeof x.analytics==="object"?x.analytics:null;
+ const plays=analytics?.plays&&typeof analytics.plays==="object"?analytics.plays:{};
+ const totalPlays=Object.values(plays).reduce((n,v)=>n+(Number(v)||0),0);
+ return {
+  v:3,n:String(x.presetName||x.name||"Library preset"),by:String(x.creatorName||x.profile?.displayName||state.profile?.displayName||"Localify listener"),x:String(x.exportedAt||x.createdAt||new Date().toISOString()),
+  c:{albums:albums.length,artists:artists.length,songs:tracks.length,folders:folders.length,playlists:playlists.length},
+  a:albums.slice(0,80).map(a=>({t:String(a?.title||"Untitled album"),a:albumArtists(a),k:publicShareCover(a?.cover),y:String(a?.year||"")})),
+  r:artists.slice(0,80).map(a=>({n:artistNameFor(a),k:publicShareCover(a?.image||a?.picture||a?.avatar),g:Array.isArray(a?.genres)?a.genres.slice(0,2).join(", "):String(a?.genre||"")})),
+  s:tracks.slice(0,120).map(t=>({t:String(t?.title||t?.fileName||"Untitled song"),a:String(t?.artist||"Unknown Artist"),k:publicShareCover(t?.cover),n:String(t?.trackNumber||t?.track||"")})),
+  f:folders.slice(0,80).map(f=>({n:String(f?.name||"Untitled folder"),i:((f?.albumIds||[]).length+(f?.trackIds||[]).length+(f?.artistIds||[]).length+(f?.playlistIds||[]).length)})),
+  p:playlists.slice(0,80).map(p=>({n:String(p?.name||"Untitled playlist"),i:Array.isArray(p?.trackIds)?p.trackIds.length:0})),
+  personal:{liked:Array.isArray(x.liked)?x.liked.length:0,recent:Array.isArray(x.recent)?x.recent.length:0,listeningTime:Number(analytics?.totalSeconds)||0,totalPlays}
+ };
 }
 async function presetShareUrl(source=null){
  const payload=buildPresetSharePayload(source);
