@@ -3290,6 +3290,30 @@ function editLocalProfile(){
       folders=o.folders?[...(state.folders||[])]:[];
       liked=o.liked?[...state.liked]:[];
       recent=o.recent?[...state.recent]:[];
+      // Exporting folders always carries the items stored inside those folders,
+      // even when the user unchecked the standalone library sections.
+      if(o.folders && folders.length){
+        const folderAlbumIds=new Set(),folderTrackIds=new Set(),folderArtistIds=new Set(),folderPlaylistIds=new Set();
+        for(const f0 of folders){
+          ensureFolderArrays(f0);
+          for(const id of f0.albumIds)folderAlbumIds.add(id);
+          for(const id of f0.trackIds)folderTrackIds.add(id);
+          for(const id of f0.artistIds)folderArtistIds.add(id);
+          for(const id of f0.playlistIds)folderPlaylistIds.add(id);
+        }
+        for(const p of state.playlists)if(folderPlaylistIds.has(p.id))for(const id of (p.trackIds||[]))folderTrackIds.add(id);
+        const folderTracks=state.tracks.filter(t=>folderTrackIds.has(t.id)||folderAlbumIds.has(t.albumId));
+        for(const t of folderTracks){
+          for(const id of artistIdsForTrack(t))folderArtistIds.add(id);
+          for(const id of (t.albumArtistIds||[]))folderArtistIds.add(id);
+          if(t.albumId)folderAlbumIds.add(t.albumId);
+        }
+        for(const a of state.albums)for(const id of artistIdsForAlbum(a))if(folderAlbumIds.has(a.id))folderArtistIds.add(id);
+        tracks=[...new Map([...tracks,...folderTracks].map(t=>[t.id,t])).values()];
+        albums=[...new Map([...albums,...state.albums.filter(a=>folderAlbumIds.has(a.id))].map(a=>[a.id,a])).values()];
+        artists=[...new Map([...artists,...state.artists.filter(a=>folderArtistIds.has(a.id))].map(a=>[a.id,a])).values()];
+        playlists=[...new Map([...playlists,...state.playlists.filter(p=>folderPlaylistIds.has(p.id))].map(p=>[p.id,p])).values()];
+      }
       settings=o.settings?state.settings:null;
       analytics=o.analytics?JSON.parse(JSON.stringify(state.analytics||{totalSeconds:0,plays:{},trackSeconds:{},days:{},history:[]})):null;
     }else if(kind==='artists'){artists=state.artists.filter(a=>set.has(a.id))}
