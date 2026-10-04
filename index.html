@@ -3664,12 +3664,11 @@ async function buildPresetExportImage(manifest){
   const sourceKinds=[
     ["albums","Albums",manifest.albums||[]],
     ["artists","Artists",manifest.artists||[]],
-    ["tracks","Songs",manifest.tracks||[]],
     ["folders","Folders",manifest.folders||[]],
     ["playlists","Playlists",manifest.playlists||[]]
   ];
-  // A focused preset image only shows the thing that was actually exported.
-  const focused={artists:"artists",albums:"albums",songs:"tracks",playlists:"playlists",folders:"folders"};
+  // The export/share image is a visual library summary. Audio tracks are not rendered as individual cards.
+  const focused={artists:"artists",albums:"albums",songs:null,playlists:"playlists",folders:"folders"};
   const wanted=focused[kind]||null;
   const kinds=sourceKinds.filter(function(group){
     if(wanted)return group[0]===wanted;
@@ -3684,19 +3683,21 @@ async function buildPresetExportImage(manifest){
 
   // Keep large exports compact instead of making the generated picture extremely tall.
   const totalItems=rows.reduce((n,g)=>n+g.items.length,0);
-  const compact=totalItems>24;
-  const veryCompact=totalItems>72;
-  const outer=veryCompact?34:compact?40:46;
+  const compact=totalItems>20;
+  const veryCompact=totalItems>60;
+  const ultraCompact=totalItems>140;
+  const megaCompact=totalItems>320;
+  const outer=megaCompact?24:ultraCompact?28:veryCompact?32:compact?38:46;
   const width=1400;
-  const cols=veryCompact?4:compact?3:2;
-  const gapX=veryCompact?10:compact?12:14;
-  const gapY=veryCompact?10:compact?12:18;
+  const cols=megaCompact?10:ultraCompact?8:veryCompact?6:compact?4:2;
+  const gapX=megaCompact?7:ultraCompact?8:veryCompact?9:compact?11:14;
+  const gapY=megaCompact?7:ultraCompact?8:veryCompact?9:compact?11:18;
   const cardW=Math.floor((width-outer*2-gapX*(cols-1))/cols);
-  const cardH=veryCompact?104:compact?122:150;
-  const art=veryCompact?78:compact?92:126;
-  const headerH=veryCompact?122:compact?136:150;
-  const sectionGap=veryCompact?22:compact?26:34;
-  const maxItems=2000;
+  const cardH=megaCompact?62:ultraCompact?74:veryCompact?88:compact?110:150;
+  const art=megaCompact?42:ultraCompact?54:veryCompact?66:compact?84:126;
+  const headerH=megaCompact?96:ultraCompact?106:veryCompact?116:compact?132:150;
+  const sectionGap=megaCompact?14:ultraCompact?18:veryCompact?22:compact?25:34;
+  const maxItems=4000;
 
   let remaining=0,shown=0;
   const visible=rows.map(function(group){
@@ -3722,17 +3723,17 @@ async function buildPresetExportImage(manifest){
   top.addColorStop(0,"#111923");top.addColorStop(1,"#0c1117");
   ctx.fillStyle=top;ctx.fillRect(0,0,width,headerH);
 
-  ctx.fillStyle="#7dd3fc";ctx.font=(veryCompact?"700 15px Arial":compact?"800 17px Arial":"800 18px Arial");
+  ctx.fillStyle="#7dd3fc";ctx.font=(megaCompact?"700 11px Arial":ultraCompact?"700 13px Arial":veryCompact?"700 15px Arial":compact?"800 17px Arial":"800 18px Arial");
   ctx.fillText("LOCALIFY EXPORT",outer,32);
   ctx.fillStyle="#f7f7f8";
-  ctx.font=(veryCompact?"900 30px Arial":compact?"900 36px Arial":"900 42px Arial");
-  ctx.fillText(String(manifest.presetName||"Localify library").slice(0,48),outer,veryCompact?72:compact?82:88);
+  ctx.font=(megaCompact?"900 22px Arial":ultraCompact?"900 26px Arial":veryCompact?"900 30px Arial":compact?"900 36px Arial":"900 42px Arial");
+  ctx.fillText(String(manifest.presetName||"Localify library").slice(0,48),outer,megaCompact?56:ultraCompact?64:veryCompact?72:compact?82:88);
   ctx.fillStyle="#8e98a4";
-  ctx.font=(veryCompact?"600 11px Arial":compact?"600 12px Arial":"600 15px Arial");
+  ctx.font=(megaCompact?"600 8px Arial":ultraCompact?"600 9px Arial":veryCompact?"600 11px Arial":compact?"600 12px Arial":"600 15px Arial");
   const summary=rows.map(function(g){
     return g.items.length+" "+g.label.toLowerCase();
   }).join("  •  ");
-  ctx.fillText(summary.slice(0,145),outer,veryCompact?98:compact?110:120);
+  ctx.fillText(summary.slice(0,145),outer,megaCompact?78:ultraCompact?88:veryCompact?98:compact?110:120);
 
   const imgCache=new Map();
   async function loadImg(src){
@@ -3792,10 +3793,10 @@ async function buildPresetExportImage(manifest){
   let y=headerH+outer;
   for(const group of visible){
     ctx.fillStyle="#f7f7f8";
-    ctx.font=veryCompact?"900 18px Arial":compact?"900 21px Arial":"900 24px Arial";
+    ctx.font=megaCompact?"900 13px Arial":ultraCompact?"900 15px Arial":veryCompact?"900 18px Arial":compact?"900 21px Arial":"900 24px Arial";
     ctx.fillText(group.label,outer,y+24);
     ctx.fillStyle="#6f7b88";
-    ctx.font=veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
+    ctx.font=megaCompact?"700 7px Arial":ultraCompact?"700 8px Arial":veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
     const countText=String(group.items.length)+" shown";
     const tw=ctx.measureText(countText).width;
     ctx.fillText(countText,width-outer-tw,y+23);
@@ -3805,18 +3806,18 @@ async function buildPresetExportImage(manifest){
       const x=group.items[i],col=i%cols,row=Math.floor(i/cols);
       const cx=outer+col*(cardW+gapX),cy=y+row*(cardH+gapY);
       ctx.fillStyle="#11171d";ctx.strokeStyle="#252d36";ctx.lineWidth=1;
-      ctx.beginPath();ctx.roundRect(cx,cy,cardW,cardH,veryCompact?11:compact?13:16);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.roundRect(cx,cy,cardW,cardH,megaCompact?8:ultraCompact?9:veryCompact?11:compact?13:16);ctx.fill();ctx.stroke();
 
       const im=await loadImg(coverOf(x));
-      const ax=cx+10,ay=cy+10;
+      const ax=cx+(megaCompact?6:ultraCompact?7:veryCompact?8:10),ay=cy+(megaCompact?6:ultraCompact?7:veryCompact?8:10);
       if(im){
-        ctx.save();ctx.beginPath();ctx.roundRect(ax,ay,art,art,veryCompact?8:10);ctx.clip();
+        ctx.save();ctx.beginPath();ctx.roundRect(ax,ay,art,art,megaCompact?5:ultraCompact?6:veryCompact?8:10);ctx.clip();
         const scale=Math.max(art/(im.naturalWidth||im.width||1),art/(im.naturalHeight||im.height||1));
         const dw=(im.naturalWidth||im.width||1)*scale,dh=(im.naturalHeight||im.height||1)*scale;
         ctx.drawImage(im,ax+(art-dw)/2,ay+(art-dh)/2,dw,dh);ctx.restore();
       }else{
         ctx.fillStyle="#1b2630";ctx.beginPath();ctx.roundRect(ax,ay,art,art,veryCompact?8:10);ctx.fill();
-        ctx.fillStyle="#697682";ctx.font=(veryCompact?"900 24px Arial":"900 34px Arial");
+        ctx.fillStyle="#697682";ctx.font=(megaCompact?"900 15px Arial":ultraCompact?"900 18px Arial":veryCompact?"900 24px Arial":"900 34px Arial");
         ctx.fillText(kindGlyph(group.kind),ax+art*.39,ay+art*.67);
       }
 
@@ -3825,18 +3826,18 @@ async function buildPresetExportImage(manifest){
       const titleMax=Math.max(16,cardW-art-(veryCompact?26:36));
       ctx.save();ctx.beginPath();ctx.rect(textX,cy+8,titleMax,cardH-16);ctx.clip();
       ctx.fillStyle="#f7f7f8";
-      ctx.font=veryCompact?"900 14px Arial":compact?"900 16px Arial":"900 20px Arial";
-      ctx.fillText(title.slice(0,veryCompact?34:compact?40:46),textX,cy+(veryCompact?26:compact?30:36));
+      ctx.font=megaCompact?"900 9px Arial":ultraCompact?"900 11px Arial":veryCompact?"900 14px Arial":compact?"900 16px Arial":"900 20px Arial";
+      ctx.fillText(title.slice(0,megaCompact?22:ultraCompact?28:veryCompact?34:compact?40:46),textX,cy+(megaCompact?18:ultraCompact?21:veryCompact?26:compact?30:36));
       ctx.fillStyle="#84909c";
-      ctx.font=veryCompact?"600 9px Arial":compact?"600 10px Arial":"600 13px Arial";
+      ctx.font=megaCompact?"600 6px Arial":ultraCompact?"600 7px Arial":veryCompact?"600 9px Arial":compact?"600 10px Arial":"600 13px Arial";
       detailLines(x,group.kind).forEach(function(line,j){
-        ctx.fillText(line.slice(0,veryCompact?46:compact?54:62),textX,cy+(veryCompact?46:compact?52:61)+j*(veryCompact?13:compact?15:18));
+        ctx.fillText(line.slice(0,megaCompact?28:ultraCompact?36:veryCompact?46:compact?54:62),textX,cy+(megaCompact?31:ultraCompact?36:veryCompact?46:compact?52:61)+j*(megaCompact?9:ultraCompact?10:veryCompact?13:compact?15:18));
       });
       ctx.restore();
 
       if(group.kind==="folders"){
         const ids=[].concat(x.albumIds||[]).map(function(id){const a=(manifest.albums||[]).find(function(a){return a.id===id});return a?coverOf(a):""}).filter(Boolean).slice(0,4);
-        const mini=veryCompact?18:compact?21:24;
+        const mini=megaCompact?11:ultraCompact?14:veryCompact?18:compact?21:24;
         for(let j=0;j<ids.length;j++){
           const im2=await loadImg(ids[j]);
           if(im2){
@@ -3852,7 +3853,7 @@ async function buildPresetExportImage(manifest){
     y+=Math.ceil(group.items.length/cols)*(cardH+gapY)+sectionGap;
     if(y>canvas.height-70)break;
   }
-  ctx.fillStyle="#707b87";ctx.font=veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
+  ctx.fillStyle="#707b87";ctx.font=megaCompact?"700 7px Arial":ultraCompact?"700 8px Arial":veryCompact?"700 10px Arial":compact?"700 11px Arial":"700 13px Arial";
   ctx.fillText((remaining?"+"+remaining+" additional items are included in the preset file.":"Generated by Localify")+"",outer,canvas.height-28);
   return canvas.toDataURL("image/png");
 }
