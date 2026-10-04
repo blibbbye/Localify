@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#7dd3fc" />
-  <meta name="localify-build" content="2026-10-04-settings-repair-2" />
+  <meta name="localify-build" content="2026-10-04-interactivity-folders-3" />
   <title>Localify — Your Music, Your Files</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -3655,7 +3655,7 @@ $("#globalSearch").addEventListener("input",e=>{
   if("mediaSession"in navigator){const set=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch{}};set("play",()=>audio.play());set("pause",()=>audio.pause());set("previoustrack",prev);set("nexttrack",next);set("seekbackward",()=>audio.currentTime=Math.max(0,audio.currentTime-10));set("seekforward",()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+10));set("stop",()=>audio.pause())}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){creditListeningTime();save(false)}});
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
-  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js?v=20261004-2").catch(()=>{});
+  if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js?v=20261004-3").catch(()=>{});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
