@@ -3613,7 +3613,7 @@ async function openPresetShareMenu(source=null){
  const renderTab=tab=>{$$("[data-share-tab]").forEach(x=>x.classList.toggle("active",x.dataset.shareTab===tab));$("#sharePreviewList").innerHTML=tab==="overview"?'<div class="shareCounts">'+tabs.slice(1).map(t=>'<button class="shareCount" data-share-jump="'+t[0]+'"><strong>'+Number(d.c[t[0]]||0).toLocaleString()+'</strong><span>'+t[1]+'</span></button>').join("")+'</div><div class="shareOverviewGrid"><div><h4>Albums</h4>'+makeRows("albums")+'</div><div><h4>Artists</h4>'+makeRows("artists")+'</div></div>':makeRows(tab);$$(".shareCount").forEach(x=>x.onclick=()=>renderTab(x.dataset.shareJump));};
  renderTab("overview");
  $("#closeModal").onclick=()=>closeModal(true);
- $$$("[data-share-tab]").forEach(b=>b.onclick=()=>renderTab(b.dataset.shareTab));
+ $("[data-share-tab]").forEach(b=>b.onclick=()=>renderTab(b.dataset.shareTab));
  $("#copyShareLink").onclick=async()=>{if(!url)return;try{await navigator.clipboard.writeText(url);toast("Share link copied.")}catch{const box=$("#shareLinkInput");box.focus();box.select();prompt("Copy this Localify share link:",url)}};
  $("#openSharePreview").onclick=()=>{if(url)window.open(url,"_blank","noopener")};
  $("#shareNative").onclick=async()=>{if(!url)return;try{if(navigator.share)await navigator.share({title:d.n,text:"Localify library preview",url});else{await navigator.clipboard.writeText(url);toast("Share link copied.")}}catch(e){if(e?.name!=="AbortError")toast("Could not share the link.")}};
