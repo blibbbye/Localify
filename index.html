@@ -1322,7 +1322,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     return '<div class="folderPreviewItem">'+(url?'<img src="'+esc(url)+'" alt="" loading="lazy" decoding="async">':uiIcon(ic))+'</div>';
   }
   function folderCard(folder){
-    const items=folderItems(folder),cells=items.slice(0,4);while(cells.length<4)cells.push(null);
+    const items=folderItems(folder),primary=items.filter(x=>x.type==="album"||x.type==="song"),secondary=items.filter(x=>x.type!=="album"&&x.type!=="song"),cells=primary.slice(0,4).concat(secondary.slice(0,Math.max(0,4-primary.length))).slice(0,4);
+    while(cells.length<4)cells.push(null);
     return '<div class="folderCard" data-folder-id="'+esc(folder.id)+'"><div class="folderPreview">'+cells.map(x=>x?folderPreviewHtml(x):'<div class="folderPreviewItem">'+uiIcon("folder")+'</div>').join("")+'</div><div class="folderIconBadge">'+uiIcon("folder")+'</div><div class="folderTitle">'+esc(folder.name||"Folder")+'</div><div class="folderSub">'+items.length+' '+(items.length===1?"item":"items")+'</div></div>';
   }
   function renderFolders(){
@@ -1366,7 +1367,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     $("#content").innerHTML=html;
     $("#folderEdit").onclick=()=>openFolderEditor(f.id);
     $("#folderAddItems").onclick=()=>openFolderItemPicker(f.id);
-    bindAlbumCards();bindTrackTable();
+    bindAlbumCards();bindTrackTable();$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
   }
   function renderHome(){
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8);
