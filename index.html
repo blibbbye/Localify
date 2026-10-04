@@ -3088,7 +3088,7 @@ function editLocalProfile(){
   async function parseZip(file){
     // Read only the ZIP footer + central directory first. Audio data stays as
     // lazy File slices instead of loading the entire preset into RAM.
-    if(!file||typeof file.size!=='number')throw Error('Invalid preset file.');
+    if(!file||typeof file.size!=='number')throw Error('Invalid backup file.');
     const tailSize=Math.min(file.size,65557);
     const tailStart=file.size-tailSize;
     const tail=new Uint8Array(await file.slice(tailStart).arrayBuffer());
@@ -3432,7 +3432,7 @@ function editLocalProfile(){
 
   function openPresetExportSelection(kind){
     const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists,folders:state.folders||[]},items=lists[kind]||[];
-    setModal('<div class="modalHead"><h2>Export '+presetLabel(kind)+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon('close')+'</button></div><div class="help">Choose what to export. Albums include their connected songs and artists. Folders include the folder itself and everything stored inside it.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">'+items.length+' selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">'+items.map(function(x){if(kind==='artists')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName">'+esc(x.name)+'</span></label>';if(kind==='albums')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')+'</span></span></label>';if(kind==='songs')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistName(x))+'</span></span></label>';if(kind==='folders'){const refs=folderExportRefs(x);return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+refs.albumIds.length+' albums • '+refs.trackIds.length+' songs • '+refs.artistIds.length+' artists</span></span></label>'}return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+(x.trackIds||[]).length+' songs</span></span></label>'}).join('')+'</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export preset</button></div>',{large:true});
+    setModal('<div class="modalHead"><h2>Export '+presetLabel(kind)+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon('close')+'</button></div><div class="help">Choose what to export. Albums include their connected songs and artists. Folders include the folder itself and everything stored inside it.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">'+items.length+' selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">'+items.map(function(x){if(kind==='artists')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName">'+esc(x.name)+'</span></label>';if(kind==='albums')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')+'</span></span></label>';if(kind==='songs')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistName(x))+'</span></span></label>';if(kind==='folders'){const refs=folderExportRefs(x);return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+refs.albumIds.length+' albums • '+refs.trackIds.length+' songs • '+refs.artistIds.length+' artists</span></span></label>'}return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+(x.trackIds||[]).length+' songs</span></span></label>'}).join('')+'</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export backup</button></div>',{large:true});
     const refresh=function(){$('#presetSelectedCount').textContent=$$('.presetCheck:checked').length+' selected'};
     $$('.presetCheck').forEach(function(x){x.addEventListener('change',refresh)});
     $('#presetSelectAll').onclick=function(){$$('.presetCheck').forEach(function(x){x.checked=true});refresh()};
@@ -3472,8 +3472,8 @@ function editLocalProfile(){
   let pendingExpectedPresetKind='';
   function pickPresetFile(expectedKind=''){const input=$('#bundlePicker');if(!input){toast('Preset import is unavailable.');return}pendingExpectedPresetKind=expectedKind||'';input.value='';input.click()}
   async function readPresetFile(file){
-    if(!file)throw new Error('No preset file was selected.');
-    if(!file.size)throw new Error('The preset file is empty.');
+    if(!file)throw new Error('No backup file was selected.');
+    if(!file.size)throw new Error('The backup file is empty.');
     let p,files=null;
     try{
       const head=new Uint8Array(await file.slice(0,4).arrayBuffer());
@@ -3490,10 +3490,10 @@ function editLocalProfile(){
       if(e instanceof SyntaxError)throw new Error('The Localio file is damaged or is not valid JSON.');
       throw e;
     }
-    if(!p||typeof p!=='object')throw new Error('Invalid Localio preset.');
-    if(!Array.isArray(p.tracks)&&!Array.isArray(p.artists)&&!Array.isArray(p.albums)&&!Array.isArray(p.playlists)&&!p.settings)throw new Error('Invalid Localio preset: no supported library data was found.');
+    if(!p||typeof p!=='object')throw new Error('Invalid Localio backup.');
+    if(!Array.isArray(p.tracks)&&!Array.isArray(p.artists)&&!Array.isArray(p.albums)&&!Array.isArray(p.playlists)&&!p.settings)throw new Error('Invalid Localio backup: no supported library data was found.');
     p.presetKind=p.presetKind||'full';
-    if(!['full','artists','albums','songs','playlists','liked','recent','settings'].includes(p.presetKind))throw new Error('Unsupported Localio preset type: '+String(p.presetKind)+'.');
+    if(!['full','artists','albums','songs','playlists','liked','recent','settings'].includes(p.presetKind))throw new Error('Unsupported Localio backup type: '+String(p.presetKind)+'.');
     const missing=[],badPaths=[];
     if(Array.isArray(p.tracks)){
       for(const t of p.tracks){
@@ -3513,7 +3513,7 @@ function editLocalProfile(){
     return {p,files};
   }
   function openPresetImportMode(p,files){pendingPresetImport={p,files};const kind=presetLabel(p.presetKind),setText=({full:'Replace your entire Localio library.',artists:'Delete every artist and replace the artist list with this file.',albums:'Delete every album and replace the album list with this file.',songs:'Delete every song and replace the song list with this file.',playlists:'Delete every playlist and replace the playlist list with this file.',liked:'Replace your liked songs list with this file.',recent:'Replace your recently played list with this file.',settings:'Replace your Localio settings with this file.'})[p.presetKind]||'Replace the data represented by this file.',summary=(p.presetKind==='full'?[['artists',p.artists?.length||0],['albums',p.albums?.length||0],['folders',p.folders?.length||0],['playlists',p.playlists?.length||0]]:[['artists',p.artists?.length||0],['albums',p.albums?.length||0],['folders',p.folders?.length||0],['playlists',p.playlists?.length||0],['songs',p.tracks?.length||0]]).filter(x=>x[1]).map(x=>`${x[1]} ${x[0]}`).join(' • ')||'Settings preset';setModal(`<div class="modalHead"><h2>Import ${esc(kind)}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon('close')}</button></div><div class="creditsBox" style="margin-top:0"><strong>${esc(p.presetName||kind)}</strong><div class="subtle">${esc(summary)}</div></div><div class="help" style="margin-top:12px">Choose how to import this Localio file.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px"><button class="primary" id="presetAdd">Add file</button><button class="dangerBtn" id="presetSet">Set file</button></div>`);$('#closeModal').onclick=()=>{pendingPresetImport=null;closeModal(true)};$('#presetAdd').onclick=async()=>{const x=pendingPresetImport;pendingPresetImport=null;closeModal(true);await importPresetData(x.p,x.files,'add')};$('#presetSet').onclick=async()=>{const x=pendingPresetImport;pendingPresetImport=null;closeModal(true);if(confirm(`Set ${kind}? This will replace the existing ${kind.toLowerCase()} data in Localio.`))await importPresetData(x.p,x.files,'set')}}
-  async function importPresetFile(file,expectedKind=''){try{const x=await readPresetFile(file);if(expectedKind&&x.p.presetKind!==expectedKind)throw Error(`This file is not an ${presetLabel(expectedKind)} preset.`);openPresetImportMode(x.p,x.files)}catch(e){console.error(e);toast(e?.message||'Could not read that Localio preset.')}finally{pendingExpectedPresetKind='';$('#bundlePicker').value=''}}
+  async function importPresetFile(file,expectedKind=''){try{const x=await readPresetFile(file);if(expectedKind&&x.p.presetKind!==expectedKind)throw Error(`This file is not an ${presetLabel(expectedKind)} preset.`);openPresetImportMode(x.p,x.files)}catch(e){console.error(e);toast(e?.message||'Could not read that Localio backup.')}finally{pendingExpectedPresetKind='';$('#bundlePicker').value=''}}
   function findArtistImport(a){return state.artists.find(x=>presetKey(x.name)===presetKey(a.name))||null}
   function findAlbumImport(a,m){const ids=artistIdsForAlbum(a).map(id=>m.get(id)||id).filter(Boolean);return state.albums.find(x=>presetKey(x.title)===presetKey(a.title)&&artistIdsForAlbum(x).length===ids.length&&artistIdsForAlbum(x).every(id=>ids.includes(id)))||null}
   function findTrackImport(t,am,atm){const aid=t.albumId?am.get(t.albumId)||null:null,arts=artistIdsForTrack(t).map(id=>atm.get(id)||id).filter(Boolean);return state.tracks.find(x=>presetKey(x.title)===presetKey(t.title)&&(aid?x.albumId===aid:!x.albumId)&&artistIdsForTrack(x).length===arts.length&&artistIdsForTrack(x).every(id=>arts.includes(id)))||null}
@@ -3630,7 +3630,7 @@ function editLocalProfile(){
     const persisted=true;
     render();renderPlayer();
     toast(presetLabel(kind)+' preset '+(mode==='set'?'set':'added')+'.')
-  }catch(e){console.error('Localio preset import failed',e);toast(e?.message||'Could not import this Localio preset.')}}
+  }catch(e){console.error('Localio backup import failed',e);toast(e?.message||'Could not import this Localio backup.')}}
   function publicShareCover(v){const s=typeof v==="string"?v:"";return /^(https?:\/\/)/i.test(s)?s:""}
 function buildPresetSharePayload(source=null){
  const x=source||state,artists=Array.isArray(x.artists)?x.artists:[],albums=Array.isArray(x.albums)?x.albums:[],tracks=Array.isArray(x.tracks)?x.tracks:[],folders=Array.isArray(x.folders)?x.folders:[],playlists=Array.isArray(x.playlists)?x.playlists:[];
@@ -3833,8 +3833,8 @@ async function buildPresetExportImage(manifest){
   ctx.fillStyle="#66737f";ctx.font="700 11px Arial";
   const creator=txt(manifest.creatorName,"Localio listener");
   let footer="Preset made by \""+creator+"\"";
-  if(hiddenSongCount)footer+=" • "+hiddenSongCount.toLocaleString()+" songs included in the preset file (not shown in image)";
-  if(totalHidden)footer+=" • "+totalHidden.toLocaleString()+" more items included in the preset file";
+  if(hiddenSongCount)footer+=" • "+hiddenSongCount.toLocaleString()+" songs included in the backup file (not shown in image)";
+  if(totalHidden)footer+=" • "+totalHidden.toLocaleString()+" more items included in the backup file";
   ctx.fillText(footer,outer,footerY);
   return canvas.toDataURL("image/png");
 }
@@ -3875,7 +3875,7 @@ async function openPresetShareMenu(source=null){
  const rowHtml=(x,type)=>'<div class="shareLocalifyRow"><div class="shareLocalifyRowArt">'+(x.k?'<img src="'+esc(x.k)+'" alt="">':(type==="folder"?"▣":type==="playlist"?"☷":type==="artist"?"♟":"♫"))+'</div><div style="min-width:0"><strong>'+esc(x.t||x.n||"Untitled")+'</strong><span>'+esc(x.a||x.g||((x.i??"")+" items"))+'</span></div><em>'+esc(x.y||"")+'</em></div>';
  const sectionHtml=(id,label,list,limit,type)=>{const shown=list.slice(0,limit);return '<section class="shareLocalifySection"><div class="shareLocalifySectionHead"><h4>'+esc(label)+'</h4><span>'+Number(d.c[id]||list.length||0).toLocaleString()+'</span></div><div class="shareLocalifyRows">'+(shown.length?shown.map(x=>rowHtml(x,type)).join(""):'<div class="profileEmpty">Nothing in this category.</div>')+'</div></section>'};
  setModal(
-   '<div class="modalHead"><div><h2>Share preset</h2><div class="settingsSectionSub">Preview and share this Localio preset.</div></div><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div>'+
+   '<div class="modalHead"><div><h2>Share preset</h2><div class="settingsSectionSub">Preview and share this Localio backup.</div></div><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div>'+
    '<div class="shareLocalifyCard">'+
      '<div class="shareLocalifyTop"><div class="shareLocalifyMosaic">'+mosaic+'</div><div class="shareLocalifyInfo"><div class="sharePreviewKicker">LOCALIFY SHARE</div><h3>'+esc(d.n)+'</h3><p>'+Number(d.c.albums||0).toLocaleString()+' albums • '+Number(d.c.artists||0).toLocaleString()+' artists • '+Number(d.c.songs||0).toLocaleString()+' songs • '+Number(d.c.folders||0).toLocaleString()+' folders • '+Number(d.c.playlists||0).toLocaleString()+' playlists</p><div class="sharePreviewCreator">Preset made by &quot;'+esc(d.by||"Localio listener")+'&quot;</div></div></div>'+
      '<div class="shareLocalifyStats"><div><strong>'+Number(d.c.songs||0).toLocaleString()+'</strong><span>Songs</span></div><div><strong>'+Number(d.c.albums||0).toLocaleString()+'</strong><span>Albums</span></div><div><strong>'+Number(d.c.artists||0).toLocaleString()+'</strong><span>Artists</span></div><div><strong>'+Number(d.c.folders||0).toLocaleString()+'</strong><span>Folders</span></div></div>'+
@@ -3890,7 +3890,7 @@ async function openPresetShareMenu(source=null){
  $("#closeModal").onclick=()=>closeModal(true);
  $("#copyShareLink").onclick=async()=>{if(!url)return;try{await navigator.clipboard.writeText(url);toast("Share link copied.")}catch{const box=$("#shareLinkInput");box.focus();box.select();prompt("Copy this Localio share link:",url)}};
  $("#openSharePreview").onclick=()=>{if(url)window.open(url,"_blank","noopener")};
- $("#shareNative").onclick=async()=>{if(!url)return;try{if(navigator.share)await navigator.share({title:d.n,text:"Localio preset preview",url});else{await navigator.clipboard.writeText(url);toast("Share link copied.")}}catch(e){if(e?.name!=="AbortError")toast("Could not share the link.")}};
+ $("#shareNative").onclick=async()=>{if(!url)return;try{if(navigator.share)await navigator.share({title:d.n,text:"Localio backup preview",url});else{await navigator.clipboard.writeText(url);toast("Share link copied.")}}catch(e){if(e?.name!=="AbortError")toast("Could not share the link.")}};
  try{
    url=await presetShareUrl(source);
    if($("#shareLinkInput"))$("#shareLinkInput").value=url;
@@ -3909,8 +3909,8 @@ function openPresetsMenu(){
       "<div class=\"presetHome\">"+
         "<div class=\"presetHero\"><div class=\"presetHeroTop\"><div><h3>Portable Localio backups</h3><p>Save and share your Localio library as <code>.localify</code> files. Audio is included in the package, and large exports use ZIP64 and streaming when your browser supports it.</p></div><div class=\"presetHeroIcon\">"+uiIcon("save")+"</div></div></div>"+
         "<div class=\"presetActionGrid\">"+
-          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export preset</strong><span>Back up or share your library</span></span></button>"+
-          "<button class=\"presetAction\" id=\"presetImportBtn\"><span class=\"presetActionIcon\">"+uiIcon("upload")+"</span><span><strong>Import preset</strong><span>Load a Localio file onto this device</span></span></button>"+
+          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export backup</strong><span>Back up or share your library</span></span></button>"+
+          "<button class=\"presetAction\" id=\"presetImportBtn\"><span class=\"presetActionIcon\">"+uiIcon("upload")+"</span><span><strong>Import backup</strong><span>Load a Localio file onto this device</span></span></button>"+
         "</div>"+
         "<div class=\"presetQuickTitle\">Quick tools</div>"+
         "<div class=\"presetQuickGrid\">"+
