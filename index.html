@@ -3745,7 +3745,11 @@ async function buildPresetExportImage(manifest){
     imgCache.set(src,p);return p;
   }
   function text(v,f){const s=String(v==null?"":v).trim();return s||f||""}
+  const manifestArtistById=new Map((manifest.artists||[]).map(function(a){return [a.id,a]}));
   function artistText(x){
+    const ids=Array.isArray(x?.artistIds)?x.artistIds:(x?.artistId?[x.artistId]:[]);
+    const linked=ids.map(function(id){const a=manifestArtistById.get(id);return a?text(a.name,""):""}).filter(Boolean);
+    if(linked.length)return [...new Set(linked)].join(", ");
     if(Array.isArray(x.artistNames)&&x.artistNames.length)return x.artistNames.join(", ");
     if(Array.isArray(x.artists)&&x.artists.length)return x.artists.map(function(a){return typeof a==="string"?a:text(a&&a.name,"")}).filter(Boolean).join(", ");
     return text(x.artist||x.albumArtist,"");
