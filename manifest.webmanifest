@@ -1,6 +1,6 @@
 {
-  "name":"Localify Mobile",
-  "short_name":"Localify",
+  "name":"Localio Mobile",
+  "short_name":"Localio",
   "start_url":"./index.html?mobile=1",
   "scope":"./",
   "display":"standalone",
