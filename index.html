@@ -3651,7 +3651,8 @@ function editLocalProfile(){
         if(!isBlobLike(blob))continue;
         const nb=enc.encode(t.audioFile),size=blob.size,crc=await crc32Blob(blob),h=zipLocalHeader(nb,crc,size);
         await writable.write(h);
-        const CHUNK=64*1024*1024;\n        for(let pos=0;pos<blob.size;pos+=CHUNK)await writable.write(blob.slice(pos,Math.min(pos+CHUNK,blob.size)));
+        const CHUNK=64*1024*1024;
+        for(let pos=0;pos<blob.size;pos+=CHUNK)await writable.write(blob.slice(pos,Math.min(pos+CHUNK,blob.size)));
         central.push(zipCentralHeader(nb,crc,size,offset));
         offset+=h.length+size;
         done++;
