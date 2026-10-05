@@ -764,6 +764,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2)}
   function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
   function fmt(sec){if(!isFinite(sec))return "0:00";sec=Math.max(0,Math.floor(sec));return Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")}
+  function formatBytes(bytes){const n=Math.max(0,Number(bytes)||0);if(n<1024)return n+" B";const units=["KB","MB","GB","TB"];let v=n;for(const unit of units){v/=1024;if(v<1024||unit==="TB")return v.toFixed(v>=100?0:v>=10?1:2)+" "+unit}return v.toFixed(2)+" TB"}
   function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove("show"),2800)}
   const __localifyLookup={
     tracksRef:null,tracksLen:-1,albumsRef:null,albumsLen:-1,artistsRef:null,artistsLen:-1,playlistsRef:null,playlistsLen:-1,
