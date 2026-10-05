@@ -3016,6 +3016,7 @@ function editLocalProfile(){
         ${field("Title","songTitle",t.title)}
         <div class="field full"><label>Artists</label><div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">${artistPickerHtml("songArtists",artistIdsForTrack(t))}</div><button class="secondary small" id="newArtistInline" title="Create artist">${uiIcon("plus")}</button></div><div class="help" style="margin-top:6px">Select multiple artists. Example: Ye, Ty Dolla $ign.</div></div>
         <div class="field"><label>Album</label><div style="display:flex;gap:6px"><select id="songAlbum"><option value="">None</option>${albumOptions(t.albumId)}</select><button class="secondary small" id="newAlbumInline">${uiIcon("plus")}</button></div></div>
+        <div class="field full"><label>Discord artwork URL</label><input id="songDiscordCover" type="url" value="${esc(t.discordCoverUrl||"")}" placeholder="https://example.com/cover.png"><div class="help">Optional public HTTPS image for Discord Rich Presence. This does not replace the Localify artwork.</div></div>
 
         ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
         <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
@@ -3033,9 +3034,9 @@ function editLocalProfile(){
     $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection("songArtists",ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
     $("#saveEdit").onclick=async()=>{
       const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
-      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
+      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.discordCoverUrl=String($("#songDiscordCover")?.value||"").trim();t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
       if(album){if(!album.cover&&newCover)album.cover=newCover;}
-      await save();closeModal(true);renderCurrentViewWithoutScroll();toast("Song updated.");
+      t._diskDirty=!!state.libraryFolderHandle;await save();closeModal(true);renderCurrentViewWithoutScroll();toast("Song updated.");
     };
   }
 
@@ -4160,7 +4161,7 @@ function openPresetsMenu(){
     $("#presetExportAlbumsBtn").onclick=()=>{closeModal(true);openPresetExportSelection("albums")};
     $("#presetImportAlbumsBtn").onclick=()=>{closeModal(true);pickPresetFile("albums")};
   }
-  function openMobileTools(){openPresetsMenu()}
+  function openMobileTools(){openLibraryStorageModal()}
 
   async function unlockPersistentStorage(){await ensureStorageAccess();try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{};try{await openDB();storageReady=true;storageBlocked=false;toast("Persistent library storage is enabled.")}catch{storageBlocked=true;writeMetaFallback();toast("Your browser/Google Sites embed is blocking persistent storage. Open Localify as its own site for automatic saving.")}}
 
