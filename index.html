@@ -734,7 +734,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
 
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
-    queue: [], queueIndex: -1, currentId: null,
+    queue: [], queueIndex: -1, currentId: null, libraryFolderHandle: null,
     settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#7dd3fc",color2:"#a78bfa"} },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
@@ -813,7 +813,9 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function applyAlbumArtistIds(t,ids){const clean=[...new Set((ids||[]).filter(Boolean))];t.albumArtistIds=clean;t.albumArtistId=clean[0]||null;return clean}
 
   function cloneMeta(){
-    const meta=JSON.parse(JSON.stringify({...state,tracks:state.tracks.map(t=>{const x={...t};delete x.blob;delete x._blobDirty;return x})}));
+    const safe={...state};
+    delete safe.libraryFolderHandle;
+    const meta=JSON.parse(JSON.stringify({...safe,tracks:state.tracks.map(t=>{const x={...t};delete x.blob;delete x._blobDirty;delete x._diskDirty;return x})}));
     return meta;
   }
 
@@ -933,6 +935,9 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   async function idbGetBlob(id){const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction("blobs","readonly").objectStore("blobs").get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}
   async function idbPutBlob(id,blob){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").put(blob,id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Audio save failed"));tx.onabort=()=>reject(tx.error||new Error("Audio save aborted"))})}
   async function idbDeleteBlob(id){try{const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("blobs","readwrite");tx.objectStore("blobs").delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
+  async function idbGetLibraryFolderHandle(){try{const d=await openDB();return new Promise((resolve,reject)=>{const r=d.transaction("meta","readonly").objectStore("meta").get("library-folder-handle");r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)})}catch{return null}}
+  async function idbPutLibraryFolderHandle(handle){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("meta","readwrite");tx.objectStore("meta").put(handle,"library-folder-handle");tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Folder handle save failed"));tx.onabort=()=>reject(tx.error||new Error("Folder handle save aborted"))})}
+  async function idbDeleteLibraryFolderHandle(){try{const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction("meta","readwrite");tx.objectStore("meta").delete("library-folder-handle");tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
   async function clearLibraryStorage(){
     try{
       const d=await openDB();
