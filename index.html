@@ -989,7 +989,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     }catch{return false}
   }
   function managedInfo(type,obj){
-    if(type==="album")return {schema:1,type,id:obj.id,title:obj.title||"",artists:artistNamesForAlbum(obj),year:obj.year||"",genre:obj.genre||"",label:obj.label||"",description:obj.description||"",credits:normalizeCredits(obj.credits||{}),discordCoverUrl:obj.discordCoverUrl||"",songs:state.tracks.filter(t=>t.albumId===obj.id).sort((a,b)=>(trackNo(a)??999999)-(trackNo(b)??999999)).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),track:trackNo(t),disc:discNo(t),fileName:t.fileName||"",genre:t.genre||obj.genre||"",year:t.year||obj.year||""))};
+    if(type==="album")return {schema:1,type,id:obj.id,title:obj.title||"",artists:artistNamesForAlbum(obj),year:obj.year||"",genre:obj.genre||"",label:obj.label||"",description:obj.description||"",credits:normalizeCredits(obj.credits||{}),discordCoverUrl:obj.discordCoverUrl||"",songs:state.tracks.filter(t=>t.albumId===obj.id).sort((a,b)=>(trackNo(a)??999999)-(trackNo(b)??999999)).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),track:trackNo(t),disc:discNo(t),fileName:t.fileName||"",genre:t.genre||obj.genre||"",year:t.year||obj.year||""}))};
     if(type==="artist")return {schema:1,type,id:obj.id,name:artistDisplayName(obj),genres:obj.genres||[],year:obj.year||"",label:obj.label||"",website:obj.website||"",bio:obj.bio||""};
     if(type==="playlist")return {schema:1,type,id:obj.id,name:obj.name||"",label:obj.label||"",description:obj.description||"",trackIds:Array.isArray(obj.trackIds)?obj.trackIds:[],songs:(obj.trackIds||[]).map(trackById).filter(Boolean).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),album:albumName(t),track:trackNo(t)}))};
     if(type==="folder"){const refs=folderExportRefs(obj);return {schema:1,type,id:obj.id,name:obj.name||"",items:obj.items||[],refs}}
@@ -4243,6 +4243,10 @@ document.addEventListener("click",profileMenuSettingsCapture,true);
     }
     renderProfileTopButton();
     render();
+    setTimeout(()=>{if(!state.libraryFolderHandle&&window.showDirectoryPicker)openLibraryStorageModal()},1400);
+    const managedVisibilitySync=()=>{if(document.visibilityState==="visible"&&state.libraryFolderHandle)scanManagedLibraryFolder({silent:true})};
+    document.addEventListener("visibilitychange",managedVisibilitySync);
+    setInterval(()=>{if(document.visibilityState==="visible"&&state.libraryFolderHandle)scanManagedLibraryFolder({silent:true})},20000);
     const warmFirst=()=>{const id=state.currentId||state.recent[0]||state.tracks[0]?.id;if(id)warmTrack(id)};
     if("requestIdleCallback"in window)requestIdleCallback(warmFirst,{timeout:1500});else setTimeout(warmFirst,700);
   })();
