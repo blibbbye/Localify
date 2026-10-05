@@ -3634,7 +3634,8 @@ function editLocalProfile(){
     return {version:15,schema:'localify-preset-v2',presetKind:kind,presetName:customSections?'Library preset':presetLabel(kind),exportedAt:new Date().toISOString(),portableAudio:true,creatorName:String(state.profile?.displayName||'Localify listener').trim()||'Localify listener',trackCount:tracks.length,audioTrackCount:tracks.filter(t=>t.hasAudio).length,artists:scope.artists.map(cloneEntity),albums:scope.albums.map(cloneEntity),tracks,playlists:scope.playlists.map(cloneEntity),folders:scope.folders.map(function(f){const x=cloneEntity(f),refs=folderExportRefs(f);x.albumIds=refs.albumIds;x.trackIds=refs.trackIds;x.artistIds=refs.artistIds;x.playlistIds=refs.playlistIds;return x;}),liked:[...scope.liked],recent:[...scope.recent],settings:scope.settings?JSON.parse(JSON.stringify(scope.settings)):null,analytics:scope.analytics?JSON.parse(JSON.stringify(scope.analytics)):null,...(customSections?{exportSections:customSections}:{})};
   }
   async function writePresetStreaming(handle,manifest){
-    const writable=await handle.createWritable();
+    const writable=await handle.createWritable({keepExistingData:false});
+    const writer=writable.getWriter();
     const enc=new TextEncoder(),mb=enc.encode(JSON.stringify(manifest)),mn=enc.encode("library.json"),mc=crc32(mb),mh=zipLocalHeader(mn,mc,mb.length);
     let offset=0,central=[];
     const sleepTick=()=>new Promise(resolve=>setTimeout(resolve,0));
@@ -3644,9 +3645,10 @@ function editLocalProfile(){
       for(const p of parts){out.set(p,at);at+=p.length}
       return out;
     };
+    let closed=false;
     try{
-      await writable.write(mh);
-      await writable.write(mb);
+      await writer.write(mh);
+      await writer.write(mb);
       central.push(zipCentralHeader(mn,mc,mb.length,offset));
       offset+=mh.length+mb.length;
       let done=0,totalBytes=mb.length;
@@ -3655,20 +3657,28 @@ function editLocalProfile(){
         const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
         if(!isBlobLike(blob))continue;
         const nb=enc.encode(t.audioFile),size=blob.size,h=zipLocalHeaderStreaming(nb,size);
-        await writable.write(h);
+        await writer.ready;
+        await writer.write(h);
         let crcState=0xffffffff,streamBytes=0;
-        const crcTransform=new TransformStream({
-          transform(chunk,controller){
-            const bytes=chunk instanceof Uint8Array?chunk:new Uint8Array(chunk);
+        const reader=blob.stream().getReader();
+        try{
+          while(true){
+            const {value,done:readerDone}=await reader.read();
+            if(readerDone)break;
+            if(!value||!value.byteLength)continue;
+            const bytes=value instanceof Uint8Array?value:new Uint8Array(value);
             crcState=crc32Update(crcState,bytes);
             streamBytes+=bytes.byteLength;
-            controller.enqueue(bytes);
+            await writer.ready;
+            await writer.write(bytes);
           }
-        });
-        await blob.stream().pipeThrough(crcTransform).pipeTo(writable,{preventClose:true});
+        }finally{
+          try{await reader.cancel()}catch{}
+          try{reader.releaseLock()}catch{}
+        }
         if(streamBytes!==size)throw new Error('Audio size changed while exporting “'+String(t.title||t.fileName||'Unknown song').slice(0,100)+'”.');
         const crc=(crcState^0xffffffff)>>>0,dd=zipDataDescriptor64(crc,size);
-        await writable.write(dd);
+        await writer.write(dd);
         central.push(zipCentralHeader(nb,crc,size,offset));
         offset+=h.length+size+dd.length;
         totalBytes+=h.length+size+dd.length;
@@ -3678,20 +3688,25 @@ function editLocalProfile(){
       }
       toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
       const cdOffset=offset,centralData=joinParts(central);
-      await writable.write(centralData);
-      await writable.write(zipEnd(central.length,centralData.length,cdOffset));
-      toast(`Exporting ${manifest.presetName}… saving file`);
-      await writable.close();
+      await writer.write(centralData);
+      await writer.write(zipEnd(central.length,centralData.length,cdOffset));
+      toast(`Exporting ${manifest.presetName}… committing file`);
+      await writer.close();
+      closed=true;
       toast(`${manifest.presetName} exported.`);
       return true;
     }catch(e){
-      try{await writable.abort()}catch{}
+      if(!closed){
+        try{await writer.abort()}catch{}
+        try{writer.releaseLock()}catch{}
+      }
       if(e?.name==='InvalidStateError'){
-        throw new Error('Chrome lost the state of the large-file writer during export. The file was not finalized. Try exporting to a local drive with enough free space, and avoid a synced/network folder while exporting.');
+        throw new Error('Chrome lost the large-file writer while committing this export. The browser may have exhausted its temporary file space or lost the file handle. Please export again to a local internal drive with at least 15 GB free and avoid OneDrive/Google Drive/network folders.');
       }
       throw e;
     }
   }
+
   async function exportPreset(kind,ids=[],options=null){
   let handle=null;
   try{
