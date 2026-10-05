@@ -953,6 +953,165 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     try{localStorage.removeItem(META_KEY)}catch(e){console.warn("Localify metadata fallback clear failed",e)}
   }
 
+
+  // ============================================================
+  // MANAGED LIBRARY FOLDER
+  // ============================================================
+  const MANAGED_LIBRARY_ROOT_NAME="Localify";
+  let managedSyncTimer=0,managedSyncBusy=false,managedScanBusy=false;
+  function managedRoot(){return state.libraryFolderHandle||null}
+  function safeFsName(name,fallback="Untitled"){
+    const s=String(name||"").replace(/[<>:"/\\|?*\u0000-\u001F]/g," ").replace(/[. ]+$/g,"").trim();
+    return (s||fallback).slice(0,180)
+  }
+  function managedUniqueName(name,id,used){
+    const base=safeFsName(name),key=base.toLowerCase();
+    if(!used.has(key)){used.add(key);return base}
+    const suffix=String(id||"").slice(0,6)||String(Date.now()).slice(-6);
+    let out=base+" ("+suffix+")",n=2;
+    while(used.has(out.toLowerCase()))out=base+" ("+suffix+"-"+n+++")";
+    used.add(out.toLowerCase());return out
+  }
+  async function fsDir(parent,name){return parent.getDirectoryHandle(name,{create:true})}
+  async function fsWriteText(dir,name,text){const h=await dir.getFileHandle(name,{create:true}),w=await h.createWritable();await w.write(String(text||""));await w.close()}
+  async function fsWriteBlob(dir,name,blob){const h=await dir.getFileHandle(name,{create:true}),w=await h.createWritable();for await(const chunk of blob.stream())await w.write(chunk);await w.close()}
+  async function fsReadText(dir,name){try{const h=await dir.getFileHandle(name),f=await h.getFile();return await f.text()}catch{return ""}}
+  async function managedPermission(handle=managedRoot(),interactive=false){
+    if(!handle||typeof handle.queryPermission!=="function")return !!handle;
+    try{
+      let p=await handle.queryPermission({mode:"readwrite"});
+      if(p==="granted")return true;
+      if(interactive&&p!=="denied"&&typeof handle.requestPermission==="function")p=await handle.requestPermission({mode:"readwrite"});
+      return p==="granted";
+    }catch{return false}
+  }
+  function managedInfo(type,obj){
+    if(type==="album")return {schema:1,type,id:obj.id,title:obj.title||"",artists:artistNamesForAlbum(obj),year:obj.year||"",genre:obj.genre||"",label:obj.label||"",description:obj.description||"",credits:normalizeCredits(obj.credits||{}),discordCoverUrl:obj.discordCoverUrl||"",songs:state.tracks.filter(t=>t.albumId===obj.id).sort((a,b)=>(trackNo(a)??999999)-(trackNo(b)??999999)).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),track:trackNo(t),disc:discNo(t),fileName:t.fileName||"",genre:t.genre||obj.genre||"",year:t.year||obj.year||""))};
+    if(type==="artist")return {schema:1,type,id:obj.id,name:artistDisplayName(obj),genres:obj.genres||[],year:obj.year||"",label:obj.label||"",website:obj.website||"",bio:obj.bio||""};
+    if(type==="playlist")return {schema:1,type,id:obj.id,name:obj.name||"",label:obj.label||"",description:obj.description||"",trackIds:Array.isArray(obj.trackIds)?obj.trackIds:[],songs:(obj.trackIds||[]).map(trackById).filter(Boolean).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),album:albumName(t),track:trackNo(t)}))};
+    if(type==="folder"){const refs=folderExportRefs(obj);return {schema:1,type,id:obj.id,name:obj.name||"",items:obj.items||[],refs}}
+    return {schema:1,type};
+  }
+  async function ensureManagedRootFromParent(parent){
+    const root=String(parent?.name||"").toLowerCase()===MANAGED_LIBRARY_ROOT_NAME.toLowerCase()?parent:await parent.getDirectoryHandle(MANAGED_LIBRARY_ROOT_NAME,{create:true});
+    for(const n of ["Albums","Songs","Artists","Playlists","Folders"])await fsDir(root,n);
+    return root;
+  }
+  async function chooseManagedLibraryFolder(){
+    if(!window.showDirectoryPicker){toast("This browser cannot connect a real computer folder. Localify will keep using browser storage.");return false}
+    try{
+      const picked=await window.showDirectoryPicker({mode:"readwrite"});
+      const root=await ensureManagedRootFromParent(picked);
+      state.libraryFolderHandle=root;
+      await idbPutLibraryFolderHandle(root);
+      if(!(await managedPermission(root,true))){toast("Localify needs write access to that folder.");return false}
+      toast("Library folder connected.");
+      await scanManagedLibraryFolder({silent:true});
+      await syncManagedLibrary({forceAudio:true});
+      await save(false);
+      showAccountSettings();
+      return true;
+    }catch(e){if(e?.name!=="AbortError"){console.error(e);toast("Could not connect that folder.")}return false}
+  }
+  async function disconnectManagedLibrary(){state.libraryFolderHandle=null;await idbDeleteLibraryFolderHandle();toast("Library folder disconnected. Browser storage is still kept.");showAccountSettings()}
+  async function syncManagedLibrary(opts={}){
+    const root=managedRoot();if(!root||managedSyncBusy)return false;managedSyncBusy=true;
+    try{
+      if(!(await managedPermission(root,false)))return false;
+      const albumsDir=await fsDir(root,"Albums"),songsDir=await fsDir(root,"Songs"),artistsDir=await fsDir(root,"Artists"),playlistsDir=await fsDir(root,"Playlists"),foldersDir=await fsDir(root,"Folders");
+      const usedAlbums=new Set();
+      for(const a of state.albums){
+        const folderName=a.managedFolderName||managedUniqueName(a.title,a.id,usedAlbums);usedAlbums.add(String(folderName).toLowerCase());a.managedFolderName=folderName;
+        const dir=await fsDir(albumsDir,folderName);
+        await fsWriteText(dir,"info.txt",JSON.stringify(managedInfo("album",a),null,2));
+        for(const t of state.tracks.filter(t=>t.albumId===a.id)){
+          if(!opts.forceAudio&&!t._diskDirty)continue;
+          const blob=await ensureTrackBlob(t);if(!isBlobLike(blob))continue;
+          const filename=safeFsName(t.fileName||((trackNo(t)!=null?String(trackNo(t)).padStart(2,"0")+". ":"")+displayTrackTitle(t,true)||"Song"))||"song";
+          await fsWriteBlob(dir,filename,blob);t.managedPath="Albums/"+folderName+"/"+filename;t._diskDirty=false;
+        }
+      }
+      for(const t of state.tracks.filter(t=>!t.albumId)){
+        if(!opts.forceAudio&&!t._diskDirty)continue;
+        const blob=await ensureTrackBlob(t);if(!isBlobLike(blob))continue;
+        const filename=safeFsName(t.fileName||displayTrackTitle(t,true)||"Song")||"song";
+        await fsWriteBlob(songsDir,filename,blob);t.managedPath="Songs/"+filename;t._diskDirty=false;
+      }
+      const usedArtists=new Set(),usedPlaylists=new Set(),usedFolders=new Set();
+      for(const a of state.artists){const n=a.managedFolderName||managedUniqueName(artistDisplayName(a),a.id,usedArtists);usedArtists.add(n.toLowerCase());a.managedFolderName=n;await fsWriteText(await fsDir(artistsDir,n),"info.txt",JSON.stringify(managedInfo("artist",a),null,2))}
+      for(const p of state.playlists){const n=p.managedFolderName||managedUniqueName(p.name,p.id,usedPlaylists);usedPlaylists.add(n.toLowerCase());p.managedFolderName=n;await fsWriteText(await fsDir(playlistsDir,n),"info.txt",JSON.stringify(managedInfo("playlist",p),null,2))}
+      for(const f of (state.folders||[])){const n=f.managedFolderName||managedUniqueName(f.name,f.id,usedFolders);usedFolders.add(n.toLowerCase());f.managedFolderName=n;await fsWriteText(await fsDir(foldersDir,n),"info.txt",JSON.stringify(managedInfo("folder",f),null,2))}
+      return true;
+    }catch(e){console.warn("Localify managed folder sync failed",e);if(!opts.silent)toast("Library folder sync failed. Check the folder permission and free disk space.");return false}
+    finally{managedSyncBusy=false}
+  }
+  function scheduleManagedLibrarySync(){if(!managedRoot())return;clearTimeout(managedSyncTimer);managedSyncTimer=setTimeout(()=>syncManagedLibrary({silent:true}),900)}
+  async function scanManagedDirAudio(dir,context={}){
+    const files=[];try{for await(const [name,h] of dir.entries())if(h.kind==="file"&&!/^info\.txt$/i.test(name)&&isAudioFile({name,type:guessMime(name)}))files.push(await h.getFile())}catch{}
+    if(!files.length)return 0;
+    await addFiles(files,{...(context||{}),suppressRender:true,skipManagedSync:true,managedImport:true});
+    return files.length;
+  }
+  async function scanManagedLibraryFolder(opts={}){
+    const root=managedRoot();if(!root||managedScanBusy)return false;managedScanBusy=true;let changed=false;
+    try{
+      if(!(await managedPermission(root,false)))return false;
+      const albumsDir=await fsDir(root,"Albums"),songsDir=await fsDir(root,"Songs"),artistsDir=await fsDir(root,"Artists"),playlistsDir=await fsDir(root,"Playlists"),foldersDir=await fsDir(root,"Folders");
+      for await(const [name,h] of albumsDir.entries())if(h.kind==="directory"){
+        let info={};try{info=JSON.parse(await fsReadText(h,"info.txt")||"{}")}catch{}
+        const title=String(info.title||name).trim();
+        let album=state.albums.find(a=>a.managedFolderName===name)||state.albums.find(a=>presetKey(a.title)===presetKey(title));
+        if(!album){album=getOrCreateFolderAlbum(title);changed=true}
+        album.managedFolderName=name;
+        const artistNames=Array.isArray(info.artists)?info.artists:[];if(artistNames.length)applyArtistIds(album,artistNames.map(n=>getOrCreateArtist(n).id));
+        if(info.year!=null)album.year=String(info.year);if(info.genre!=null)album.genre=String(info.genre);if(info.label!=null)album.label=String(info.label);if(info.description!=null)album.description=String(info.description);if(info.discordCoverUrl!=null)album.discordCoverUrl=String(info.discordCoverUrl);
+        if(await scanManagedDirAudio(h,{albumId:album.id}))changed=true;
+      }
+      if(await scanManagedDirAudio(songsDir,{}))changed=true;
+      for await(const [name,h] of artistsDir.entries())if(h.kind==="directory"){let info={};try{info=JSON.parse(await fsReadText(h,"info.txt")||"{}")}catch{};const a=getOrCreateArtist(info.name||name);a.managedFolderName=name;a.genres=Array.isArray(info.genres)?info.genres:a.genres;a.year=info.year??a.year;a.label=info.label??a.label;a.website=info.website??a.website;a.bio=info.bio??a.bio}
+      for await(const [name,h] of playlistsDir.entries())if(h.kind==="directory"){let info={};try{info=JSON.parse(await fsReadText(h,"info.txt")||"{}")}catch{};let p=state.playlists.find(x=>x.managedFolderName===name)||state.playlists.find(x=>presetKey(x.name)===presetKey(info.name||name));if(!p){p={id:uid(),name:info.name||name,description:"",label:"",cover:null,trackIds:[]};state.playlists.push(p);changed=true}p.managedFolderName=name;p.description=info.description??p.description;p.label=info.label??p.label;if(Array.isArray(info.trackIds))p.trackIds=info.trackIds.filter(id=>trackById(id))}
+      for await(const [name,h] of foldersDir.entries())if(h.kind==="directory"){let info={};try{info=JSON.parse(await fsReadText(h,"info.txt")||"{}")}catch{};let f=state.folders.find(x=>x.managedFolderName===name)||state.folders.find(x=>presetKey(x.name)===presetKey(info.name||name));if(!f){f={id:uid(),name:info.name||name,items:Array.isArray(info.items)?info.items:[],createdAt:Date.now()};state.folders.push(f);changed=true}f.managedFolderName=name;if(Array.isArray(info.items))f.items=info.items}
+      if(changed)await save(false);
+      if(!opts.silent)render();
+      return changed;
+    }catch(e){console.warn("Localify managed folder scan failed",e);return false}
+    finally{managedScanBusy=false}
+  }
+  function openLibraryStorageModal(){
+    const root=managedRoot();
+    setModal('<div class="modalHead"><h2>Library folder</h2><button class="circle iconOnly" id="closeLibraryStorage" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">'+(root?"Connected":"Not connected")+'</div><div class="settingsSectionSub">'+(root?"Your Localify files are stored in a normal folder on your computer.":"Choose a parent folder and Localify will create a Localify folder inside it.")+'</div></div></div><div class="libraryPathBox">'+(root?'<strong>Localify</strong><span>Albums • Songs • Artists • Playlists • Folders</span>':'<strong>No folder selected</strong><span>Browser storage is still available until you connect one.</span>')+'</div><div class="libraryStorageActions"><button class="primary" id="chooseLibraryFolder">'+uiIcon("folder")+' '+(root?"Change folder":"Choose folder")+'</button>'+(root?'<button class="secondary" id="scanLibraryFolder">'+uiIcon("repeat")+' Scan folder</button><button class="secondary" id="syncLibraryFolder">'+uiIcon("save")+' Save now</button><button class="secondary" id="shareLibrarySave">'+uiIcon("download")+' Share save</button><button class="dangerBtn" id="disconnectLibraryFolder">Disconnect</button>':'')+'</div><div class="help" style="margin-top:10px">Localify writes ordinary files: Albums/<em>Album name</em>/info.txt plus the album songs, Songs/ for loose songs, and info.txt files for artists, playlists and Localify folders.</div></div>',{large:true});
+    $("#closeLibraryStorage").onclick=()=>closeModal(true);$("#chooseLibraryFolder").onclick=chooseManagedLibraryFolder;
+    if(root){
+      $("#scanLibraryFolder").onclick=async()=>{await scanManagedLibraryFolder();toast("Folder scanned.")};
+      $("#syncLibraryFolder").onclick=async()=>{await flushSave(false);await syncManagedLibrary({forceAudio:true});toast("Library saved to folder.")};
+      $("#shareLibrarySave").onclick=shareManagedSave;$("#disconnectLibraryFolder").onclick=disconnectManagedLibrary;
+    }
+  }
+  async function shareManagedSave(){
+    const root=managedRoot();if(!root){openLibraryStorageModal();return}
+    if(!(await managedPermission(root,true))){toast("Allow access to the library folder first.");return}
+    try{
+      const files=[];
+      const walk=async(dir,prefix="")=>{for await(const [name,h] of dir.entries()){const path=prefix+name;if(h.kind==="file"){files.push({path,file:await h.getFile()})}else await walk(h,path+"/")}};
+      await walk(root,"");
+      if(!files.length){toast("There is nothing to share yet.");return}
+      const total=files.reduce((n,x)=>n+x.file.size,0);
+      if(navigator.share&&typeof File==="function"&&total<=180*1024*1024){
+        const entries=files.map(x=>x.file);const zipEntries=[];for(let i=0;i<files.length;i++)zipEntries.push({name:files[i].path,bytes:new Uint8Array(await entries[i].arrayBuffer())});
+        const zip=await makeZip(zipEntries),file=new File([zip],"save.zip",{type:"application/zip"});
+        try{await navigator.share({files:[file],title:"Save",text:""})}catch(e){if(e?.name!=="AbortError")downloadBlob(zip,"save.zip")}
+        return;
+      }
+      if(window.showSaveFilePicker){
+        const handle=await window.showSaveFilePicker({suggestedName:"save.zip",types:[{description:"ZIP archive",accept:{"application/zip":[".zip"]}}]}),w=await handle.createWritable(),enc=new TextEncoder(),central=[];let offset=0;
+        for(const x of files){const nb=enc.encode(x.path),size=x.file.size,crc=await crc32Blob(x.file),lh=zipLocalHeader(nb,crc,size);await w.write(lh);for await(const chunk of x.file.stream())await w.write(chunk);central.push(zipCentralHeader(nb,crc,size,offset));offset+=lh.length+size}
+        const cdSize=central.reduce((n,x)=>n+x.length,0),cd=new Uint8Array(cdSize);let at=0;for(const x of central){cd.set(x,at);at+=x.length}
+        await w.write(cd);await w.write(zipEnd(central.length,cd.length,offset));await w.close();toast("Saved as save.zip.");return;
+      }
+      toast("This browser cannot create the ZIP at this size.");
+    }catch(e){if(e?.name!=="AbortError"){console.error(e);toast("Could not create the save ZIP.")}}
+  }
+
   const AUDIO_EXT_RE=/\.(mp3|m4a|mp4|aac|flac|wav|ogg|oga|opus|webm|aiff|aif|alac|caf)$/i;
   const isBlobLike=v=>!!v&&typeof v.size==="number"&&typeof v.arrayBuffer==="function";
   const isAudioFile=f=>!!f&&(((f.type||"").toLowerCase().startsWith("audio/"))||AUDIO_EXT_RE.test(f.name||""));
