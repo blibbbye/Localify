@@ -989,7 +989,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     }catch{return false}
   }
   function managedInfo(type,obj){
-    if(type==="album")return {schema:1,type,id:obj.id,title:obj.title||"",artists:artistNamesForAlbum(obj),year:obj.year||"",genre:obj.genre||"",label:obj.label||"",description:obj.description||"",credits:normalizeCredits(obj.credits||{}),discordCoverUrl:obj.discordCoverUrl||"",songs:state.tracks.filter(t=>t.albumId===obj.id).sort((a,b)=>(trackNo(a)??999999)-(trackNo(b)??999999)).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),track:trackNo(t),disc:discNo(t),fileName:t.fileName||"",genre:t.genre||obj.genre||"",year:t.year||obj.year||""}))};
+    if(type==="album")return {schema:1,type,id:obj.id,title:obj.title||"",artists:artistNamesForAlbum(obj),year:obj.year||"",genre:obj.genre||"",label:obj.label||"",description:obj.description||"",credits:normalizeCredits(obj.credits||{}),discordCoverUrl:obj.discordCoverUrl||"",songs:state.tracks.filter(t=>t.albumId===obj.id).sort((a,b)=>(trackNo(a)??999999)-(trackNo(b)??999999)).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),track:trackNo(t),disc:discNo(t),fileName:t.fileName||"",genre:t.genre||obj.genre||"",year:t.year||obj.year||"",discordCoverUrl:t.discordCoverUrl||""}))};
     if(type==="artist")return {schema:1,type,id:obj.id,name:artistDisplayName(obj),genres:obj.genres||[],year:obj.year||"",label:obj.label||"",website:obj.website||"",bio:obj.bio||""};
     if(type==="playlist")return {schema:1,type,id:obj.id,name:obj.name||"",label:obj.label||"",description:obj.description||"",trackIds:Array.isArray(obj.trackIds)?obj.trackIds:[],songs:(obj.trackIds||[]).map(trackById).filter(Boolean).map(t=>({id:t.id,title:displayTrackTitle(t,true),artist:artistNamesForTrack(t),album:albumName(t),track:trackNo(t)}))};
     if(type==="folder"){const refs=folderExportRefs(obj);return {schema:1,type,id:obj.id,name:obj.name||"",items:obj.items||[],refs}}
@@ -1005,9 +1005,9 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     try{
       const picked=await window.showDirectoryPicker({mode:"readwrite"});
       const root=await ensureManagedRootFromParent(picked);
-      state.libraryFolderHandle=root;
-      await idbPutLibraryFolderHandle(root);
       if(!(await managedPermission(root,true))){toast("Localify needs write access to that folder.");return false}
+      state.libraryFolderHandle=root;
+      await idbPutLibraryFolderHandle(root)
       toast("Library folder connected.");
       await scanManagedLibraryFolder({silent:true});
       await syncManagedLibrary({forceAudio:true});
@@ -1085,8 +1085,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     setModal('<div class="modalHead"><h2>Library folder</h2><button class="circle iconOnly" id="closeLibraryStorage" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">'+(root?"Connected":"Not connected")+'</div><div class="settingsSectionSub">'+(root?"Your Localify files are stored in a normal folder on your computer.":"Choose a parent folder and Localify will create a Localify folder inside it.")+'</div></div></div><div class="libraryPathBox">'+(root?'<strong>Localify</strong><span>Albums • Songs • Artists • Playlists • Folders</span>':'<strong>No folder selected</strong><span>Browser storage is still available until you connect one.</span>')+'</div><div class="libraryStorageActions"><button class="primary" id="chooseLibraryFolder">'+uiIcon("folder")+' '+(root?"Change folder":"Choose folder")+'</button>'+(root?'<button class="secondary" id="scanLibraryFolder">'+uiIcon("repeat")+' Scan folder</button><button class="secondary" id="syncLibraryFolder">'+uiIcon("save")+' Save now</button><button class="secondary" id="shareLibrarySave">'+uiIcon("download")+' Share save</button><button class="dangerBtn" id="disconnectLibraryFolder">Disconnect</button>':'')+'</div><div class="help" style="margin-top:10px">Localify writes ordinary files: Albums/<em>Album name</em>/info.txt plus the album songs, Songs/ for loose songs, and info.txt files for artists, playlists and Localify folders.</div></div>',{large:true});
     $("#closeLibraryStorage").onclick=()=>closeModal(true);$("#chooseLibraryFolder").onclick=chooseManagedLibraryFolder;
     if(root){
-      $("#scanLibraryFolder").onclick=async()=>{await scanManagedLibraryFolder();toast("Folder scanned.")};
-      $("#syncLibraryFolder").onclick=async()=>{await flushSave(false);await syncManagedLibrary({forceAudio:true});toast("Library saved to folder.")};
+      $("#scanLibraryFolder").onclick=async()=>{if(!(await managedPermission(state.libraryFolderHandle,true))){toast("Allow Localify to access the library folder first.");return}await scanManagedLibraryFolder();toast("Folder scanned.")};
+      $("#syncLibraryFolder").onclick=async()=>{if(!(await managedPermission(state.libraryFolderHandle,true))){toast("Allow Localify to access the library folder first.");return}await flushSave(false);await syncManagedLibrary({forceAudio:true});toast("Library saved to folder.")};
       $("#shareLibrarySave").onclick=shareManagedSave;$("#disconnectLibraryFolder").onclick=disconnectManagedLibrary;
     }
   }
@@ -2581,7 +2581,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     m.innerHTML='<div class="profileMenuHead"><div class="profileMenuAvatar">'+avatar+'</div><div style="min-width:0"><div class="profileMenuName">'+esc(name)+'</div><div class="profileMenuSub">Localify account on this device</div></div></div>'+
       '<button type="button" class="profileMenuItem" id="profileMenuProfile"><span class="menuIcon">'+uiIcon("artist")+'</span><span>Profile<small>Library overview and profile picture</small></span></button>'+
       '<button type="button" class="profileMenuItem" id="profileMenuStats"><span class="menuIcon">'+uiIcon("clock")+'</span><span>Listening stats<small>Weekly and all-time listening</small></span></button>'+
-      '<button type="button" class="profileMenuItem" id="profileMenuSettings"><span class="menuIcon">'+uiIcon("equalizer")+'</span><span>Account settings<small>Playback, Discord and themes</small></span></button>';
+      '<button type="button" class="profileMenuItem" id="profileMenuSettings"><span class="menuIcon">'+uiIcon("equalizer")+'</span><span>Account settings<small>Playback, Discord and storage</small></span></button>';
     m.classList.add("open");m.setAttribute("aria-hidden","false");
     const stop=e=>{e.preventDefault();e.stopPropagation()};
     $("#profileMenuProfile").onclick=e=>{stop(e);closeProfileMenu();showProfile()};
@@ -2665,8 +2665,8 @@ function editLocalProfile(){
     $("#accountSettingsBack").onclick=()=>showProfile();
     $("#accountChooseFolder").onclick=()=>chooseManagedLibraryFolder();
     if(folderConnected){
-      $("#accountScanFolder").onclick=async()=>{await scanManagedLibraryFolder();toast("Folder scanned.")};
-      $("#accountSyncFolder").onclick=async()=>{await flushSave(false);await syncManagedLibrary({forceAudio:true});toast("Library saved to folder.")};
+      $("#accountScanFolder").onclick=async()=>{if(!(await managedPermission(state.libraryFolderHandle,true))){toast("Allow Localify to access the library folder first.");return}await scanManagedLibraryFolder();toast("Folder scanned.")};
+      $("#accountSyncFolder").onclick=async()=>{if(!(await managedPermission(state.libraryFolderHandle,true))){toast("Allow Localify to access the library folder first.");return}await flushSave(false);await syncManagedLibrary({forceAudio:true});toast("Library saved to folder.")};
       $("#accountShareSave").onclick=shareManagedSave;
       $("#accountDisconnectFolder").onclick=disconnectManagedLibrary;
     }
