@@ -3640,31 +3640,22 @@ function editLocalProfile(){
       for(const p of parts){out.set(p,at);at+=p.length}
       return out;
     };
-    // Write large audio files as larger Blob slices. This avoids the extremely
-    // high number of write() calls produced by Blob.stream() on big libraries.
-    const CHUNK=64*1024*1024;
-    const writeBlobReliably=async blob=>{
-      if(!(blob instanceof Blob))throw new Error("Invalid audio data.");
-      for(let pos=0;pos<blob.size;pos+=CHUNK){
-        await writable.write(blob.slice(pos,Math.min(pos+CHUNK,blob.size)));
-      }
-    };
     try{
       await writable.write(mh);
       await writable.write(mb);
       central.push(zipCentralHeader(mn,mc,mb.length,offset));
       offset+=mh.length+mb.length;
-      let done=0,totalTracks=manifest.tracks.length;
+      let done=0;
       for(const t of manifest.tracks){
         const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
         if(!isBlobLike(blob))continue;
         const nb=enc.encode(t.audioFile),size=blob.size,crc=await crc32Blob(blob),h=zipLocalHeader(nb,crc,size);
         await writable.write(h);
-        await writeBlobReliably(blob);
+        const CHUNK=64*1024*1024;\n        for(let pos=0;pos<blob.size;pos+=CHUNK)await writable.write(blob.slice(pos,Math.min(pos+CHUNK,blob.size)));
         central.push(zipCentralHeader(nb,crc,size,offset));
         offset+=h.length+size;
         done++;
-        toast(`Exporting ${manifest.presetName}… ${done}/${totalTracks} songs`);
+        if(done%2===0||done===manifest.tracks.length)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs`);
       }
       toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
       const cdOffset=offset;
@@ -3680,7 +3671,35 @@ function editLocalProfile(){
       throw e;
     }
   }
-  async function exportPreset(kind,ids=[],options=null){  function openPresetExportSelection(kind){
+  async function exportPreset(kind,ids=[],options=null){
+  let handle=null;
+  try{
+    if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:`Localify-${kind==='full'&&options?'library':kind}.localify`,types:[{description:'Localify Preset',accept:{'application/octet-stream':['.localify']}}]});
+    await flushSave(false);
+    const manifest=await collectPresetMeta(kind,ids,options);
+    if(handle){
+      await writePresetStreaming(handle,manifest);
+      await openPresetImagePreview(manifest);
+      return true;
+    }
+    const entries=[{name:'library.json',bytes:new TextEncoder().encode(JSON.stringify(manifest))}];
+    for(const t of manifest.tracks){
+      const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
+      if(isBlobLike(blob))entries.push({name:t.audioFile,bytes:await blobToBytes(blob)});
+    }
+    downloadBlob(await makeZip(entries),`Localify-${kind==='full'&&options?'library':kind}.localify`);
+    toast(`${manifest.presetName} exported.`);
+    await openPresetImagePreview(manifest);
+    return true;
+  }catch(e){
+    if(e?.name==='AbortError')return false;
+    console.error(e);
+    toast(e?.message||'Could not export this preset.');
+    return false;
+  }
+}
+
+  function openPresetExportSelection(kind){
     const lists={artists:state.artists,albums:state.albums,songs:state.tracks,playlists:state.playlists,folders:state.folders||[]},items=lists[kind]||[];
     setModal('<div class="modalHead"><h2>Export '+presetLabel(kind)+'</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon('close')+'</button></div><div class="help">Choose what to export. Albums include their connected songs and artists. Folders include the folder itself and everything stored inside it.</div><div style="display:flex;gap:8px;align-items:center;margin:14px 0"><button class="secondary small" id="presetSelectAll">Select all</button><button class="secondary small" id="presetClearAll">Clear</button><span class="subtle" id="presetSelectedCount">'+items.length+' selected</span></div><div class="artistPickerMenu" style="display:grid;position:static;max-height:50vh;overflow:auto">'+items.map(function(x){if(kind==='artists')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName">'+esc(x.name)+'</span></label>';if(kind==='albums')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistNamesForAlbum(x).join(', ')||'Unknown Artist')+'</span></span></label>';if(kind==='songs')return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.title)+'</strong> <span class="muted">— '+esc(artistName(x))+'</span></span></label>';if(kind==='folders'){const refs=folderExportRefs(x);return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+refs.albumIds.length+' albums • '+refs.trackIds.length+' songs • '+refs.artistIds.length+' artists</span></span></label>'}return '<label class="artistChoice"><input class="presetCheck" type="checkbox" value="'+esc(x.id)+'" checked><span class="artistChoiceName"><strong>'+esc(x.name)+'</strong> <span class="muted">— '+(x.trackIds||[]).length+' songs</span></span></label>'}).join('')+'</div><div class="modalFoot"><button class="secondary" id="presetCancel">Cancel</button><button class="primary" id="presetExport">Export backup</button></div>',{large:true});
     const refresh=function(){$('#presetSelectedCount').textContent=$$('.presetCheck:checked').length+' selected'};
