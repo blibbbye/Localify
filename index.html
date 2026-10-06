@@ -3646,11 +3646,20 @@ function editLocalProfile(){
       let at=0;for(const p of parts){out.set(p,at);at+=p.length}
       return out;
     };
-    const WRITE_BATCH=8*1024*1024;
+    const WRITE_BATCH=1024*1024;
     let closed=false;
+    const writeWithRetry=async data=>{
+      for(let attempt=0;;attempt++){
+        try{await writable.write(data);return}
+        catch(e){
+          if(attempt>=3)throw e;
+          await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+        }
+      }
+    };
     try{
-      await writable.write(mh);
-      await writable.write(mb);
+      await writeWithRetry(mh);
+      await writeWithRetry(mb);
       central.push(zipCentralHeader(mn,mc,mb.length,offset));
       offset+=mh.length+mb.length;
       let done=0,totalBytes=mh.length+mb.length;
@@ -3659,12 +3668,12 @@ function editLocalProfile(){
         const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
         if(!isBlobLike(blob))continue;
         const nb=enc.encode(t.audioFile),size=blob.size,h=zipLocalHeaderStreaming(nb,size);
-        await writable.write(h);
+        await writeWithRetry(h);
         let crcState=0xffffffff,streamBytes=0,batchBytes=0,batch=[];
         const flushBatch=async()=>{
           if(!batchBytes)return;
           const out=joinParts(batch);
-          await writable.write(out);
+          await writeWithRetry(out);
           batch=[];batchBytes=0;
         };
         const reader=blob.stream().getReader();
@@ -3686,7 +3695,7 @@ function editLocalProfile(){
         await flushBatch();
         if(streamBytes!==size)throw new Error('Audio size changed while exporting “'+String(t.title||t.fileName||'Unknown song').slice(0,100)+'”.');
         const crc=(crcState^0xffffffff)>>>0,dd=zipDataDescriptor64(crc,size);
-        await writable.write(dd);
+        await writeWithRetry(dd);
         central.push(zipCentralHeader(nb,crc,size,offset));
         offset+=h.length+size+dd.length;
         totalBytes+=h.length+size+dd.length;
@@ -3696,8 +3705,8 @@ function editLocalProfile(){
       }
       toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
       const cdOffset=offset,centralData=joinParts(central);
-      await writable.write(centralData);
-      await writable.write(zipEnd(central.length,centralData.length,cdOffset));
+      await writeWithRetry(centralData);
+      await writeWithRetry(zipEnd(central.length,centralData.length,cdOffset));
       toast(`Exporting ${manifest.presetName}… committing file`);
       // A single close can occasionally race Chromium's large-file commit.
       // Retry with a fresh event-loop turn before reporting failure.
@@ -3717,7 +3726,7 @@ function editLocalProfile(){
         try{if(typeof writable.abort==="function")await writable.abort()}catch{}
       }
       if(e?.name==="InvalidStateError"){
-        throw new Error("Brave/Chromium lost the large-file save stream while committing the export. The export writer is now batched into 8 MB writes and retries the final commit. For very large libraries, save to a local drive (not OneDrive/Google Drive/network storage) and keep plenty of free disk space.");
+        throw new Error("Brave/Chromium lost the large-file save stream while committing the export. The export writer uses small 1 MB writes and retries transient file-system write failures before committing. For very large libraries, save to a local drive (not OneDrive/Google Drive/network storage) and keep plenty of free disk space.");
       }
       if(e?.name==="QuotaExceededError"){
         throw new Error("The browser ran out of temporary storage while exporting this large preset. Free more local disk space and export again.");
