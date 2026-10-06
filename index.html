@@ -3654,7 +3654,7 @@ function editLocalProfile(){
       central.push(zipCentralHeader(mn,mc,mb.length,offset));
       offset+=mh.length+mb.length;
       let done=0,totalBytes=mh.length+mb.length;
-      toast(\`Exporting \${manifest.presetName}… preparing \${manifest.tracks.length} songs\`);
+      toast(`Exporting ${manifest.presetName}… preparing ${manifest.tracks.length} songs`);
       for(const t of manifest.tracks){
         const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
         if(!isBlobLike(blob))continue;
@@ -3691,14 +3691,14 @@ function editLocalProfile(){
         offset+=h.length+size+dd.length;
         totalBytes+=h.length+size+dd.length;
         done++;
-        if(done===manifest.tracks.length||done%2===0)toast(\`Exporting \${manifest.presetName}… \${done}/\${manifest.tracks.length} songs • \${formatBytes(totalBytes)}\`);
+        if(done===manifest.tracks.length||done%2===0)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs • ${formatBytes(totalBytes)}`);
         await sleepTick();
       }
-      toast(\`Exporting \${manifest.presetName}… finalizing ZIP (\${central.length} entries)\`);
+      toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
       const cdOffset=offset,centralData=joinParts(central);
       await writable.write(centralData);
       await writable.write(zipEnd(central.length,centralData.length,cdOffset));
-      toast(\`Exporting \${manifest.presetName}… committing file\`);
+      toast(`Exporting ${manifest.presetName}… committing file`);
       // A single close can occasionally race Chromium's large-file commit.
       // Retry with a fresh event-loop turn before reporting failure.
       for(let attempt=0;attempt<3&&!closed;attempt++){
@@ -3710,7 +3710,7 @@ function editLocalProfile(){
           await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
         }
       }
-      toast(\`\${manifest.presetName} exported.\`);
+      toast(`${manifest.presetName} exported.`);
       return true;
     }catch(e){
       if(!closed){
