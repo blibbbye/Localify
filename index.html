@@ -3634,33 +3634,39 @@ function editLocalProfile(){
     return {version:15,schema:'localify-preset-v2',presetKind:kind,presetName:customSections?'Library preset':presetLabel(kind),exportedAt:new Date().toISOString(),portableAudio:true,creatorName:String(state.profile?.displayName||'Localify listener').trim()||'Localify listener',trackCount:tracks.length,audioTrackCount:tracks.filter(t=>t.hasAudio).length,artists:scope.artists.map(cloneEntity),albums:scope.albums.map(cloneEntity),tracks,playlists:scope.playlists.map(cloneEntity),folders:scope.folders.map(function(f){const x=cloneEntity(f),refs=folderExportRefs(f);x.albumIds=refs.albumIds;x.trackIds=refs.trackIds;x.artistIds=refs.artistIds;x.playlistIds=refs.playlistIds;return x;}),liked:[...scope.liked],recent:[...scope.recent],settings:scope.settings?JSON.parse(JSON.stringify(scope.settings)):null,analytics:scope.analytics?JSON.parse(JSON.stringify(scope.analytics)):null,...(customSections?{exportSections:customSections}:{})};
   }
   async function writePresetStreaming(handle,manifest){
-    // Use FileSystemWritableFileStream.write()/close() directly. This avoids
-    // keeping a WritableStreamDefaultWriter locked for a multi-GB export.
+    // Large Chromium/Brave exports are much more reliable when we batch the
+    // underlying audio stream into multi-megabyte writes instead of issuing
+    // tens of thousands of tiny File System Access API writes.
     const writable=await handle.createWritable({keepExistingData:false});
     const enc=new TextEncoder(),mb=enc.encode(JSON.stringify(manifest)),mn=enc.encode("library.json"),mc=crc32(mb),mh=zipLocalHeader(mn,mc,mb.length);
     let offset=0,central=[];
     const sleepTick=()=>new Promise(resolve=>setTimeout(resolve,0));
     const joinParts=parts=>{
       const total=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(total);
-      let at=0;
-      for(const p of parts){out.set(p,at);at+=p.length}
+      let at=0;for(const p of parts){out.set(p,at);at+=p.length}
       return out;
     };
+    const WRITE_BATCH=8*1024*1024;
     let closed=false;
-    let closeError=null;
     try{
       await writable.write(mh);
       await writable.write(mb);
       central.push(zipCentralHeader(mn,mc,mb.length,offset));
       offset+=mh.length+mb.length;
-      let done=0,totalBytes=mb.length;
-      toast(`Exporting ${manifest.presetName}… preparing ${manifest.tracks.length} songs`);
+      let done=0,totalBytes=mh.length+mb.length;
+      toast(\`Exporting \${manifest.presetName}… preparing \${manifest.tracks.length} songs\`);
       for(const t of manifest.tracks){
         const src=trackById(t.id),blob=src?await ensureTrackBlob(src):null;
         if(!isBlobLike(blob))continue;
         const nb=enc.encode(t.audioFile),size=blob.size,h=zipLocalHeaderStreaming(nb,size);
         await writable.write(h);
-        let crcState=0xffffffff,streamBytes=0;
+        let crcState=0xffffffff,streamBytes=0,batchBytes=0,batch=[];
+        const flushBatch=async()=>{
+          if(!batchBytes)return;
+          const out=joinParts(batch);
+          await writable.write(out);
+          batch=[];batchBytes=0;
+        };
         const reader=blob.stream().getReader();
         try{
           while(true){
@@ -3670,12 +3676,14 @@ function editLocalProfile(){
             const bytes=value instanceof Uint8Array?value:new Uint8Array(value);
             crcState=crc32Update(crcState,bytes);
             streamBytes+=bytes.byteLength;
-            await writable.write(bytes);
+            batch.push(bytes);batchBytes+=bytes.byteLength;
+            if(batchBytes>=WRITE_BATCH)await flushBatch();
           }
         }finally{
           try{await reader.cancel()}catch{}
           try{reader.releaseLock()}catch{}
         }
+        await flushBatch();
         if(streamBytes!==size)throw new Error('Audio size changed while exporting “'+String(t.title||t.fileName||'Unknown song').slice(0,100)+'”.');
         const crc=(crcState^0xffffffff)>>>0,dd=zipDataDescriptor64(crc,size);
         await writable.write(dd);
@@ -3683,42 +3691,36 @@ function editLocalProfile(){
         offset+=h.length+size+dd.length;
         totalBytes+=h.length+size+dd.length;
         done++;
-        if(done===manifest.tracks.length||done%2===0)toast(`Exporting ${manifest.presetName}… ${done}/${manifest.tracks.length} songs • ${formatBytes(totalBytes)}`);
+        if(done===manifest.tracks.length||done%2===0)toast(\`Exporting \${manifest.presetName}… \${done}/\${manifest.tracks.length} songs • \${formatBytes(totalBytes)}\`);
         await sleepTick();
       }
-      toast(`Exporting ${manifest.presetName}… finalizing ZIP (${central.length} entries)`);
+      toast(\`Exporting \${manifest.presetName}… finalizing ZIP (\${central.length} entries)\`);
       const cdOffset=offset,centralData=joinParts(central);
       await writable.write(centralData);
       await writable.write(zipEnd(central.length,centralData.length,cdOffset));
-      toast(`Exporting ${manifest.presetName}… committing file`);
-      try{
-        await writable.close();
-        closed=true;
-      }catch(e){
-        closeError=e;
-        // Some Chromium builds can lose the stream state while committing a
-        // very large File System Access export. Give close() one clean retry.
+      toast(\`Exporting \${manifest.presetName}… committing file\`);
+      // A single close can occasionally race Chromium's large-file commit.
+      // Retry with a fresh event-loop turn before reporting failure.
+      for(let attempt=0;attempt<3&&!closed;attempt++){
         try{
-          if(typeof writable.close==="function" && !closed){
-            await new Promise(resolve=>setTimeout(resolve,300));
-            await writable.close();
-            closed=true;
-            closeError=null;
-          }
-        }catch{}
-        if(!closed)throw closeError;
+          await writable.close();
+          closed=true;
+        }catch(e){
+          if(attempt===2)throw e;
+          await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+        }
       }
-      toast(`${manifest.presetName} exported.`);
+      toast(\`\${manifest.presetName} exported.\`);
       return true;
     }catch(e){
       if(!closed){
         try{if(typeof writable.abort==="function")await writable.abort()}catch{}
       }
       if(e?.name==="InvalidStateError"){
-        throw new Error("The browser lost the large-file save stream while committing this export. This is usually a temporary-space or browser file-writer problem. Try exporting to a local drive (not OneDrive/Google Drive/network storage), close other large downloads/apps, and keep at least 15–20 GB free for a multi-GB preset. Then export again.");
+        throw new Error("Brave/Chromium lost the large-file save stream while committing the export. The export writer is now batched into 8 MB writes and retries the final commit. For very large libraries, save to a local drive (not OneDrive/Google Drive/network storage) and keep plenty of free disk space.");
       }
       if(e?.name==="QuotaExceededError"){
-        throw new Error("The browser ran out of temporary storage while preparing this large preset. Free more local disk space and export again.");
+        throw new Error("The browser ran out of temporary storage while exporting this large preset. Free more local disk space and export again.");
       }
       throw e;
     }
